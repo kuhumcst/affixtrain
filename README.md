@@ -1,4 +1,4 @@
-annotators
+affixtrain
 ==========
 
-Family of CL-tools for segmentation/tokenisation, POS-tagging and lemmatization. Some code is shared.
+Using supervised learning, create a set of affix rules for use by the CSTlemma lemmatiser.

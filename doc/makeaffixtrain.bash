@@ -1,3 +1,4 @@
+METH=git
 METH=https
 
 if [ ! -d letterfunc ]; then
@@ -24,4 +25,3 @@ cd src
 make all
 cd ..
 cd ..
-

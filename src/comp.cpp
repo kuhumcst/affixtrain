@@ -1987,7 +1987,7 @@ bestParms best_en_suffix =
     {
     true,
     "en",
-    4,
+    3,
         {
     /* 14144, after 88 iterations*/
 // 87.993939 +- 1.039632, cutoff 3, 1156.666667 rules, 15 iterations 

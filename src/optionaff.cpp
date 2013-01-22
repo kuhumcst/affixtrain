@@ -136,9 +136,20 @@ OptReturnTp optionStruct::doSwitch(int optchar,char * locoptarg,char * progname)
             printf("-H: maximum percent (with option -f0 or -p)\n");
             printf("-W: minimise weight (sum of inverse number of supporters over rules), not count (sum of rules) (with -p or -f0)\n");
             printf("-P: write parameters to file (default parms.txt if -p or -f0, otherwise no parameter file)\n");
-            printf("-n: columns (default 123):\n");
+            printf("-n: columns (default 120):\n");
             printf("  1:Word\n");
+            printf("  F:Word\n");
+            printf("  f:Word\n");
+            printf("  W:Word\n");
+            printf("  w:Word\n");
             printf("  2:Lemma\n");
+            printf("  B:Lemma\n");
+            printf("  b:Lemma\n");
+            printf("  L:Lemma\n");
+            printf("  l:Lemma\n");
+            printf("  3:POS tag (create rules for each of them)\n");
+            printf("  T:POS tag (create rules for each of them)\n");
+            printf("  t:POS tag (create rules for each of them)\n");
 #if LEMMAINL
             printf("  3:Word Frequency\n");
             printf("  4:Lemma Frequency\n");
@@ -149,7 +160,7 @@ OptReturnTp optionStruct::doSwitch(int optchar,char * locoptarg,char * progname)
 #if LEMMACLASS
             printf("  6:Lemma Class\n");
 #endif
-            printf("  0:Other (don't care)\n");
+            printf("  0:Other (don't care). (Use this to skip and ignore e.g. column with POS tags.)\n");
             printf("-f: Name or index of comparison function (which look at number of right, wrong and not applicable cases):\n");
             printf("  0:parms (Compute good parameter settings. Use -L and -H if training set must grow.)\n");
 #if _NA

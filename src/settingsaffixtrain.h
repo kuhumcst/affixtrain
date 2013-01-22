@@ -29,8 +29,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // OS-specific stuff:
 #ifdef WIN32
 #define COPY "copy "
+#define MKDIR "mkdir "
+#define DIRSEP '\\'
 #else
 #define COPY "cp -f "
+#define MKDIR "mkdir "
+#define DIRSEP '/'
 #endif
 
 extern bool VERBOSE;

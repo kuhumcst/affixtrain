@@ -20,7 +20,7 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "1.1"
+#define VERSION "1.2"
 
 static int PERC = 1;
 static int RECURSE = 1;
@@ -53,6 +53,8 @@ static const int iEnd[2] = {END,0};
 static const char StartAny[3] = {START,ANY,0};
 static const char AnyEnd[3] = {ANY,END,0};
 static const char StartAnyEnd[4] = {START,ANY,END,0};
+static const char * SCUT = ".cutoff";
+
 union pointers
     {
     unsigned char * uchars;
@@ -61,6 +63,33 @@ union pointers
     const short int * shorts;
     const long int * longs;
     };
+
+class tagClass
+    {
+    public:
+        char * name;
+        tagClass * next;
+        tagClass(const char * name,ptrdiff_t length,tagClass * next)
+            {
+            this->name = new char[length+1];
+            strncpy(this->name,name,length);
+            this->name[length] = '\0';
+            this->next = next;
+            }
+        ~tagClass()
+            {
+            delete [] name;
+            delete next;
+            }
+        bool has(const char * str,ptrdiff_t length)
+            {
+            return (  (length == (ptrdiff_t)strlen(name))
+                   && !strncmp(str,name,length)
+                   )
+                || (next && next->has(str,length));
+            }
+    };
+
 
 class shortRulePair;
 class fullRulePair : public rulePair
@@ -336,6 +365,7 @@ struct aFile
     int lines;
     long size;
     const char * eob;
+    char * fname;
 #if 0    
     int * frequencylist(int & max0,char & k0,int & max1,char & k1)
         {
@@ -379,8 +409,10 @@ struct aFile
             printf("max1 %c %d %ld\n",k1,max1,(max1*100)/size);
         }
 #endif
-    aFile(FILE * fp):Lines(NULL),filesize(0),lines(0),eob(NULL)
+    aFile(FILE * fp,const char * fname):Lines(NULL),filesize(0),lines(0),eob(NULL)
         {
+        this->fname = new char[strlen(fname)+1];
+        strcpy(this->fname,fname);
         file.chars = NULL;
         size = 0;
         while(getc(fp) != EOF)
@@ -461,6 +493,7 @@ struct aFile
         delete [] file.chars;
         //free(Lines);
         delete [] Lines;
+        delete [] this->fname;
         }
     };
 /*
@@ -949,7 +982,7 @@ static struct aFile * readFile(const char * fname)
     FILE * fp = fopen(fname,"rb");
     if(fp)
         {
-        aFile * a_file = new aFile(fp);
+        aFile * a_file = new aFile(fp,fname);
         fclose(fp);
         if(VERBOSE)
             {
@@ -1693,13 +1726,71 @@ static bool isSpace(int a)
         }
     }
 
-static int readLines(int lines,struct aFile * afile,trainingPair * TrainingPair,const char * columns) 
+static tagClass * collectTags(struct aFile * afile,const char * columns) 
+// "123456" means Word, Lemma, Wordfreq, Lemmafreq, Wordclass, Lemmaclass
+    {
+    tagClass * Tags = NULL;
+    int line;
+    pointers * Lines = afile->Lines;
+    if(VERBOSE)
+        {
+        printf("Checking %d lines in %s for tags %s\n",afile->lines,afile->fname,columns);
+        }
+    for(line = 0;line < afile->lines;++line)
+        {
+        const char * cols[18];
+        ptrdiff_t lengths[18];
+        const char * limit = (line < afile->lines - 1) ? Lines[line+1].cchars : afile->eob;
+
+        const char * q = Lines[line].cchars;
+        cols[0] = q;
+        unsigned int ii = 0;
+        while(  (q = find(q,'\t',limit)) != NULL
+            && (ii < sizeof(cols)/sizeof(cols[0]) - 1)
+            )
+            {
+            lengths[ii] = q - cols[ii];
+            cols[++ii] = ++q;
+            }
+        lengths[ii] = limit - cols[ii] - 1;
+        unsigned int maxii = ++ii;
+        cols[maxii] = q ? q : limit;
+        const char * column;
+        for(column = columns,ii = 0
+            ; *column && (ii < maxii)
+            ; ++column,++ii
+            )
+            {
+            switch(*column)
+                {
+                case '3':
+                case 'T':
+                case 't':
+                    if(!Tags || !(Tags->has(cols[ii],lengths[ii])))
+                        {
+                        Tags = new tagClass(cols[ii],lengths[ii],Tags);
+                        }
+                    break;
+                default:
+                    ;
+                }
+            }
+        }
+    return Tags;
+    }
+
+static int readLines(struct aFile * afile,trainingPair * TrainingPair,const char * columns, const char * tag) 
 // "123456" means Word, Lemma, Wordfreq, Lemmafreq, Wordclass, Lemmaclass
     {
     int pairs = 0;
     int line;
+    int taglength = tag ? strlen(tag) : 0;
     pointers * Lines = afile->Lines;
-    for(line = 0;line < lines;++line)
+    if(VERBOSE)
+        {
+        printf("readLines with tag %s\n",tag ? tag : "_ (UNDEFINED)");
+        }
+    for(line = 0;line < afile->lines;++line)
         {
         const char * cols[18];
         const char * Word = NULL;
@@ -1719,7 +1810,7 @@ static int readLines(int lines,struct aFile * afile,trainingPair * TrainingPair,
         long Inl = 0;
         long Lemma_Inl = 0;
 #endif
-        const char * limit = (line < lines - 1) ? Lines[line+1].cchars : afile->eob;
+        const char * limit = (line < afile->lines - 1) ? Lines[line+1].cchars : afile->eob;
 
         const char * q = Lines[line].cchars;
         cols[0] = q;
@@ -1735,6 +1826,7 @@ static int readLines(int lines,struct aFile * afile,trainingPair * TrainingPair,
         unsigned int maxii = ++ii;
         cols[maxii] = q ? q : limit;
         const char * column;
+        bool doUse = (tag == NULL);
         for(column = columns,ii = 0
             ;    *column 
             && (ii < maxii)
@@ -1744,12 +1836,28 @@ static int readLines(int lines,struct aFile * afile,trainingPair * TrainingPair,
             switch(*column)
                 {
                 case '1':
+                case 'F':
+                case 'f':
+                case 'W':
+                case 'w':
                     Word = cols[ii];
                     wordlength = lengths[ii];
                     break;
                 case '2':
+                case 'B':
+                case 'b':
+                case 'L':
+                case 'l':
                     LemmaHead = cols[ii];
                     lemmalength = lengths[ii];
+                    break;
+                case '3':
+                case 'T':
+                case 't':
+                    if(tag && (taglength == lengths[ii]) && !strncmp(cols[ii],tag,taglength))
+                        {
+                        doUse = true;
+                        }
                     break;
 #if LEMMAINL
                 case '3':
@@ -1775,8 +1883,9 @@ static int readLines(int lines,struct aFile * afile,trainingPair * TrainingPair,
                     ;
                 }
             }
-        if(Word)
+        if(Word && doUse)
             {
+            doUse = (tag == NULL);
             while(lemmalength > 0 && isSpace(LemmaHead[lemmalength - 1]))
                 --lemmalength;
 #if WORDCLASS
@@ -2243,17 +2352,18 @@ static double maxCorrectness = 0.0;
 static trainingPair * globTrainingPair;
 static int globlines;
 
-
-
-static trainingPair * readTrainingPairs(struct aFile * afile,int & pairs,const char * columns)
+static trainingPair * readTrainingPairs(struct aFile * afile,int & pairs,const char * columns,const char * tag)
     {
     globlines = afile->lines;
     trainingPair * TrainingPair = new trainingPair[afile->lines];
     globTrainingPair = TrainingPair;
-    pairs = readLines(afile->lines,afile,TrainingPair,columns);
+    pairs = readLines(afile,TrainingPair,columns,tag);
     if(VERBOSE)
         {
-        printf("%ld characters and %d lines\r",afile->size,afile->lines);
+        if(tag)
+            printf("%ld characters and %d lines, %d selected with tag %s       \n",afile->size,afile->lines,pairs,tag);
+        else
+            printf("%ld characters and %d lines\r",afile->size,afile->lines);
         }
     return TrainingPair;
     }
@@ -2724,6 +2834,7 @@ static bool doTraining
         , char * disambtrainname
         , int & Nnodes
         , double & weight
+        , const char * tag
         )
     {
     bool moreToDo = false;
@@ -2731,7 +2842,7 @@ static bool doTraining
     VertexPointerCount = 0;
 
     int pairs;
-    trainingPair * TrainingPair = readTrainingPairs(afile,pairs,columns);
+    trainingPair * TrainingPair = readTrainingPairs(afile,pairs,columns,tag);
     markTheAmbiguousPairs(TrainingPair,ext,pairs);
     writeAllAvailablePairs(TrainingPair,ext,pairs);
     if(PERC > 0)
@@ -2803,7 +2914,7 @@ static bool doTraining
     if(cutoff >= 0 && nflexrules)
         {
         char naam[500];
-        sprintf(naam,"%s0",nflexrules);
+        sprintf(naam,"%s%s0",nflexrules,SCUT);
         writeAndTest(top,ext,0,naam,Nnodes,weight);
 #if DOTEST
         testf(top,test,ext,0,naam);
@@ -2812,7 +2923,7 @@ static bool doTraining
             {
             top->pruneAll(thresh);
             top = top->cleanup(NULL);
-            sprintf(naam,"%s%d",nflexrules,thresh);
+            sprintf(naam,"%s%s%d",nflexrules,SCUT,thresh);
             writeAndTest(top,ext,thresh,naam,Nnodes,weight);
 #if DOTEST
             testf(top,test,ext,0,naam);
@@ -2854,6 +2965,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
     double brownweight = 0.0;
     double fraction = 0.0; // 0.0 <= fraction <= 1.0
     double factor = 0.0;
+    char * tag = 0;
     if(minperc > 0)
         {
         factor = (double)maxperc/(double)minperc;
@@ -2891,7 +3003,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                     FILE * f = fopen(fname,"r");
                     if(f == NULL)
                         {
-                        fprintf(stderr,"Cannot open %s for reading\n",fname);
+                        fprintf(stderr,"Can not open %s for reading\n",fname);
                         exit(-1);
                         }
                     int kar = 0;
@@ -3007,7 +3119,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                             init();
                         else
                             copybest(); // go on with best result so far.
-                        doTraining(afile,ext,0,nflexrules,columns,NULL,NULL,NULL,NULL,Nnodes,weight); // sets Nnodes
+                        doTraining(afile,ext,0,nflexrules,columns,NULL,NULL,NULL,NULL,Nnodes,weight,tag); // sets Nnodes
                         delete afile;
                         afile = NULL;
                         brownNo = Nnodes;
@@ -3050,7 +3162,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                     struct aFile * afile = readFile(filename);
                     if(afile)
                         {
-                        doTraining(afile,ext,0,nflexrules,columns,NULL,NULL,NULL,NULL,Nnodes,weight); // sets Nnodes
+                        doTraining(afile,ext,0,nflexrules,columns,NULL,NULL,NULL,NULL,Nnodes,weight,tag); // sets Nnodes
                         delete afile;
                         afile = NULL;
                         }
@@ -3085,7 +3197,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
     remove(fbuf);
     }
 
-void trainRules(const char * fname, const char * extra,int cutoff,const char * nflexrules,const char * columns)
+void trainRules(const char * fname, const char * extra,int cutoff,const char * nflexrules,const char * columns,const char * tag)
     {
     bool moreToDo = true;
     int passes = 0;
@@ -3093,10 +3205,20 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
     char donename[256] = "__done";
     char combinedname[256] = "__combined";
     char disambtrainname[256] = "__disambtrain";
-    char command[200];
+    char command[1000];
     clock_t start = clock();
     int Nnodes = 0;
     double weight = 0.0;
+    char nflexrulesExtended[256];
+    if(nflexrules)
+        {
+        if(tag)
+            sprintf(nflexrulesExtended,"%s.%s",nflexrules,tag);
+        else
+            strcpy(nflexrulesExtended,nflexrules);
+        nflexrules = nflexrulesExtended;
+        }
+
     do
         {
         ++passes;
@@ -3107,11 +3229,13 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
         ext[0] = '\0';
         if(extra)
             strcpy(ext,extra);
-        sprintf(ext,"%s%d",extra ? extra : "",passes);
+        char spass[10];
+        sprintf(spass,".pass%d",passes);
+        sprintf(ext,"%s%s",extra ? extra : "",spass);
 
         if(afile)
             {
-            moreToDo = doTraining(afile,ext,cutoff,nflexrules,columns,nexttrainname,donename,combinedname,disambtrainname,Nnodes,weight);
+            moreToDo = doTraining(afile,ext,cutoff,nflexrules,columns,nexttrainname,donename,combinedname,disambtrainname,Nnodes,weight,tag);
             //printf("CNT = %d\n",CNT);
             delete afile;
             afile = NULL;
@@ -3138,7 +3262,7 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
 #endif
                 if(VERBOSE)
                 {
-                printf("No more training to do\n");
+                printf("No more training to do                                  \n");
                 }
             }
         char filename[256];
@@ -3171,9 +3295,11 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
             {
             if(nflexrules)
                 {
-                char scut[3];
-                sprintf(scut,"%d",cut);
-                sprintf(command,COPY "%s%s %s_%s%d",nflexrules,scut,nflexrules,scut,passes);
+                char scut[20];
+                sprintf(scut,"%s%d",SCUT,cut);
+                char spass[10];
+                sprintf(spass,".pass%d",passes);
+                sprintf(command,COPY "%s%s %s%s%s",nflexrules,scut,nflexrules,scut,spass);
                 if(VERBOSE)
                     {
                     printf("%s\n",command);
@@ -3182,7 +3308,7 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
                     break; //error
                 if(passes == 1)
                     {
-                    sprintf(command,COPY "%s%s %s%s_ambi",nflexrules,scut,nflexrules,scut);
+                    sprintf(command,COPY "%s%s %s%s.ambi",nflexrules,scut,nflexrules,scut);
                     if(VERBOSE)
                         {
                         printf("%s\n",command);
@@ -3202,9 +3328,9 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
                     if(system(command))
                         break; //error
                     */
-                    char bestflexrules[50], nextbestflexrules[50];
-                    sprintf(bestflexrules,"%s%s_ambi",nflexrules,scut);
-                    sprintf(nextbestflexrules,"%s_%s%d",nflexrules,scut,passes);
+                    char bestflexrules[256], nextbestflexrules[50];
+                    sprintf(bestflexrules,"%s%s.ambi",nflexrules,scut);
+                    sprintf(nextbestflexrules,"%s%s%s",nflexrules,scut,spass);
                     if(!flexcombi(bestflexrules, nextbestflexrules, bestflexrules))
                         break;
                     }
@@ -3263,27 +3389,96 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
         }
     if(cutoff == 0)
         {
+        char scut[20];
+        sprintf(scut,"%s%d",SCUT,cutoff);
+        if(VERBOSE)
+            printf("Remove %s \n",nflexrules);
         remove(nflexrules);
-        sprintf(command,"%s0_ambi",nflexrules);
+        sprintf(command,"%s%s.ambi",nflexrules,scut);
         rename(command,nflexrules);
         }
     else
         {
+        char dest[1000];
+        dest[0] = '\0';
         for(int cut = 0;cut <= cutoff;++cut)
             {
-            char dest[1000];
-            sprintf(dest,"%s%d",nflexrules,cut);
+            char scut[20];
+            sprintf(scut,"%s%d",SCUT,cut);
+            sprintf(dest,"%s%s",nflexrules,scut);
+            if(VERBOSE)
+                printf("Remove %s \n",dest);
             remove(dest);
-            sprintf(command,"%s%d_ambi",nflexrules,cut);
+            sprintf(command,"%s%s.ambi",nflexrules,scut);
             rename(command,dest);
+            char dirname[500];
+            const char * lastslash = strrchr(nflexrules,DIRSEP);
+            const char * filename;
+            if(lastslash)
+                {
+                filename = lastslash + 1;
+                sprintf(dirname,"%.*s%c%d",(int)(lastslash - nflexrules),nflexrules,DIRSEP,cut);
+                }
+            else
+                {
+                filename = nflexrules;
+                sprintf(dirname,"%d",cut);
+                }
+            printf("dirname %s\n",dirname);
+            char testfile[500];
+            sprintf(testfile,"%s%cTESTFILE",dirname,DIRSEP);
+            printf("testfile %s\n",testfile);
+            FILE * fptest = fopen(testfile,"w");
+            bool hasDir = false;
+            if(fptest)
+                {
+                printf("testfile created\n");
+                fclose(fptest);
+                remove(testfile);
+                printf("testfile deleted\n");
+                hasDir = true;
+                }
+            else
+                {
+                printf("testfile not created\n");
+                sprintf(command,"%s %s",MKDIR,dirname);
+                printf("command %s\n",command);
+                system(command);
+                fptest = fopen(testfile,"w");
+                if(fptest)
+                    {
+                    printf("testfile created\n");
+                    fclose(fptest);
+                    remove(testfile);
+                    printf("testfile deleted\n");
+                    hasDir = true;
+                    }
+                }
+            if(hasDir)
+                {
+                sprintf(command,"%s%c%s",dirname,DIRSEP,filename);
+                rename(dest,command);
+                }
             }
+        /*
+        if(dest[0] > '\0')
+            rename(dest,nflexrules);*/ /* Remove the '.cutoffN' extension if N is
+                                     the cutoff threshold set by the parameter
+                                     -c. Indeed, those are the rules the user
+                                     asked for. */
         }
     for(int cut = 0;cut <= cutoff;++cut)
         {
+        char scut[20];
+        sprintf(scut,"%s%d",SCUT,cut);
         for(int passes = 1;;++passes)
             {
             char dest[1000];
-            sprintf(dest,"%s_%d%d",nflexrules,cut,passes);
+            char spass[10];
+            sprintf(spass,".pass%d",passes);
+            sprintf(dest,"%s%s%s",nflexrules,scut,spass);
+            if(VERBOSE)
+                printf("Remove %s \n",dest);
             if(remove(dest))
                 break;
             }
@@ -3389,7 +3584,7 @@ int main(int argc,char **argv)
     //const char * columns = "12634"; // Word, Lemma, LemmaClass, WordFreq, LemmaFreq
     const char * columns = options.n; 
     if(!columns)
-        columns = "123";// Word, Lemma, other
+        columns = "FB";// Word, Lemma
 
     comp = comp_koud;
     if(options.computeParms)
@@ -3419,7 +3614,7 @@ int main(int argc,char **argv)
         printf("flex rules:%s\n",(nflexrules == NULL) ? "automatically generated names" : nflexrules);
         if(extra)
             printf("extra name suffix:%s\n",extra);
-        printf("columns:%s (1=word,2=lemma,3=other)\n",columns);
+        printf("columns:%s (1=word,2=lemma,3=tags,0=other)\n",columns);
         if(comp)
             printf("competition function:%s\n",options.computeParms ? "parms" : options.f ? options.f : "unknown");
         if(parmstxt)
@@ -3434,12 +3629,42 @@ int main(int argc,char **argv)
         }
     else
         {
-        trainRules(fname,extra,cutoff,nflexrules,columns);
+        tagClass * Tags = NULL;
+
+        struct aFile * afile = readFile(fname);
+        if(afile)
+            {
+            Tags = collectTags(afile,columns);
+            delete afile;
+            afile = NULL;
+            }
+
+        tagClass * theTag = Tags;
+        if(theTag)
+            {
+            if(VERBOSE)
+                printf("Doing Tags\n");
+            while(theTag)
+                {
+                if(VERBOSE)
+                    {
+                    printf("Doing tag %s\n",theTag->name);
+                    }
+                trainRules(fname,extra,cutoff,nflexrules,columns,theTag->name);
+                theTag = theTag->next;
+                }
+            }
+        else
+            {
+            if(VERBOSE)
+                printf("NOT doing Tags\n");
+            trainRules(fname,extra,cutoff,nflexrules,columns,NULL);
+            }
         }
     if(VERBOSE)
         {
         if(argc < 3)
             getchar();
-        printf("\nSIMIL OK\n");
+        printf("\nAffixTrain OK\n");
         }
     }

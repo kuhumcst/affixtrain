@@ -275,6 +275,8 @@ static int merge(char * arr,
                 ind += sizeof(int);
                 arr[ind] = 1;
                 arr[ind+1] = 12;// test
+                arr[ind+2] = 13;// test
+                arr[ind+3] = 15;// test
                 ind += sizeof(int);
                 for(k = child1;k < mmax1;++k)
                     arr[ind++] = *k;
@@ -368,7 +370,10 @@ int flexcombi(const char * bestflexrules, const char * nextbestflexrules, const 
         }
     char start[1000] = {0};
     char end[1000] = {0};
-    fm = fopen("1.txt","wb");
+    char one   [1000];sprintf(one,   "%s.1.txt",bestflexrules);
+    char two   [1000];sprintf(two,   "%s.2.txt",nextbestflexrules);
+    char onetwo[1000];sprintf(onetwo,"%s.12.txt",combinedflexrules);
+    fm = fopen(one,"wb");
     printrules(buf1,0,buf1+end1,start,end);
     fclose(fm);
     if(!readRules(nextbestflexrules,buf2,end2))
@@ -376,7 +381,7 @@ int flexcombi(const char * bestflexrules, const char * nextbestflexrules, const 
         printf("Error: Cannot open %s for reading\n",nextbestflexrules);
         return -1;
         }
-    fm = fopen("2.txt","wb");
+    fm = fopen(two,"wb");
     printrules(buf2,0,buf2+end2,start,end);
     fclose(fm);
     //printf("end1 %d + end2 %d = %d\n",end1,end2,end1+end2);
@@ -402,7 +407,7 @@ int flexcombi(const char * bestflexrules, const char * nextbestflexrules, const 
     end[0] = 0;
     /**/
     printf("\n>>\n");
-    fm = fopen("12.txt","wb");
+    fm = fopen(onetwo,"wb");
     printrules(buf12,0,buf12+end12,start,end);
     fclose(fm);
     printf("\n<<\n");

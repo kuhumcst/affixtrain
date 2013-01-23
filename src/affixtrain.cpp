@@ -2568,6 +2568,9 @@ static void rearrange
         if(ind[j] >= pos)
             ind[j] -= pos; // We only need to know how far to jump from here.
         fwrite(ind+j,sizeof(int),1,fo);
+        if(VERBOSE)
+            printf("n+%d = %X\n",j,ind[j]);
+
 #if RULESASTEXT
         fprintf(foleltxt,"%d",ind[j]);
 #endif
@@ -3359,7 +3362,7 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
                     sprintf(command,COPY "%s%s %s%s.ambi",nflexrules,scut,nflexrules,scut);
                     if(VERBOSE)
                         {
-                        printf("%s\n",command);
+                        printf("passes == 1 command %s\n",command);
                         }
                     if(system(command))
                         break; //error
@@ -3376,9 +3379,13 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
                     if(system(command))
                         break; //error
                     */
-                    char bestflexrules[256], nextbestflexrules[50];
+                    char bestflexrules[1150], nextbestflexrules[1150];
                     sprintf(bestflexrules,"%s%s.ambi",nflexrules,scut);
                     sprintf(nextbestflexrules,"%s%s%s",nflexrules,scut,spass);
+                    if(VERBOSE)
+                        {
+                        printf("flexcombi best %s + next best %s -> combined %s\n",bestflexrules, nextbestflexrules, bestflexrules);
+                        }
                     if(!flexcombi(bestflexrules, nextbestflexrules, bestflexrules))
                         break;
                     }
@@ -3409,7 +3416,7 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
                     if(system(command))
                         break; //error
                     */
-                    char bestflexrules[50], nextbestflexrules[50], combinedflexrules[50];
+                    char bestflexrules[1150], nextbestflexrules[1150], combinedflexrules[1150];
                     sprintf(bestflexrules,"rules.lem");
                     sprintf(nextbestflexrules,"rules_0%d.lem",passes);
                     sprintf(combinedflexrules,"rules.lem2");
@@ -3545,6 +3552,7 @@ int main(int argc,char **argv)
         {
         printf("affixtrain - supervised learning of affix rules for AFFIXTRAIN, version " VERSION "\n");
         printf("%s -h for usage\n",argv[0]);
+        //printf("sizeof(int) == %lu\n",(unsigned long)sizeof(int));
         exit(0);
         }
     optionStruct options;

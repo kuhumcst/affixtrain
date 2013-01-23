@@ -20,7 +20,7 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "1.2"
+#define VERSION "1.3"
 
 static int PERC = 1;
 static int RECURSE = 1;
@@ -2568,8 +2568,8 @@ static void rearrange
         if(ind[j] >= pos)
             ind[j] -= pos; // We only need to know how far to jump from here.
         fwrite(ind+j,sizeof(int),1,fo);
-        if(VERBOSE)
-            printf("n+%d = %X\n",j,ind[j]);
+        /*if(VERBOSE)
+            printf("n+%d = %X\n",j,ind[j]);*/
 
 #if RULESASTEXT
         fprintf(foleltxt,"%d",ind[j]);
@@ -2829,7 +2829,7 @@ static bool doTraining
         ( struct aFile * afile
         , const char * ext
         , int cutoff
-        , const char * nflexrules
+        , const char * nflexrulesFormat
         , const char * columns
         , char * pairsToTrainInNextPassName
         , char * ingestedFractionOfAmbiguousPairsName
@@ -2916,10 +2916,10 @@ static bool doTraining
         top->Counting(nodes,pairs,fcounting);
         fclose(fcounting);
         }
-    if(cutoff >= 0 && nflexrules)
+    if(cutoff >= 0 && nflexrulesFormat)
         {
         char naam[500];
-        sprintf(naam,"%s%s0",nflexrules,SCUT);
+        sprintf(naam,nflexrulesFormat,0);
         writeAndTest(top,ext,0,naam,Nnodes,weight);
 #if DOTEST
         testf(top,test,ext,0,naam);
@@ -2928,18 +2928,20 @@ static bool doTraining
             {
             top->pruneAll(thresh);
             top = top->cleanup(NULL);
-            sprintf(naam,"%s%s%d",nflexrules,SCUT,thresh);
+            sprintf(naam,nflexrulesFormat,thresh);
             writeAndTest(top,ext,thresh,naam,Nnodes,weight);
 #if DOTEST
             testf(top,test,ext,0,naam);
 #endif
             }
         }
-    else
+    else if(nflexrulesFormat)
         {
-        writeAndTest(top,ext,0,nflexrules,Nnodes,weight);
+        char naam[500];
+        sprintf(naam,nflexrulesFormat,cutoff);
+        writeAndTest(top,ext,0,naam,Nnodes,weight);
 #if DOTEST
-        testf(top,test,ext,0,nflexrules);
+        testf(top,test,ext,0,naam);
 #endif
         int max = 3;
         if(cutoff >= 0)
@@ -2947,9 +2949,27 @@ static bool doTraining
         for(int thresh = 1;thresh <= max;thresh++)
             {
             top->pruneAll(thresh);
-            writeAndTest(top,ext,thresh,nflexrules,Nnodes,weight);
+            writeAndTest(top,ext,thresh,naam,Nnodes,weight);
 #if DOTEST
-            testf(top,test,ext,thresh,nflexrules);
+            testf(top,test,ext,thresh,naam);
+#endif
+            }
+        }
+    else
+        {
+        writeAndTest(top,ext,0,0,Nnodes,weight);
+#if DOTEST
+        testf(top,test,ext,0,0);
+#endif
+        int max = 3;
+        if(cutoff >= 0)
+            max = cutoff;
+        for(int thresh = 1;thresh <= max;thresh++)
+            {
+            top->pruneAll(thresh);
+            writeAndTest(top,ext,thresh,0,Nnodes,weight);
+#if DOTEST
+            testf(top,test,ext,thresh,0);
 #endif
             }
         }
@@ -3227,32 +3247,44 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
     char allPairsFormat[1024];
     char allIngestedPairsFormat[1024];
     char wordsGroupedByRuleFormat[1024];
+    char bestRulesFormat[1024];
+
+
+
     char numbersFormat[1024];
     char command[1024];
+    const char * FlexrulePassFormat = "%s.pass%d.cutoff%%d"; // flexrules.passN.cutoffM
+    const char * AccumulatedFlexrulePassFormat = "%s.pass%d.cutoff%%d.accumulated"; // flexrules.passN.cutoffM
     clock_t start = clock();
     int Nnodes = 0;
     double weight = 0.0;
-    char nflexrulesExtended[256];
     sprintf(pairsToTrainInNextPassFormat,"%s.pairsToTrainInNextPass.%s%s.pass%%d",fname,extra,tag);
     sprintf(ingestedFractionOfAmbiguousPairsFormat,"%s.ingestedFractionOfAmbiguousPairs.%s%s.pass%%d",fname,extra,tag);
     sprintf(allPairsFormat,"%s.allPairs.%s%s.pass%%d",fname,extra,tag);
     sprintf(allIngestedPairsFormat,"%s.allIngestedPairs.%s%s.pass%%d",fname,extra,tag);
     sprintf(wordsGroupedByRuleFormat,"%s.wordsGroupedByRuleName.%s%s.pass%%d",fname,extra,tag);
     sprintf(numbersFormat,"%s.numbers.%s%s.pass%%d",fname,extra,tag);
-    
+
+
+
     if(nflexrules)
         {
+        char nflexrulesTag[256];
         if(tag)
-            sprintf(nflexrulesExtended,"%s.%s",nflexrules,tag);
+            sprintf(nflexrulesTag,"%s.%s",nflexrules,tag);
         else
-            strcpy(nflexrulesExtended,nflexrules);
-        nflexrules = nflexrulesExtended;
+            strcpy(nflexrulesTag,nflexrules);
+        nflexrules = nflexrulesTag;
         }
+
+    const char * accumulatedFormat = FlexrulePassFormat;
+    const char * accumulatedFormatPrev = NULL;
 
     do
         {
         ++passes;
-        allIngestedPairsName[0] = allPairsName[0] = ingestedFractionOfAmbiguousPairsName[0] = (char)(passes+'0');
+        char flexrulesPass[256];
+        sprintf(flexrulesPass,FlexrulePassFormat,nflexrules,passes);
         struct aFile * afile = readFile(fname);
         sprintf(pairsToTrainInNextPassName,pairsToTrainInNextPassFormat,passes);
         sprintf(ingestedFractionOfAmbiguousPairsName,ingestedFractionOfAmbiguousPairsFormat,passes);
@@ -3273,8 +3305,8 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
             moreToDo = doTraining   (afile
                                     ,ext
                                     ,cutoff
-                                    ,nflexrules
-                                    ,columns
+                                    ,flexrulesPass
+                                    ,passes > 1 ? "12" : columns
                                     ,pairsToTrainInNextPassName
                                     ,ingestedFractionOfAmbiguousPairsName
                                     ,allPairsName
@@ -3283,12 +3315,18 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
                                     ,numbersName
                                     ,Nnodes
                                     ,weight
-                                    ,tag
+                                    ,passes > 1 ? NULL : tag
                                     );
             //printf("CNT = %d\n",CNT);
             delete afile;
             afile = NULL;
 #if SLOW
+            /*
+            Re-do the training, but only with those paisr that made it into
+            the set of ingested pairs. The idea is to avoid the "noise" caused
+            by the siblings of ambiguous pairs that didn't make it.
+            The result of this excercise can be a better rule tree.
+            */
             if(moreToDo)
                 {
                 if(VERBOSE)
@@ -3298,7 +3336,7 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
                 afile = readFile(allIngestedPairsName);
                 sprintf(wordsGroupedByRuleName,"words_%s%s.txt",ext,tag);
                 sprintf(numbersName,"numbers_%s%s.tab",ext,tag);
-                if(doTraining(afile,ext,cutoff,nflexrules,columns,NULL,NULL,NULL,NULL,wordsGroupedByRuleName,numbersName,Nnodes,weight,tag); // sets Nnodes
+                if(doTraining(afile,ext,cutoff,flexrulesPass,columns,NULL,NULL,NULL,NULL,wordsGroupedByRuleName,numbersName,Nnodes,weight,tag); // sets Nnodes
                     {
                     if(VERBOSE)
                         {
@@ -3313,7 +3351,8 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
 #endif
                 if(VERBOSE)
                 {
-                printf("No more training to do                                  \n");
+                if(moreToDo)
+                    printf("No retraining done on ingested pairs, although ambiguous pairs were found and may have caused noise. (Faster) \n");
                 }
             }
         char filename[256];
@@ -3342,52 +3381,39 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
                 printf( "%2.1f seconds\n", duration );
                 }
             }
+
+        char AccumulatedFlexrulesPass[256];
+        char NextAccumulatedFlexrulesPassFormat[256];
+        sprintf(bestRulesFormat,accumulatedFormat,nflexrules,passes);
+        if(passes > 1)
+            {
+            assert(accumulatedFormatPrev != NULL);
+            sprintf(AccumulatedFlexrulesPass,accumulatedFormatPrev,nflexrules,passes-1);
+            sprintf(NextAccumulatedFlexrulesPassFormat,AccumulatedFlexrulePassFormat,nflexrules,passes);
+            }
+
         for(int cut = 0;cut <= cutoff;++cut)
             {
-            if(nflexrules)
+            if(flexrulesPass)
                 {
-                char scut[20];
-                sprintf(scut,"%s%d",SCUT,cut);
-                char spass[10];
-                sprintf(spass,".pass%d",passes);
-                sprintf(command,COPY "%s%s %s%s%s",nflexrules,scut,nflexrules,scut,spass);
-                if(VERBOSE)
+                char nextbestflexrules[1150];
+                char Pretty[1150];
+                sprintf(nextbestflexrules,flexrulesPass,cut);
+                sprintf(Pretty,"%s.txt",nextbestflexrules);
+                prettyPrint(nextbestflexrules,Pretty);
+                if(passes > 1)
                     {
-                    printf("%s\n",command);
-                    }
-                if(system(command))
-                    break; //error
-                if(passes == 1)
-                    {
-                    sprintf(command,COPY "%s%s %s%s.ambi",nflexrules,scut,nflexrules,scut);
-                    if(VERBOSE)
-                        {
-                        printf("passes == 1 command %s\n",command);
-                        }
-                    if(system(command))
-                        break; //error
-                    }
-                else
-                    {
-                    // combiflex tinyflexrules0_ambi tinyflexrules_02 tinyflexrules0_ambi
-                    /*
-                    sprintf(command,COMBIFLEX "%s%s_ambi %s_%s%d %s%s_ambi",nflexrules,scut,nflexrules,scut,passes,nflexrules,scut);
-                    if(VERBOSE)
-                        {
-                        printf("%s\n",command);
-                        }
-                    if(system(command))
-                        break; //error
-                    */
-                    char bestflexrules[1150], nextbestflexrules[1150];
-                    sprintf(bestflexrules,"%s%s.ambi",nflexrules,scut);
-                    sprintf(nextbestflexrules,"%s%s%s",nflexrules,scut,spass);
+                    char bestflexrules[1150], newbestflexrules[1150];
+                    sprintf(bestflexrules,AccumulatedFlexrulesPass,cut);
+                    sprintf(newbestflexrules,NextAccumulatedFlexrulesPassFormat,cut);
                     if(VERBOSE)
                         {
                         printf("flexcombi best %s + next best %s -> combined %s\n",bestflexrules, nextbestflexrules, bestflexrules);
                         }
-                    if(!flexcombi(bestflexrules, nextbestflexrules, bestflexrules))
+                    if(!flexcombi(bestflexrules, nextbestflexrules, newbestflexrules))
                         break;
+                    sprintf(Pretty,"%s.txt",newbestflexrules);
+                    prettyPrint(newbestflexrules,Pretty);
                     }
                 }
             else //rules_0.lem
@@ -3407,15 +3433,6 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
                     }
                 else
                     {
-                    /*
-                    sprintf(command,COMBIFLEX "rules.lem rules_0%d.lem rules.lem2",passes);
-                    if(VERBOSE)
-                        {
-                        printf("%s\n",command);
-                        }
-                    if(system(command))
-                        break; //error
-                    */
                     char bestflexrules[1150], nextbestflexrules[1150], combinedflexrules[1150];
                     sprintf(bestflexrules,"rules.lem");
                     sprintf(nextbestflexrules,"rules_0%d.lem",passes);
@@ -3436,8 +3453,14 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
                 }
             }
         fname = pairsToTrainInNextPassName;
+
+        accumulatedFormatPrev = accumulatedFormat;
+        accumulatedFormat = AccumulatedFlexrulePassFormat;
         }
     while(moreToDo && passes < 2);
+
+
+
     if(VERBOSE)
         {
         putchar('\n'); // to compensate for missing newline in readTrainingPairs
@@ -3458,14 +3481,8 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
         dest[0] = '\0';
         for(int cut = 0;cut <= cutoff;++cut)
             {
-            char scut[20];
-            sprintf(scut,"%s%d",SCUT,cut);
-            sprintf(dest,"%s%s",nflexrules,scut);
-            if(VERBOSE)
-                printf("Remove %s \n",dest);
-            remove(dest);
-            sprintf(command,"%s%s.ambi",nflexrules,scut);
-            rename(command,dest);
+            sprintf(dest,bestRulesFormat,cut);
+
             char dirname[500];
             const char * lastslash = strrchr(nflexrules,DIRSEP);
             const char * filename;
@@ -3480,6 +3497,8 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
                 sprintf(dirname,"%d",cut);
                 }
             printf("dirname %s\n",dirname);
+
+
             char testfile[500];
             sprintf(testfile,"%s%cTESTFILE",dirname,DIRSEP);
             printf("testfile %s\n",testfile);
@@ -3517,7 +3536,7 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
             }
         /*
         if(dest[0] > '\0')
-            rename(dest,nflexrules);*/ /* Remove the '.cutoffN' extension if N is
+            rename(dest,flexrulesPass);*/ /* Remove the '.cutoffN' extension if N is
                                      the cutoff threshold set by the parameter
                                      -c. Indeed, those are the rules the user
                                      asked for. */

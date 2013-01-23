@@ -157,8 +157,7 @@ Also enables word frequency.
 
 #define WORDCLASS 0
 /* WORDCLASS 1
-Read word class from file. No code in the training program currently uses
-the word class.
+Read word class from file. 
 */
 
 #if defined __BORLANDC__

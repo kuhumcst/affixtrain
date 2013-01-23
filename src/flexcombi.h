@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #ifndef FLEXCOMBI_H
 #define FLEXCOMBI_H
 
-int flexcombi(const char * bestflexrules, const char * nextbestflexrules, const char * combinedflexrules);
+bool flexcombi(const char * bestflexrules, const char * nextbestflexrules, const char * combinedflexrules);
+int prettyPrint(char * flexrulesIn,char * filenameOut);
 
 #endif

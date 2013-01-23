@@ -390,7 +390,14 @@ void trainingPair::print(FILE * f)
 
 void trainingPair::printMore(FILE * f)
     {
-    fprintf(f,"%.*s\t%.*s\n",(int)(wordlength),Word,(int)(lemmalength),LemmaHead);
+    fprintf(f,"%.*s\t%.*s",(int)(wordlength),Word,(int)(lemmalength),LemmaHead);
+#if WORDCLASS
+    fprintf(f,"\t%.*s",(int)(wordclasslength),WordClass);
+#endif
+#if LEMMACLASS
+    fprintf(f,"\t%.*s",(int)(lemmaclasslength),LemmaClass);
+#endif
+    fprintf(f,"\n");
     }
 
 void trainingPair::printSep(FILE * f)

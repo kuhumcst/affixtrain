@@ -39,9 +39,7 @@ static void Strrev(char * s)
     }
 
 
-static FILE * fm = NULL;
-
-static void printpat(char ** fields,int findex,char * start,char * end)
+static void printpat(char ** fields,int findex,char * start,char * end,FILE * fm)
     {
     sprintf(start+strlen(start),"%.*s",(int)(fields[1] - fields[0] - 1),fields[0]);
     fprintf(fm,"%s",start);
@@ -79,15 +77,63 @@ static void printpat(char ** fields,int findex,char * start,char * end)
         fprintf(fm,"\n");
     }
 
-static char * printrules(char * rules,int indent,char * max,char * start,char * end);
+static char * printrules(char * rules,int indent,char * max,char * start,char * end,FILE * fm);
 
-static char * printlist(char * p,char * e,int indent,char * start,char * end)
+static bool readRules(FILE * flexrulefile,char *& buf,long int & end)
+    {
+    fseek(flexrulefile,0,SEEK_END);
+    end = ftell(flexrulefile);
+    buf = new char[end];
+    rewind(flexrulefile);
+    if(end != (long int)fread(buf,1,end,flexrulefile))
+        {
+        fclose(flexrulefile);
+	    return false;
+        }
+    fclose(flexrulefile);
+    return true;
+    }
+
+bool readRules(const char * filename,char *& buf,long int & end)
+    {
+    FILE * f = fopen(filename,"rb");
+    if(f)
+        {
+        return readRules(f,buf,end);
+        }
+    return false;
+    }
+
+int prettyPrint(char * flexrulesIn,char * filenameOut)
+    {
+    char * buf;
+    long int endPos;
+    if(!readRules(flexrulesIn,buf,endPos))
+        {
+        printf("Error: Cannot open %s for reading\n",flexrulesIn);
+        return false;
+        }
+    char start[1000] = {0};
+    char end[1000] = {0};
+    FILE * fm = fopen(filenameOut,"wb");
+    if(!fm)
+        {
+        printf("Error: Cannot open %s for writing\n",filenameOut);
+        return false;
+        }
+    printrules(buf,0,buf+endPos,start,end,fm);
+    fclose(fm);
+    return true;
+    }
+
+
+static char * printlist(char * p,char * e,int indent,char * start,char * end,FILE * fm)
     {
     size_t stlen = strlen(start);
     size_t endlen = strlen(end);
     while(p < e)
         {
-        p = printrules(p,indent+1,e,start,end);
+        p = printrules(p,indent+1,e,start,end,fm);
         start[stlen] = '\0';
         Strrev(end);
         end[endlen] = 0;
@@ -96,7 +142,7 @@ static char * printlist(char * p,char * e,int indent,char * start,char * end)
     return e;
     }
 
-static char * printrules(char * rules,int indent,char * max,char * start,char * end)
+static char * printrules(char * rules,int indent,char * max,char * start,char * end,FILE * fm)
     {
     char * fields[44];
     ptrdiff_t index = *(int *)rules;
@@ -118,22 +164,22 @@ static char * printrules(char * rules,int indent,char * max,char * start,char * 
         switch(byt)
             {
             case 1:
-                ret = printlist(p,max,indent,start,end);
+                ret = printlist(p,max,indent,start,end,fm);
                 fprintf(fm,"%*s|\n%*s(parent)\n",2+indent*2,"",2+indent*2,"");
                 break;
             case 2:
                 fprintf(fm,"%*s(parent)\n%*s|\n",2+indent*2,"",2+indent*2,"");
-                ret = printlist(p,max,indent,start,end);
+                ret = printlist(p,max,indent,start,end,fm);
                 break;
             case 3:
                 {
                 char * next = p + *(int *)p;
                 p += sizeof(int);
-                printlist(p,next,indent,start,end);
+                printlist(p,next,indent,start,end,fm);
                 start[slen] = 0;
                 end[elen] = 0;
                 fprintf(fm,"%*s",2+indent*2,"|\n");
-                ret = printlist(next,max,indent,start,end);
+                ret = printlist(next,max,indent,start,end,fm);
                 break;
                 }
             }
@@ -151,7 +197,7 @@ static char * printrules(char * rules,int indent,char * max,char * start,char * 
         }
     fields[findex] = ++p; // p is now within 3 bytes from the next record.
     fprintf(fm,"%*s",indent*2,"");
-    printpat(fields,findex,start,end);
+    printpat(fields,findex,start,end,fm);
 
     /*start[slen] = 0;
     end[elen] = 0;*/
@@ -162,34 +208,9 @@ static char * printrules(char * rules,int indent,char * max,char * start,char * 
     nxt /= sizeof(int);
     nxt *= sizeof(int);
     p = rules+nxt;
-    return printlist(p,rules+index,indent,start,end);
+    return printlist(p,rules+index,indent,start,end,fm);
     }
 
-static bool readRules(FILE * flexrulefile,char *& buf,long int & end)
-    {
-    fseek(flexrulefile,0,SEEK_END);
-    end = ftell(flexrulefile);
-    buf = new char[end];
-    rewind(flexrulefile);
-    if(end != (long int)fread(buf,1,end,flexrulefile))
-        {
-        fclose(flexrulefile);
-	    return false;
-        }
-    fclose(flexrulefile);
-    return true;
-    }
-
-
-bool readRules(const char * filename,char *& buf,long int & end)
-    {
-    FILE * f = fopen(filename,"rb");
-    if(f)
-        {
-        return readRules(f,buf,end);
-        }
-    return false;
-    }
 
 static void parse(char * buf,char * len,int & sibling,char *& p,char *& e,char *& child/*,char *& field_1,char *& field_3*/,char *& mmax)
     {
@@ -355,62 +376,34 @@ static int merge(char * arr,
     return ind;
     }
 
-int flexcombi(const char * bestflexrules, const char * nextbestflexrules, const char * combinedflexrules)
+bool flexcombi(const char * bestflexrules, const char * nextbestflexrules, const char * combinedflexrules)
     {
     char * buf1;
     long int end1;
     char * buf2;
     long int end2;
-    char * buf12;
-    long int end12;
     if(!readRules(bestflexrules,buf1,end1))
         {
         printf("Error: Cannot open %s for reading\n",bestflexrules);
-        return -1;
+        return false;
         }
-    char start[1000] = {0};
-    char end[1000] = {0};
-    char one   [1000];sprintf(one,   "%s.1.txt",bestflexrules);
-    char two   [1000];sprintf(two,   "%s.2.txt",nextbestflexrules);
-    char onetwo[1000];sprintf(onetwo,"%s.12.txt",combinedflexrules);
-    fm = fopen(one,"wb");
-    printrules(buf1,0,buf1+end1,start,end);
-    fclose(fm);
     if(!readRules(nextbestflexrules,buf2,end2))
         {
         printf("Error: Cannot open %s for reading\n",nextbestflexrules);
-        return -1;
+        return false;
         }
-    fm = fopen(two,"wb");
-    printrules(buf2,0,buf2+end2,start,end);
-    fclose(fm);
-    //printf("end1 %d + end2 %d = %d\n",end1,end2,end1+end2);
     char * arr = new char[2*(end1 + end2)];
     FILE * f = fopen(combinedflexrules,"wb");
     if(!f)
         {
         printf("Error: Cannot open %s for writing\n",combinedflexrules);
-        return -1;
+        return false;
         }
-    fm = fopen("merged","wb");
     int length = merge(arr,buf1,buf1+end1,buf2,buf2+end2/*,"\t\t\t\n"*/,0);
-    fclose(fm);
     //printf("length %d\n",length);
     *(int*)arr = 0;
     for(int i = 0;i < length;++i)
         fputc(arr[i],f);
     fclose(f);
-    if(!readRules(combinedflexrules,buf12,end12))
-        return -1;
-    //printf("end12 %d\n",end12);
-    start[0] = 0;
-    end[0] = 0;
-    /**/
-    printf("\n>>\n");
-    fm = fopen(onetwo,"wb");
-    printrules(buf12,0,buf12+end12,start,end);
-    fclose(fm);
-    printf("\n<<\n");
-    /**/
-    return 0;
+    return true;
     }

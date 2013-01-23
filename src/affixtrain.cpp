@@ -2828,17 +2828,19 @@ static bool doTraining
         , int cutoff
         , const char * nflexrules
         , const char * columns
-        , char * nexttrainname
-        , char * donename
-        , char * combinedname
-        , char * disambtrainname
+        , char * pairsToTrainInNextPassName
+        , char * ingestedFractionOfAmbiguousPairsName
+        , char * allPairsName
+        , char * allIngestedPairsName
+        , char * wordsGroupedByRuleName
+        , char * numbersName
         , int & Nnodes
         , double & weight
         , const char * tag
         )
     {
     bool moreToDo = false;
-    char filename[256];
+    //char filename[256];
     VertexPointerCount = 0;
 
     int pairs;
@@ -2866,10 +2868,10 @@ static bool doTraining
     node * top;
     doTheRules(&Hash,train,&top);
 
-    FILE * nexttrain = nexttrainname ? fopen(nexttrainname,"wb") : NULL;
-    FILE * done = donename ? fopen(donename,"wb") : NULL;
-    FILE * combined = combinedname ? fopen(combinedname,"wb") : NULL;
-    FILE * disamb = disambtrainname ? fopen(disambtrainname,"wb") : NULL;
+    FILE * nexttrain = pairsToTrainInNextPassName ? fopen(pairsToTrainInNextPassName,"wb") : NULL;
+    FILE * done = ingestedFractionOfAmbiguousPairsName ? fopen(ingestedFractionOfAmbiguousPairsName,"wb") : NULL;
+    FILE * combined = allPairsName ? fopen(allPairsName,"wb") : NULL;
+    FILE * disamb = allIngestedPairsName ? fopen(allIngestedPairsName,"wb") : NULL;
     if(nexttrain && done && combined && disamb)
         {
         int donepairs = trainingPair::makeNextTrainingSet(pairs,TrainingPair,nexttrain,done,combined,disamb);
@@ -2879,15 +2881,15 @@ static bool doTraining
             }
         }
     if(nexttrain)
-        fclose(nexttrain);
+        fclose(nexttrain); /* The training that still has to be done, containing all unambiguous pairs and all that remains of the ambiguous pairs. */
     if(done)
-        fclose(done);
+        fclose(done); /* Those parts of ambiguous pairs that are done in this pass. These are typically the most regular parts of ambiguous pairs. */
     if(combined)
-        fclose(combined);
+        fclose(combined); /* The sum of the above two. */
     if(disamb)
-        fclose(disamb);
-    sprintf(filename,"words_%s.txt",ext);
-    FILE * wordsFile = fopen(filename,"wb");
+        fclose(disamb);  /* The training that has been done, containing all unambiguous pairs and all parts of ambiguous pairs that were done in this pass. */
+    //sprintf(filename,"words_%s.txt",ext);
+    FILE * wordsFile = fopen(wordsGroupedByRuleName,"wb");
     if(wordsFile)
         {
         ambivalentWords = 0;
@@ -2899,9 +2901,9 @@ static bool doTraining
             ,allwords
             ,ambivalentWords
             ,alternatives);
-        fclose(wordsFile);
+        fclose(wordsFile); /* Lists all words, grouped by the rule that creates each word's lemma. */
         }
-    FILE * fcounting = fopen("counting.tab","wb");
+    FILE * fcounting = fopen(numbersName,"wb");
     if(fcounting)
         {
         fprintf(fcounting,"Bottom up left to right traversal of tree.\n");
@@ -3119,7 +3121,11 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                             init();
                         else
                             copybest(); // go on with best result so far.
-                        doTraining(afile,ext,0,nflexrules,columns,NULL,NULL,NULL,NULL,Nnodes,weight,tag); // sets Nnodes
+                        char wordsGroupedByRuleName[1024];
+                        sprintf(wordsGroupedByRuleName,"words_%s%s.txt",ext,tag);
+                        char numbersName[1024];
+                        sprintf(numbersName,"numbers_%s%s.tab",ext,tag);
+                        doTraining(afile,ext,0,nflexrules,columns,NULL,NULL,NULL,NULL,wordsGroupedByRuleName,numbersName,Nnodes,weight,tag); // sets Nnodes
                         delete afile;
                         afile = NULL;
                         brownNo = Nnodes;
@@ -3162,7 +3168,11 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                     struct aFile * afile = readFile(filename);
                     if(afile)
                         {
-                        doTraining(afile,ext,0,nflexrules,columns,NULL,NULL,NULL,NULL,Nnodes,weight,tag); // sets Nnodes
+                        char wordsGroupedByRuleName[1024];
+                        sprintf(wordsGroupedByRuleName,"words_%s%s.txt",ext,tag);
+                        char numbersName[1024];
+                        sprintf(numbersName,"numbers_%s%s.tab",ext,tag);
+                        doTraining(afile,ext,0,nflexrules,columns,NULL,NULL,NULL,NULL,wordsGroupedByRuleName,numbersName,Nnodes,weight,tag); // sets Nnodes
                         delete afile;
                         afile = NULL;
                         }
@@ -3201,15 +3211,32 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
     {
     bool moreToDo = true;
     int passes = 0;
-    char nexttrainname[256] = "__nexttrain";
-    char donename[256] = "__done";
-    char combinedname[256] = "__combined";
-    char disambtrainname[256] = "__disambtrain";
-    char command[1000];
+    char pairsToTrainInNextPassName[1024];
+    char ingestedFractionOfAmbiguousPairsName[1024];
+    char allPairsName[1024];
+    char allIngestedPairsName[1024];
+    char wordsGroupedByRuleName[1024];
+    char numbersName[1024];
+
+
+    char pairsToTrainInNextPassFormat[1024];
+    char ingestedFractionOfAmbiguousPairsFormat[1024];
+    char allPairsFormat[1024];
+    char allIngestedPairsFormat[1024];
+    char wordsGroupedByRuleFormat[1024];
+    char numbersFormat[1024];
+    char command[1024];
     clock_t start = clock();
     int Nnodes = 0;
     double weight = 0.0;
     char nflexrulesExtended[256];
+    sprintf(pairsToTrainInNextPassFormat,"%s.pairsToTrainInNextPass.%s%s.pass%%d",fname,extra,tag);
+    sprintf(ingestedFractionOfAmbiguousPairsFormat,"%s.ingestedFractionOfAmbiguousPairs.%s%s.pass%%d",fname,extra,tag);
+    sprintf(allPairsFormat,"%s.allPairs.%s%s.pass%%d",fname,extra,tag);
+    sprintf(allIngestedPairsFormat,"%s.allIngestedPairs.%s%s.pass%%d",fname,extra,tag);
+    sprintf(wordsGroupedByRuleFormat,"%s.wordsGroupedByRuleName.%s%s.pass%%d",fname,extra,tag);
+    sprintf(numbersFormat,"%s.numbers.%s%s.pass%%d",fname,extra,tag);
+    
     if(nflexrules)
         {
         if(tag)
@@ -3222,9 +3249,14 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
     do
         {
         ++passes;
-        disambtrainname[0] = combinedname[0] = donename[0] = (char)(passes+'0');
+        allIngestedPairsName[0] = allPairsName[0] = ingestedFractionOfAmbiguousPairsName[0] = (char)(passes+'0');
         struct aFile * afile = readFile(fname);
-        nexttrainname[0] = (char)(passes+'0');
+        sprintf(pairsToTrainInNextPassName,pairsToTrainInNextPassFormat,passes);
+        sprintf(ingestedFractionOfAmbiguousPairsName,ingestedFractionOfAmbiguousPairsFormat,passes);
+        sprintf(allPairsName,allPairsFormat,passes);
+        sprintf(allIngestedPairsName,allIngestedPairsFormat,passes);
+        sprintf(wordsGroupedByRuleName,wordsGroupedByRuleFormat,passes);
+        sprintf(numbersName,numbersFormat,passes);
         char ext[100];
         ext[0] = '\0';
         if(extra)
@@ -3235,7 +3267,21 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
 
         if(afile)
             {
-            moreToDo = doTraining(afile,ext,cutoff,nflexrules,columns,nexttrainname,donename,combinedname,disambtrainname,Nnodes,weight,tag);
+            moreToDo = doTraining   (afile
+                                    ,ext
+                                    ,cutoff
+                                    ,nflexrules
+                                    ,columns
+                                    ,pairsToTrainInNextPassName
+                                    ,ingestedFractionOfAmbiguousPairsName
+                                    ,allPairsName
+                                    ,allIngestedPairsName
+                                    ,wordsGroupedByRuleName
+                                    ,numbersName
+                                    ,Nnodes
+                                    ,weight
+                                    ,tag
+                                    );
             //printf("CNT = %d\n",CNT);
             delete afile;
             afile = NULL;
@@ -3244,10 +3290,12 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
                 {
                 if(VERBOSE)
                     {
-                    printf("More training to do with file \"%s\"\n",nexttrainname);
+                    printf("More training to do with file \"%s\"\n",pairsToTrainInNextPassName);
                     }
-                afile = readFile(disambtrainname);
-                if(doTraining(afile,ext,cutoff,nflexrules,columns,NULL,NULL,NULL,NULL,Nnodes))
+                afile = readFile(allIngestedPairsName);
+                sprintf(wordsGroupedByRuleName,"words_%s%s.txt",ext,tag);
+                sprintf(numbersName,"numbers_%s%s.tab",ext,tag);
+                if(doTraining(afile,ext,cutoff,nflexrules,columns,NULL,NULL,NULL,NULL,wordsGroupedByRuleName,numbersName,Nnodes,weight,tag); // sets Nnodes
                     {
                     if(VERBOSE)
                         {
@@ -3380,7 +3428,7 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
                     }
                 }
             }
-        fname = nexttrainname;
+        fname = pairsToTrainInNextPassName;
         }
     while(moreToDo && passes < 2);
     if(VERBOSE)

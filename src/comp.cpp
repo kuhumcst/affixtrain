@@ -2667,7 +2667,7 @@ bool setCompetitionFunction(const char * functionname,const char * extra,bool su
 		  , functionname
 		  , extra
 		  , suffixonly ? "true" : "false"
-		  , parmstxt
+          , parmstxt ? parmstxt : "Not defined"
 		  );
     for(i = 0;funcstructs[i].number;++i)
         if(!strcmp(functionname,funcstructs[i].number) || !strcmp(functionname,funcstructs[i].name))

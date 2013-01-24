@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //        printf("usage: makeaffixrules -w <word list> -c <cutoff> -o <flexrules> -e <extra> -n <columns> -f <compfunc> [<word list> [<cutoff> [<flexrules> [<extra> [<columns> [<compfunc>]]]]]]\n");
 
 bool VERBOSE = false;
-static char opts[] = "?@:B:c:e:f:hH:i:L:n:o:O:p:P:s:v:W:" /* GNU: */ "wr";
+static char opts[] = "?@:B:c:e:f:hH:i:j:L:n:o:O:p:P:s:v:W:" /* GNU: */ "wr";
 static char *** Ppoptions = NULL;
 static char ** Poptions = NULL;
 static int optionSets = 0;
@@ -56,6 +56,7 @@ optionStruct::optionStruct()
     o = NULL; // flexrules
     B = NULL;
     P = NULL;
+    j = NULL; // temp dir
     computeParms = false;// compute parms
     suffixOnly = false;// suffix rules only
     verbose = false;// verbose
@@ -77,6 +78,7 @@ optionStruct::~optionStruct()
     delete [] e;
     delete [] f;
     delete [] i;
+    delete [] j;
     delete [] n;
     delete [] o;
     delete [] B;
@@ -118,7 +120,7 @@ OptReturnTp optionStruct::doSwitch(int optchar,char * locoptarg,char * progname)
         case 'h':
         case '?':
             printf("usage:\n"
-                "makeaffixrules [-@ <option file>] -i <word list> [-c <cutoff>] [-o <flexrules>] [-e <extra>] [-n <columns>] [-f <compfunc>] [-p[-]] [-s[-]] [-v[-]] [-L<n>] [-H<n>]"
+                "makeaffixrules [-@ <option file>] -i <word list> [-c <cutoff>] [-o <flexrules>] [-e <extra>] [-n <columns>] [-f <compfunc>] [-p[-]] [-s[-]] [-v[-]] [-j <tempdir>] [-L<n>] [-H<n>]"
                 "\nor\n"
                 "makeaffixrules [<word list> [<cutoff> [<flexrules> [<extra> [<columns> [<compfunc>]]]]]]"
                 "\n");
@@ -132,6 +134,7 @@ OptReturnTp optionStruct::doSwitch(int optchar,char * locoptarg,char * progname)
             printf("-p: compute parameters (overrules -f)\n");
             printf("-s: create suffix-only rules\n");
             printf("-v: verbose\n");
+            printf("-j: directory to store the bulk of intermediate results, also textual presentations of rules. Must not include final (back)slash.");
             printf("-L: minimum percent (with option -f0 or -p)\n");
             printf("-H: maximum percent (with option -f0 or -p)\n");
             printf("-W: minimise weight (sum of inverse number of supporters over rules), not count (sum of rules) (with -p or -f0)\n");
@@ -187,6 +190,9 @@ OptReturnTp optionStruct::doSwitch(int optchar,char * locoptarg,char * progname)
             return Leave;
         case 'i': // word list
             i = dupl(locoptarg);
+            break;
+        case 'j': // temp dir
+            j = dupl(locoptarg);
             break;
         case 'n': // columns
             n = dupl(locoptarg);

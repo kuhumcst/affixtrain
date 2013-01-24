@@ -36,6 +36,7 @@ struct optionStruct
     const char * e; // extra
     const char * f; // compfunc
     const char * i; // word list
+    const char * j; // temp dir
     const char * n; // columns
     const char * o; // flexrules
     const char * B; // Best parms

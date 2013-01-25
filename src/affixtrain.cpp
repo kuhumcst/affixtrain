@@ -3318,6 +3318,8 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
         {
         ++passes;
         char flexrulesPass[256];
+        printf("nflexrules == [%s]\n",nflexrules);
+        printf("FlexrulePassFormat == [%s]\n",FlexrulePassFormat);
         sprintf(flexrulesPass,FlexrulePassFormat,nflexrules,passes);
         printf("flexrulesPass (initial) == [%s]\n",flexrulesPass);
         struct aFile * afile = readFile(fname);

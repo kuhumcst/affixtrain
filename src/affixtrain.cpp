@@ -3318,25 +3318,14 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
         {
         ++passes;
         char flexrulesPass[1256];
-        printf("nflexrules == [%s]\n",nflexrules);
-        printf("FlexrulePassFormat == [%s]\n",FlexrulePassFormat);
         sprintf(flexrulesPass,FlexrulePassFormat,nflexrules,passes);
-        printf("1-------nflexrules == [%s]\n",nflexrules);
-        printf("flexrulesPass (initial) == [%s]\n",flexrulesPass);
         struct aFile * afile = readFile(fname);
-        printf("\n2-------nflexrules == [%s]\n",nflexrules);
         sprintf(pairsToTrainInNextPassName,pairsToTrainInNextPassFormat,passes);
-        printf("3-------nflexrules == [%s]\n",nflexrules);
         sprintf(ingestedFractionOfAmbiguousPairsName,ingestedFractionOfAmbiguousPairsFormat,passes);
-        printf("4-------nflexrules == [%s]\n",nflexrules);
         sprintf(allPairsName,allPairsFormat,passes);
-        printf("5-------nflexrules == [%s]\n",nflexrules);
         sprintf(allIngestedPairsName,allIngestedPairsFormat,passes);
-        printf("6-------nflexrules == [%s]\n",nflexrules);
         sprintf(wordsGroupedByRuleName,wordsGroupedByRuleFormat,passes);
-        printf("7-------nflexrules == [%s]\n",nflexrules);
         sprintf(numbersName,numbersFormat,passes);
-        printf("nflexrulesB == [%s]\n",nflexrules);
         char ext[100];
         ext[0] = '\0';
         if(extra)
@@ -3347,7 +3336,6 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
 
         if(afile)
             {
-        printf("flexrulesPass (before doTraining) == [%s]\n",flexrulesPass);
             moreToDo = doTraining   (afile
                                     ,ext
                                     ,cutoff
@@ -3363,8 +3351,6 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
                                     ,weight
                                     ,passes > 1 ? NULL : tag
                                     );
-        printf("nflexrulesC == [%s]\n",nflexrules);
-        printf("flexrulesPass (after doTraining) == [%s]\n",flexrulesPass);
             //printf("CNT = %d\n",CNT);
             delete afile;
             afile = NULL;
@@ -3403,7 +3389,6 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
                     printf("No retraining done on ingested pairs, although ambiguous pairs were found and may have caused noise. (Faster) \n");
                 }
             }
-        printf("nflexrulesD == [%s]\n",nflexrules);
         char filename[256];
         sprintf(filename,"statistics_%s.txt",ext);
         FILE * fo = fopen(tempDir(filename),"ab");
@@ -3443,24 +3428,18 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
             sprintf(NextAccumulatedFlexrulesPassFormat,AccumulatedFlexrulePassFormat,nflexrules,passes);
             }
 
-        printf("nflexrulesE == [%s]\n",nflexrules);
-        printf("Entering for loop %d : %d\n",0,cutoff);
         for(int cut = 0;cut <= cutoff;++cut)
             {
             if(flexrulesPass)
                 {
                 char nextbestflexrules[1150];
                 char Pretty[1150];
-        printf("nflexrulesF == [%s]\n",nflexrules);
                 printf("flexrulesPass == [%s]\n",flexrulesPass);
                 sprintf(nextbestflexrules,flexrulesPass,cut);
-        printf("nflexrulesG == [%s]\n",nflexrules);
                 sprintf(Pretty,"%s.txt",nextbestflexrules);
-        printf("nflexrulesH == [%s]\n",nflexrules);
                 printf("Pretty == [%s]\n",Pretty);
                 printf("nextbestflexrules == [%s]\n",nextbestflexrules);
                 prettyPrint(nextbestflexrules,Pretty);
-        printf("nflexrulesI == [%s]\n",nflexrules);
                 if(passes > 1)
                     {
                     char bestflexrules[1150], newbestflexrules[1150];
@@ -3516,7 +3495,6 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
 
         accumulatedFormatPrev = accumulatedFormat;
         accumulatedFormat = AccumulatedFlexrulePassFormat;
-        printf("nflexrulesJ == [%s]\n",nflexrules);
         }
     while(moreToDo && passes < 2);
 
@@ -3547,35 +3525,42 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
                 filename = nflexrules;
                 sprintf(dirname,"%d",cut);
                 }
-            printf("dirname %s\n",dirname);
-
+            if(VERBOSE)
+                printf("dirname %s\n",dirname);
 
             char testfile[500];
             sprintf(testfile,"%s%cTESTFILE",dirname,DIRSEP);
-            printf("testfile %s\n",testfile);
+            if(VERBOSE)
+                printf("testfile %s\n",testfile);
             FILE * fptest = fopen(testfile,"w");
             bool hasDir = false;
             if(fptest)
                 {
-                printf("testfile created\n");
+                if(VERBOSE)
+                    printf("testfile created\n");
                 fclose(fptest);
                 remove(testfile);
-                printf("testfile deleted\n");
+                if(VERBOSE)
+                    printf("testfile deleted\n");
                 hasDir = true;
                 }
             else
                 {
-                printf("testfile not created\n");
+                if(VERBOSE)
+                    printf("testfile not created\n");
                 sprintf(command,"%s %s",MKDIR,dirname);
-                printf("command %s\n",command);
+                if(VERBOSE)
+                    printf("command %s\n",command);
                 system(command);
                 fptest = fopen(testfile,"w");
                 if(fptest)
                     {
-                    printf("testfile created\n");
+                    if(VERBOSE)
+                        printf("testfile created\n");
                     fclose(fptest);
                     remove(testfile);
-                    printf("testfile deleted\n");
+                    if(VERBOSE)
+                        printf("testfile deleted\n");
                     hasDir = true;
                     }
                 }

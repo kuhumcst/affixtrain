@@ -3265,6 +3265,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
 
 void trainRules(const char * fname, const char * extra,int cutoff,const char * nflexrules,const char * columns,const char * tag)
     {
+    assert(nflexrules != NULL); // 20130125
     bool moreToDo = true;
     int passes = 0;
     char pairsToTrainInNextPassName[1024];
@@ -3318,6 +3319,7 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
         ++passes;
         char flexrulesPass[256];
         sprintf(flexrulesPass,FlexrulePassFormat,nflexrules,passes);
+        printf("flexrulesPass (initial) == [%s]\n",flexrulesPass);
         struct aFile * afile = readFile(fname);
         sprintf(pairsToTrainInNextPassName,pairsToTrainInNextPassFormat,passes);
         sprintf(ingestedFractionOfAmbiguousPairsName,ingestedFractionOfAmbiguousPairsFormat,passes);
@@ -3335,6 +3337,7 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
 
         if(afile)
             {
+        printf("flexrulesPass (before doTraining) == [%s]\n",flexrulesPass);
             moreToDo = doTraining   (afile
                                     ,ext
                                     ,cutoff
@@ -3350,6 +3353,7 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
                                     ,weight
                                     ,passes > 1 ? NULL : tag
                                     );
+        printf("flexrulesPass (after doTraining) == [%s]\n",flexrulesPass);
             //printf("CNT = %d\n",CNT);
             delete afile;
             afile = NULL;
@@ -3427,6 +3431,7 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
             sprintf(NextAccumulatedFlexrulesPassFormat,AccumulatedFlexrulePassFormat,nflexrules,passes);
             }
 
+        printf("Entering for loop %d : %d\n",0,cutoff);
         for(int cut = 0;cut <= cutoff;++cut)
             {
             if(flexrulesPass)
@@ -3646,6 +3651,9 @@ int main(int argc,char **argv)
 
 
     const char * nflexrules = options.o;//NULL;
+
+    if(nflexrules == NULL)
+        nflexrules = "rules"; //20130125
 
     int cutoff;
     if(options.c)

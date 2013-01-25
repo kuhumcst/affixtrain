@@ -3317,7 +3317,7 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
     do
         {
         ++passes;
-        char flexrulesPass[256];
+        static char flexrulesPass[1256];
         printf("nflexrules == [%s]\n",nflexrules);
         printf("FlexrulePassFormat == [%s]\n",FlexrulePassFormat);
         sprintf(flexrulesPass,FlexrulePassFormat,nflexrules,passes);

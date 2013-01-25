@@ -3434,11 +3434,8 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
                 {
                 char nextbestflexrules[1150];
                 char Pretty[1150];
-                printf("flexrulesPass == [%s]\n",flexrulesPass);
                 sprintf(nextbestflexrules,flexrulesPass,cut);
                 sprintf(Pretty,"%s.txt",nextbestflexrules);
-                printf("Pretty == [%s]\n",Pretty);
-                printf("nextbestflexrules == [%s]\n",nextbestflexrules);
                 prettyPrint(nextbestflexrules,Pretty);
                 if(passes > 1)
                     {

@@ -110,7 +110,7 @@ int prettyPrint(char * flexrulesIn,char * filenameOut)
     long int endPos;
     if(!readRules(flexrulesIn,buf,endPos))
         {
-        printf("Error: Cannot open %s for reading\n",flexrulesIn);
+        printf("Error (prettyPrint): Cannot open %s for reading\n",flexrulesIn);
         return false;
         }
     char start[1000] = {0};
@@ -118,7 +118,7 @@ int prettyPrint(char * flexrulesIn,char * filenameOut)
     FILE * fm = fopen(filenameOut,"wb");
     if(!fm)
         {
-        printf("Error: Cannot open %s for writing\n",filenameOut);
+        printf("Error (prettyPrint): Cannot open %s for writing\n",filenameOut);
         return false;
         }
     printrules(buf,0,buf+endPos,start,end,fm);
@@ -384,19 +384,19 @@ bool flexcombi(const char * bestflexrules, const char * nextbestflexrules, const
     long int end2;
     if(!readRules(bestflexrules,buf1,end1))
         {
-        printf("Error: Cannot open %s for reading\n",bestflexrules);
+        printf("Error (flexcombi): Cannot open %s for reading\n",bestflexrules);
         return false;
         }
     if(!readRules(nextbestflexrules,buf2,end2))
         {
-        printf("Error: Cannot open %s for reading\n",nextbestflexrules);
+        printf("Error (flexcombi): Cannot open %s for reading\n",nextbestflexrules);
         return false;
         }
     char * arr = new char[2*(end1 + end2)];
     FILE * f = fopen(combinedflexrules,"wb");
     if(!f)
         {
-        printf("Error: Cannot open %s for writing\n",combinedflexrules);
+        printf("Error (flexcombi): Cannot open %s for writing\n",combinedflexrules);
         return false;
         }
     int length = merge(arr,buf1,buf1+end1,buf2,buf2+end2/*,"\t\t\t\n"*/,0);

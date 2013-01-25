@@ -1010,7 +1010,7 @@ static struct aFile * readFile(const char * fname)
             }
         return a_file;
         }
-    fprintf(stderr,"Error: reading input file %s FAILED\n",fname);
+    fprintf(stderr,"Error (readFile): reading input file %s FAILED\n",fname);
     exit(-1);
 //    return NULL;
     }
@@ -1723,7 +1723,7 @@ int trainingPair::makeRuleEx(hash * Hash,vertex * parent,bool alreadyRight)
     int nr = makeCorrectRules(Hash,&SimilData,similarArray,parent,1,RECURSE);
     if(nr == 0 && !alreadyRight)
         {
-        fprintf(stderr,"Error: Cannot construct rule for trainingpair ");
+        fprintf(stderr,"Error (makeRuleEx): Cannot construct rule for trainingpair ");
         this->print(stderr);
         fprintf(stderr," Based on parent ");
         parent->print1(stderr);
@@ -2668,7 +2668,7 @@ static bool writeAndTest(node * tree,const char * ext,int threshold,const char *
         sprintf(filename,"rules_%d%s.lel",threshold,ext);
         FILE * folel = fopen(tempDir(filename),"wb+");
         if(!folel)
-            fprintf(stderr,"Error: Cannot open \"%s\" for writing\n",filename);
+            fprintf(stderr,"Error (writeAndTest): Cannot open \"%s\" for writing\n",filename);
 #if RULESASTEXT
         filename[strlen(filename)-1] += 2; // change ".lel" to ".len"
         FILE * foleltxt = fopenwb(filename);
@@ -2806,14 +2806,14 @@ static void testf(node * tree,trainingPair * TestPair,const char * ext,int thres
         sprintf(filename,"test_%d%s.txt",threshold,ext);
         FILE * ftest = fopen(filename,"ab+");
         if(!ftest)
-            fprintf(stderr,"Error: Cannot open \"%s\" for appending\n",filename);
+            fprintf(stderr,"Error (testf): Cannot open \"%s\" for appending\n",filename);
         showResults(TestPair,wrong,right,both,ftest);
         int tot = right+wrong+both;
         if(ftest)
             fprintf(ftest,"test pairs %d threshold %d vertices %d right %d (%f) wrong %d (%f) both %d (%f)\n\n",tot,threshold,tree->count(),right,(right*100.0)/tot,wrong,(wrong*100.0)/tot,both,(both*100.0)/tot);
         fresults = fopen("results.txt","ab+");
         if(!fresults)
-            fprintf(stderr,"Error: Cannot open \"%s\" for appending\n","results.txt");
+            fprintf(stderr,"Error (testf): Cannot open \"%s\" for appending\n","results.txt");
         if(fresults)
             {
             fprintf(fresults,"tot %d\tthreshold %d\ttree->count() %d\tright %d\t%% %f\twrong %d\t%% %f\n",tot,threshold,tree->count(),right,(right*100.0)/tot,wrong,(wrong*100.0)/tot);
@@ -3057,7 +3057,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                     FILE * f = fopen(fname,"r");
                     if(f == NULL)
                         {
-                        fprintf(stderr,"Error: Can not open %s for reading\n",tempDir(fname));
+                        fprintf(stderr,"Error (computeParms): Can not open %s for reading\n",tempDir(fname));
                         exit(-1);
                         }
                     int kar = 0;
@@ -3088,7 +3088,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                         }
                     FILE * f2 = fopen(fbuf,"w");
                     if(!f2)
-                        fprintf(stderr,"Error: Cannot open \"%s\" for writing\n",fbuf);
+                        fprintf(stderr,"Error (computeParms): Cannot open \"%s\" for writing\n",fbuf);
                     double bucket = fraction;
                     if((double)blobs * fraction > 1.0)
                         {
@@ -3151,7 +3151,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                     fclose(f2);
                     f2 = fopen(fbuf,"r");
                     if(!f2)
-                        fprintf(stderr,"Error: Cannot open \"%s\" for writing\n",fbuf);
+                        fprintf(stderr,"Error (computeParms): Cannot open \"%s\" for writing\n",fbuf);
                     lines = 0;
                     while((kar = fgetc(f2)) != EOF)
                         {
@@ -3392,7 +3392,7 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
         sprintf(filename,"statistics_%s.txt",ext);
         FILE * fo = fopen(tempDir(filename),"ab");
         if(!fo)
-            fprintf(stderr,"Error: Cannot open \"%s\" for writing\n",tempDir(filename));
+            fprintf(stderr,"Error (trainRules): Cannot open \"%s\" for writing\n",tempDir(filename));
         if(fo)
             {
             fprintf(fo,"VertexPointerCount          %d\n",VertexPointerCount          );
@@ -3433,8 +3433,11 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
                 {
                 char nextbestflexrules[1150];
                 char Pretty[1150];
+                printf("flexrulesPass == [%s]\n",flexrulesPass);
                 sprintf(nextbestflexrules,flexrulesPass,cut);
                 sprintf(Pretty,"%s.txt",nextbestflexrules);
+                printf("Pretty == [%s]\n",Pretty);
+                printf("nextbestflexrules == [%s]\n",nextbestflexrules);
                 prettyPrint(nextbestflexrules,Pretty);
                 if(passes > 1)
                     {

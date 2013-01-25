@@ -1983,6 +1983,26 @@ bestParms best_en =
         }
     };
 
+bestParms best_ena = // English, ambiguous training pairs in training set derived from CELEX
+    {
+    false,
+    "ena",
+    3,
+//OnlyZeros 12 
+//suffix only no 
+//iteration:19.63
+/* 8960 8539.535721 */
+        {
+            1,  511, -348,  180, //325539
+           -7,  696, -328,  573, //5597
+           64,  512,-1536, -576  //592
+                                 //        0
+        }
+    };
+
+
+
+
 bestParms best_en_suffix =
     {
     true,
@@ -2357,6 +2377,8 @@ static struct bestParms bests[] =
     ,best_daSP
     ,best_en
     ,best_en_suffix
+    ,best_ena
+
     ,best_fr
     ,best_fr_suffix
     ,best_ge

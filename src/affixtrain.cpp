@@ -3082,7 +3082,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                         printf("blobs:%d lines %d\n",blobs,lines);
                     if(parmstxt)
                         {
-                        FILE * flog = fopen(tempDir(parmstxt),"a");
+                        FILE * flog = fopen(parmstxt,"a");
                         fprintf(flog,"%s: blobs=%d lines=%d fraction=%f\n",fname,blobs,lines,fraction);
                         fclose(flog);
                         }
@@ -3122,7 +3122,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                             }
                         if(parmstxt)
                             {
-                            flog = fopen(tempDir(parmstxt),"a");
+                            flog = fopen(parmstxt,"a");
                             fprintf(flog,"Read %d blobs\n",bl);
                             fclose(flog);
                             }
@@ -3161,7 +3161,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                     fclose(f2);
                     if(parmstxt)
                         {
-                        flog = fopen(tempDir(parmstxt),"a");
+                        flog = fopen(parmstxt,"a");
                         fprintf(flog,"Read %d lines\n",lines);
                         fclose(flog);
                         }
@@ -3205,7 +3205,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                     {
                     if(parmstxt)
                         {
-                        FILE * flog = fopen(tempDir(parmstxt),"a");
+                        FILE * flog = fopen(parmstxt,"a");
                         fprintf(flog,"//fraction: %f  blobs:%d  lines: %d\n",fraction,blobs,lines);
                         fprintf(flog,"//iteration:%d.%d SKIPPED\n",swath,iterations);
                         fclose(flog);
@@ -3214,7 +3214,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                     }
                 else
                     {
-                    FILE * flog = fopen(tempDir(parmstxt),"a");
+                    FILE * flog = fopen(parmstxt,"a");
                     fprintf(flog,"//iteration:%d.%d %s\n",swath,iterations,doweights ? "weights" : "count");
                     fclose(flog);
                     if(VERBOSE)

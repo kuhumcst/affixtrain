@@ -2691,6 +2691,12 @@ bool setCompetitionFunction(const char * functionname,const char * extra,bool su
 		  , suffixonly ? "true" : "false"
           , parmstxt ? parmstxt : "Not defined"
 		  );
+
+    size_t langlength = strlen(extra);
+    const char * underscore = strchr(extra,'_');
+    if(underscore != NULL)
+        langlength = underscore - extra;
+
     for(i = 0;funcstructs[i].number;++i)
         if(!strcmp(functionname,funcstructs[i].number) || !strcmp(functionname,funcstructs[i].name))
             {
@@ -2700,7 +2706,10 @@ bool setCompetitionFunction(const char * functionname,const char * extra,bool su
                 {
                 for(unsigned int j = 0;j < sizeof(bests)/sizeof(bests[0]);++j)
                     {
-                    if(bests[j].suffixonly == suffixonly && !strncmp(bests[j].langbase,extra,strlen(bests[j].langbase)))
+                    if(  bests[j].suffixonly == suffixonly 
+                      && (langlength == strlen(bests[j].langbase)) // 20130125
+                      && !strncmp(bests[j].langbase,extra,strlen(bests[j].langbase))
+                      )
                         {
                         printf("bests[%d].suffixonly == [%s] bests[%d].langbase == [%s]\n",j,bests[j].suffixonly ? "true" : "false",j,bests[j].langbase);
                         printf("comp = comp_parms0_off\n");

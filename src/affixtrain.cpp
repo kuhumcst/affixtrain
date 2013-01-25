@@ -2503,7 +2503,7 @@ static void rearrange
 #endif
         )
     {
-    FILE * fo = fopenwb(tempDir(filename)); // output
+    FILE * fo = fopenwb(filename); // output
     if(!fo)
         {
         return;

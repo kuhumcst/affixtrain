@@ -3301,9 +3301,9 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
 
 
 
+    char nflexrulesTag[1256];
     if(nflexrules)
         {
-        char nflexrulesTag[256];
         if(tag && *tag)
             sprintf(nflexrulesTag,"%s.%s",nflexrules,tag);
         else
@@ -3317,7 +3317,7 @@ void trainRules(const char * fname, const char * extra,int cutoff,const char * n
     do
         {
         ++passes;
-        static char flexrulesPass[1256];
+        char flexrulesPass[1256];
         printf("nflexrules == [%s]\n",nflexrules);
         printf("FlexrulePassFormat == [%s]\n",FlexrulePassFormat);
         sprintf(flexrulesPass,FlexrulePassFormat,nflexrules,passes);

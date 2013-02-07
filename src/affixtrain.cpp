@@ -2649,7 +2649,7 @@ static bool writeAndTest(node * tree,const char * ext,int threshold,const char *
         fprintf(foo,"threshold %d\n",threshold);
         int NnodesR = 0;
         int N = tree->print(foo,0,Nnodes,NnodesR);
-        fprintf(foo,"threshold %d:%d words %d nodes %d weight %f nodes with words\n\n",threshold,N,Nnodes,weight,NnodesR);
+        fprintf(foo,"threshold %d:%d words %d nodes %d weight %f nodes with words\n\n",threshold,N,Nnodes,NnodesR,weight);
         fclose(foo);
         sprintf(filename,"rules_%d%s.txt",threshold,ext);
         foo = fopenwb(filename);

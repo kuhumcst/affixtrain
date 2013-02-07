@@ -58,7 +58,7 @@ extern bool VERBOSE;
 
 #define PESSIMISTIC 0
 
-#define RULESASTEXTINDENTED 0
+#define RULESASTEXTINDENTED 1
 /* RULESASTEXTINDENTED 1
 produce human readable tree:
 
@@ -83,9 +83,13 @@ threshold 0
 threshold 0:3309 words 1553 nodes 1322 nodes with words
 */
 
-#define BRACMATOUTPUT 0
+#define BRACMATOUTPUT 1
 /* BRACMATOUTPUT 1
-produce output as a Bracmat expression:
+
+affixtrain -b binaryFlexRules -t myprettyrules
+
+produces output myprettyrules.bra as a Bracmat expression:
+
 ((((=?W: ?A ).(=!A)).1)
 ,((((=?W n&@(!W: ?A )).(=!A n)).2)
 ,((((=?W e&@(!W: ?A )).(=!A en)).3)
@@ -98,9 +102,65 @@ produce output as a Bracmat expression:
 
 (((=k ?W u&@(!W: ?A )).(=k !A uen)).1553)
 )
+
+
+
+Bracmat function to lemmatise a word, given the structure stored in 'brafile'
+(see declaration after this comment)
+
+
+    ( lemmatise
+    =     tree woord pat rep subtree lemma nr rule
+        , A B C D E F W
+        , first second one none two ntwo sub
+      .   !arg:(?tree.?woord)
+        & ( !tree:&(.)
+          |   !tree:((?rule.#?nr),?subtree) ?tree
+            & (   apply$(!woord.!rule):(=?lemma)
+                & (   lemmatise$(!subtree.!W):?sub
+                    & (   !sub:? (.) ?
+                        &   (   !sub:(.) ?sub
+                              & (!lemma.!nr) !sub
+                            |   !sub:?sub (.)
+                              & !sub (!lemma.!nr)
+                            )
+                          : (?one.?none) (?two.?ntwo)
+                        & (   str$!one:str$!two
+                            & (str$!one.!none)
+                          | (str$!one.!none) (str$!two.!ntwo)
+                          )
+                      | !sub
+                      )
+                  | (!lemma.!nr)
+                  )
+              | !tree:~&lemmatise$(!tree.!woord)
+              | ~`
+              )
+          |   !tree:(?.?):(?first.~#?second)
+            & lemmatise$(!first.!woord):(?one.?none)
+            & lemmatise$(!second.!woord):(?two.?ntwo)
+            & ( str$!one:str$!two&(!one.!none)
+              | (!one.!none) (!two.!ntwo)
+              )
+          |   !tree:((?.#):(?rule.#?nr)) ?tree
+            & (   apply$(!woord.!rule):(=?lemma)
+                & (!lemma.!nr)
+              | !tree:~&lemmatise$(!tree.!woord)
+              )
+          )
+    )
+
+
+	How to lemmatise the word 'acculadestationerne':
+
+	  get$"pretty.bra":?tree
+	& lemmatise$(!tree.acculadestationerne):(?lemma.?rulenr) (|(?lemma2.?rulenr2))
+
+	Go to https://github.com/BartJongejan/Bracmat.
+
 */
 
-#define RULESASTEXT 0
+#define RULESASTEXT 1
 /* RULESASTEXT 1
 Produce output as text. This format is close to the binary format, only made 
 "readable".

@@ -20,7 +20,7 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "1.3"
+#define VERSION "1.4"
 
 static int PERC = 1;
 static int RECURSE = 1;
@@ -2704,7 +2704,7 @@ static bool writeAndTest(node * tree,const char * ext,int threshold,const char *
             int nr = 0;
             strng L("");
             strng R("");
-            tree->printRules
+            printRules
                 ( tree
 #if RULESASTEXTINDENTED
                 , foo // "rules_%d%s.txt"
@@ -3618,6 +3618,25 @@ int main(int argc,char **argv)
             fprintf(stderr,"Error: Error in options. Exiting\n");
             exit(1);
         }
+
+	if(options.b)
+		{
+		if(options.t)
+			{
+			prettyPrint(options.b,options.t);
+			}
+		else
+			{
+			fprintf(stderr,"affixtrain: option -b only goes in combination with option -t\n");
+            exit(1);
+			}
+		exit(0);
+		}
+	else if(options.t)
+		{
+		fprintf(stderr,"affixtrain: option -t only goes in combination with option -b\n");
+        exit(1);
+		}
 
     globTempDir = options.j;
     FILE * fptest = fopen(tempDir("testFile"),"wb");

@@ -57,6 +57,365 @@ int VCount = 0;
 
 bool building = true;
 
+
+        /*
+    & ( translatePat
+      =   p,n,f
+        .     !arg:(?n.?arg)
+            & @(!arg:?p "*" ?arg)
+            & chr$!n:?f
+            &   !p
+                ( glf$('(?.$f)):(=?f)
+                & !f
+                )
+                translatePat$(!n+1.!arg)
+          | !arg:?RR&
+      )
+      */
+
+
+#if BRACMATOUTPUT
+strng * protect(strng * p)
+	{
+	const char * txt = p->itsTxt();
+	if(strcspn(txt,"()\"!?' \t{}[]-#@%/\\;+*^$`&|=_:,.><") < strlen(txt))
+		{
+		/*
+		printf("txt: [%s]\n",txt);
+		getchar();
+		*/
+		strng * ret = new strng("\"");
+		strng slash("\\\\");
+		strng quot("\\\"");
+		strng qu("\"");
+		const char * pq;
+		while((pq = strpbrk(txt,"\\\"")) != NULL)
+			{
+			strng stxt(txt,pq - txt);
+			printf("stxt %s pq %s\n",stxt.itsTxt(),pq);
+			if(*pq == '\\')
+				ret->cat(&stxt,&slash,(const strng *)0);
+			else
+				ret->cat(&stxt,&quot,(const strng *)0);
+			txt = pq+1;
+			}
+		strng stxt2(txt);
+		ret->cat(&stxt2,&qu,(const strng *)0);
+		return ret;
+		}
+	return NULL;
+	}
+#endif
+
+#if BRACMATOUTPUT
+static const strng * translatePat(int f,const strng * arg,strng ** RR)
+#else
+static void translatePat(const strng * arg,strng ** RR)
+#endif
+	{
+	ptrdiff_t star = arg->pos(ANY);
+#if BRACMATOUTPUT
+	strng * ret;
+#endif
+	if(star >= 0)
+		{
+		strng * npat = arg->substr(star+1);
+#if BRACMATOUTPUT
+		strng * P = arg->substr(0,star);
+		strng * p = protect(P);if(p) delete P; else p = P;
+		const strng * rem = translatePat(f+1,npat,RR);
+		strng blank(" ");
+		strng question("?");
+		strng var(f);
+		ret = p;
+		ret->cat(&blank,&question,&var,&blank,rem,(const strng *)0);
+		delete rem;
+#else
+		translatePat(npat,RR);
+#endif
+		delete npat;
+		}
+	else
+		{
+		if(RR)
+			{
+			delete *RR;
+			*RR = new strng(arg);
+			}
+#if BRACMATOUTPUT
+		ret = new strng("");
+#endif
+		}
+#if BRACMATOUTPUT
+	return ret;
+#endif
+	}
+
+#if BRACMATOUTPUT
+static const strng * translatePat2(int f,const strng * arg,strng ** patreps,int index)
+#else
+static void translatePat2(const strng * arg,strng ** patreps,int index)
+#endif
+	{
+	ptrdiff_t star = arg->pos(ANY);
+#if BRACMATOUTPUT
+	strng * ret;
+#endif
+	if(star >= 0)
+		{
+		delete patreps[index];
+		patreps[index] = arg->substr(0,star);
+		strng * npat = arg->substr(star+1);
+#if BRACMATOUTPUT
+		strng * P = arg->substr(0,star);
+		strng * p = protect(P);if(p) delete P; else p = P;
+		const strng * rem = translatePat2(f+1,npat,patreps,index+2);
+		strng blank(" ");
+		strng question("?");
+		strng var(f);
+		ret = p;
+		ret->cat(&blank,&question,&var,&blank,rem,(const strng *)0);
+		delete rem;
+#else
+		translatePat2(npat,patreps,index+2);
+#endif
+		delete npat;
+		}
+	else
+		{
+		delete patreps[index];
+		patreps[index] = new strng(arg);
+#if BRACMATOUTPUT
+		ret = new strng("");
+#endif
+		}
+#if BRACMATOUTPUT
+	return ret;
+#endif
+	}
+        /*
+    & ( translateRep
+      =   p,n,f,rem
+        .     !arg:(?n.?arg)
+            & @(!arg:?p "*" ?arg)
+            & translateRep$(!n+1.!arg):(=?rem)
+            & chr$!n:?f
+            & glf$('(!.$f)):(=?f)
+            & (   !p:~
+                & (   '$rem:(=)
+                    & '($p ()$f)
+                  | '($p ()$f ()$rem)
+                  )
+              | '$rem:(=)&'$f
+              | '($f ()$rem)
+              )
+          | '$arg
+      )
+      */
+#if BRACMATOUTPUT
+static const strng * translateRep(int f,const strng * arg,strng ** patreps,int index)
+#else
+static void translateRep(const strng * arg,strng ** patreps,int index)
+#endif
+	{
+	ptrdiff_t star = arg->pos(ANY);
+#if BRACMATOUTPUT
+	strng * ret;
+#endif
+	if(star >= 0)
+		{
+		patreps[index] = arg->substr(0,star);
+		strng * narg = arg->substr(star+1);
+#if BRACMATOUTPUT
+		strng * P = arg->substr(0,star);
+		strng * p = protect(P);if(p) delete P; else p = P;
+		const strng * rem = translateRep(f+1,narg,patreps,index+2);
+		strng blank(" ");
+		strng bang("!");
+		strng var(f);
+		ret = p;
+		if(star)
+			{
+			if(rem->length() == 0)
+				ret->cat(&blank,&bang,&var,(const strng *)0);
+			else
+				ret->cat(&blank,&bang,&var,&blank,rem,(const strng *)0);
+			}
+		else if(rem->length() == 0)
+			{
+			ret->cat(&bang,&var,(const strng *)0);
+			}
+		else
+			{
+			ret->cat(&bang,&var,&blank,rem,(const strng *)0);
+			}
+		delete rem;
+#else
+		translateRep(narg,patreps,index+2);
+#endif
+		delete narg;
+		}
+	else
+		{
+		delete patreps[index];
+		patreps[index] = new strng(arg);
+#if BRACMATOUTPUT
+		strng * Ret = new strng(arg);
+		ret = protect(Ret);if(ret) delete Ret; else ret = Ret;
+#endif
+		}
+#if BRACMATOUTPUT
+	return ret;
+#endif
+	}
+        /*
+    & ( makeNode
+      =   L R pat rep
+        .   !arg:((?pat.?rep).?L.?R)
+          & @(!pat:!L ?pat !R)
+          & ( @(!pat:?LL ("*" ?:?pat))
+            | :?LL
+            )
+          & :?RR
+          & translatePat$(asc$A.!pat):?pat
+          & ( (     !LL:~
+                  & (   !RR:~
+                      &   
+                        ' ( $LL ?W ()$RR
+                          & @(!W:$pat)
+                          )
+                    | '($LL ?W&@(!W:$pat))
+                    )
+                |   !RR:~
+                  & '(?W ()$RR&@(!W:$pat))
+                | '(?W:$pat)
+              . translateRep$(asc$A.!rep)
+              )
+            . !nr+1:?nr
+            )
+      )
+    & (makeNodeAndTrim=.makeNode$!arg.!LL.!RR)
+
+*/
+
+#if BRACMATOUTPUT
+strng * makeNode(strng ** patreps,int & nr,const strng * pat,const strng * rep,const strng * L,const strng * R,strng ** pLL,strng ** pRR)
+#else
+void makeNode(strng ** patreps,const strng * pat,const strng * rep,const strng * L,const strng * R,strng ** pLL,strng ** pRR)
+#endif
+	{
+	strng * LL = 0;
+	strng * RR = 0;
+	const strng * npat = pat->salad(L,R);
+	ptrdiff_t star = npat->pos(ANY);
+	delete patreps[0];
+	if(star >= 0)
+		{
+		LL = npat->substr(0,star);
+#if BRACMATOUTPUT
+		const strng * dummy = translatePat2('A',npat,patreps,0);
+		delete dummy;
+#else
+		translatePat2(npat,patreps,0);
+#endif
+		const strng * nnpat = npat->substr(star);
+		delete npat;
+		npat = nnpat;
+		}
+	else
+		{
+		LL = new strng("");
+		patreps[0] = new strng("");
+#if BRACMATOUTPUT
+		const strng * dummy = translatePat2('A',npat,patreps,0);
+		delete dummy;
+#else
+		translatePat2(npat,patreps,0);
+#endif
+		}
+#if BRACMATOUTPUT
+	const strng * nnnpat = translatePat('A',npat,&RR);
+#else
+	translatePat(npat,&RR);
+#endif
+	delete npat;
+	LL->trim();
+	RR->trim();
+#if BRACMATOUTPUT
+	strng blank(" ");
+	strng question("?");
+	strng bang("!");
+	strng questionW("?W");
+	strng * ret = new strng("(((=");
+//	strng * ret = new strng("=");
+
+	strng part2("&@(!W:");
+	strng part3(").(=");
+	strng part2bis("?W:");
+	strng rpar(")");
+
+/*
+	strng part2("&@!W:");
+	strng part3(".=");
+	strng part2bis("?W:");
+	strng rpar("");
+*/
+	//  (((=?W g&@(!W:?A)).(=!A g)).3)
+	if(LL->length() > 0)
+		{
+		strng * ll = protect(LL);if(!ll) ll = LL;
+		if(RR->length() > 0)
+			{
+			strng * rr = protect(RR);if(!rr) rr = RR;
+			ret->cat(ll,&blank,&questionW,&blank,rr,&part2,nnnpat,&rpar,(const strng *)0);
+			if(rr != RR)
+				delete rr;
+			}
+		else
+			{
+			ret->cat(ll,&blank,&questionW,&part2,nnnpat,&rpar,(const strng *)0);
+			}
+		if(ll != LL)
+			delete ll;
+		}
+	else if(RR->length() > 0)
+		{
+		strng * rr = protect(RR);if(!rr) rr = RR;
+		ret->cat(&questionW,&blank,rr,&part2,nnnpat,&rpar,(const strng *)0);
+		if(rr != RR)
+			delete rr;
+		}
+	else
+		{
+		ret->cat(&part2bis,nnnpat,(const strng *)0);
+		}
+	delete nnnpat;
+	const strng * nrep = translateRep('A',rep,patreps,1);
+	++nr;
+	char buf[12];
+	sprintf(buf,"%d",nr);
+	strng Nr(buf);
+	strng pardot(")).");
+//	strng pardot(".");
+	ret->cat(&part3,nrep,&pardot,&Nr,&rpar,(const strng *)0);
+	delete nrep;
+#else
+	translateRep(rep,patreps,1);
+#endif
+	if(pLL)
+		*pLL = LL;
+	else
+		delete LL;
+
+	if(pRR)
+		*pRR = RR;
+	else
+		delete RR;
+#if BRACMATOUTPUT
+	return ret;
+#endif
+	}
+
 bool strongerCondition(char ** A,char ** B)
     {
     // Return true if all B are contained in an A.
@@ -194,9 +553,23 @@ char * dup(const char * buf)
     return Txt;
     }
 
+char * dupn(const char * buf,size_t n)
+    {
+    char * Txt = new char[n+1];
+    strncpy(Txt,buf,n);
+	Txt[n] = 0;
+    return Txt;
+    }
+
 strng::strng(const char * buf)
     {
     Txt = dup(buf);
+    ++StrngCount;
+    }
+
+strng::strng(const char * buf,size_t length)
+    {
+    Txt = dupn(buf,length);
     ++StrngCount;
     }
 
@@ -1079,21 +1452,33 @@ void trainingPair::makeCandidateRules(hash * Hash,vertex * parent,bool alreadyRi
         }
     }
 
-int node::printRules(node * nd
+int printRules(node * nd
 #if RULESASTEXTINDENTED
-                     ,FILE * fo
+             , FILE * fo
 #endif
 #if BRACMATOUTPUT
-                     ,FILE * fobra
+             , FILE * fobra
 #endif
-                     ,FILE * folem,int ind,strng * L,strng * R,int & nr)
+             , FILE * folem
+			 , int ind
+			 , strng * L
+			 , strng * R
+			 , int & nr
+			 )
     {
     int n = 0;
     while(nd)
         {
         strng * nLL = 0;
         strng * nRR = 0;
-        strng * node;
+#if BRACMATOUTPUT
+        strng * snode;
+#endif
+		// pat is the complete pattern, not an optimized pattern that only 
+		// specifies the differences with its parent pattern.
+		// pat starts with '^' and ends with '$'.
+		// Wildcards are the character in the constant ANY (currently ':')
+		printf("pat [%s] rep [%s]\n",nd->V->itsPattern(),nd->V->itsReplacement());
         strng * pat = nd->V->itsstrngPattern()->substr(1,strlen(nd->V->itsPattern()) - 2);
         strng * rep = nd->V->itsstrngReplacement()->substr(1,strlen(nd->V->itsReplacement()) - 2);
         strng * patreps[100];
@@ -1102,13 +1487,21 @@ int node::printRules(node * nd
             patreps[i] = 0;
         if(nd->IfPatternSucceeds)
             {
-            node = nd->makeNodeAndTrim(nr,pat,rep,L,R,nLL,nRR,patreps);
 #if BRACMATOUTPUT
+            snode = makeNode(patreps,nr,pat,rep,L,R,&nLL,&nRR);
             fprintf(fobra,"(");
+#else
+            makeNode(patreps,pat,rep,L,R,&nLL,&nRR);
 #endif
             }
         else
-            node = nd->makeNode(patreps,nr,pat,rep,L,R);
+			{
+#if BRACMATOUTPUT
+            snode = makeNode(patreps,nr,pat,rep,L,R,NULL,NULL);
+#else
+            makeNode(patreps,pat,rep,L,R,NULL,NULL);
+#endif
+			}
         for(i = 0;patreps[i];i+=2)
             ;
         /**/
@@ -1146,9 +1539,9 @@ int node::printRules(node * nd
         nd->V->printRule(fo,ind,nr);
 #endif
 #if BRACMATOUTPUT
-        fprintf(fobra,"%s\n",node->itsTxt());
+        fprintf(fobra,"%s\n",snode->itsTxt());
+        delete snode;
 #endif
-        delete node;
         if(nd->IfPatternSucceeds)
             {
 #if BRACMATOUTPUT
@@ -1158,7 +1551,7 @@ int node::printRules(node * nd
             strng nR(nRR);
             nL.cat(nLL,(const strng *)0);
             nR.cat(R,(const strng *)0);
-            n += nd->IfPatternSucceeds->printRules
+            n += printRules
                 ( nd->IfPatternSucceeds
 #if RULESASTEXTINDENTED
                 , fo

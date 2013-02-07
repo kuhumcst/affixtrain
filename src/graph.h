@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #ifndef GRAPH_H
 #define GRAPH_H
 
+#include "strng.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -77,23 +78,14 @@ extern int VertexCount;
 extern int TrainingPairCount;
 extern int HashCount;
 extern int RulePairCount;
-extern int StrngCount;
 extern int RuleTemplateCount;
 extern int ShortRulePairCount;
 extern int FullRulePairCount;
 //extern int XX;
 
-typedef enum {dif_smaller,dif_equal,dif_bigger,dif_incommensurable,dif_incompatible
-/*
-        dif_equalsuccessor, // rule is identical with a successor
-        dif_addedsuccessor, 
-        dif_identical       // used if both pattern and replacement are the same. In that case we have the same object in both hands.
-        */
-        } edif;  // rule has been added as a successor
 
 
 edif dif(char * Txt, char * s_Txt);
-char * dup(const char * buf);
 
 class vertex;
 class trainingPair;
@@ -340,161 +332,6 @@ class rulePair
         edif dif(rulePair * other);
         rulePair(){++RulePairCount;}
         virtual ~rulePair(){--RulePairCount;}
-    };
-
-
-class strng
-    {
-    private:
-        char * Txt;
-    public:
-        char * itsTxt() const
-            {
-            return Txt;
-            }
-        const char * itsCTxt() const
-            {
-            return Txt;
-            }
-        strng(const char * buf);
-        strng(const strng * s)
-            {
-            Txt = dup(s->Txt);
-            ++StrngCount;
-            }
-        strng(int kar)
-            {
-            Txt = new char[2];
-            Txt[0] = (char)kar;
-            Txt[1] = '\0';
-            ++StrngCount;
-            }
-        strng():Txt(0)
-            {
-            ++StrngCount;
-            }
-        ~strng()
-            {
-            delete [] Txt;
-            --StrngCount;
-            }
-        bool eq(const char * s);
-        edif dif(strng * s); // returns this->Txt - s (1, 0 or -1)
-        void checkIntegrity();
-        bool hasWildCard();
-        void cat(const strng * a,...)
-            {
-            va_list ap;
-            va_start(ap,a);
-            const strng * i = a;
-            size_t len = strlen(this->Txt);
-            while(i)
-                {
-                len += strlen(i->Txt);
-                i = va_arg(ap,const strng *);
-                }
-            va_end(ap);
-            char * buf = new char[len+1];
-            char * p = buf;
-            const char * j = this->Txt;
-            while(*j)
-                {
-                *p++ = *j++;
-                }
-            va_list ap2;
-            va_start(ap2,a);
-            i = a;
-            while(i)
-                {
-                j = i->Txt;
-                while(*j)
-                    {
-                    *p++ = *j++;
-                    }
-                i = va_arg(ap2,const strng *);
-                }
-            va_end(ap2);
-            *p = '\0';
-            delete this->Txt;
-            this->Txt = buf;
-            }
-        ptrdiff_t pos(int kar) const
-            {
-            const char * p = strchr(this->Txt,kar);
-            if(p)
-                return p - this->Txt;
-            else
-                return -1;
-            }
-        strng * substr(ptrdiff_t pos,ptrdiff_t len = -1) const
-            {
-            if(len < 0)
-                len = strlen(this->Txt+pos);
-            char * buf = new char[len+1];
-            char * p = buf;
-            char * s = this->Txt+pos;
-            while(len-- > 0 && *s)
-                {
-                *p++ = *s++;
-                }
-            *p = '\0';
-            strng * ret = new strng();
-            ret->Txt = buf;
-            return ret;
-            }
-        size_t length() const
-            {
-            return strlen(this->Txt);
-            }
-        const strng * salad(const strng * L,const strng * R) const
-            {// Find out what is sandwiched between L and R
-            const char * l = L->Txt;
-            const char * r = R->Txt;
-            r += strlen(r);
-            const char * s = this->Txt;
-            const char * e = this->Txt+strlen(this->Txt);
-            while(*l && *l == *s)
-                {
-                ++l;
-                ++s;
-                }
-            assert(!*l);
-            while(r > R->Txt && *--e == *--r && *e) 
-                {
-                }
-           // assert(s < e);
-            strng * ret = new strng();
-            ret->Txt = new char[e - s + 1];
-            char * d = ret->Txt;
-            while(s < e)
-                {
-                *d++ = *s++;
-                }
-            *d = '\0';
-            return ret;
-            }
-        void trim()
-            {
-            const char * l = this->Txt;
-            const char * r = l;
-            r += strlen(r);
-            while(*l == ' ' || *l == '\t' || *l == '\n' || *l == '\r')
-                {
-                ++l;
-                }
-            while(*--r == ' ' || *r == '\t' || *r == '\n' || *r == '\r')
-                {
-                }
-            char * nTxt = new char[r - l + 2];
-            char * d = nTxt;
-            while(l <= r)
-                {
-                *d++ = *l++;
-                }
-            *d = '\0';
-            delete this->Txt;
-            this->Txt = nTxt;
-            }
     };
 
 class trainingPairPointer;
@@ -819,262 +656,7 @@ class vertexPointer
                 return n;
                 }
            
-            /*
-        & ( translatePat
-          =   p,n,f
-            .     !arg:(?n.?arg)
-                & @(!arg:?p "*" ?arg)
-                & chr$!n:?f
-                &   !p
-                    ( glf$('(?.$f)):(=?f)
-                    & !f
-                    )
-                    translatePat$(!n+1.!arg)
-              | !arg:?RR&
-          )
-          */
-            const strng * translatePat(int f,const strng * arg,strng ** RR)
-                {
-                ptrdiff_t star = arg->pos(ANY);
-                strng * ret;
-                if(star >= 0)
-                    {
-                    strng * p = arg->substr(0,star);
-                    strng * npat = arg->substr(star+1);
-                    const strng * rem = translatePat(f+1,npat,RR);
-                    strng blank(" ");
-                    strng question("?");
-                    strng var(f);
-                    ret = p;
-                    ret->cat(&blank,&question,&var,&blank,rem,(const strng *)0);
-                    delete rem;
-                    delete npat;
-                    }
-                else
-                    {
-                    if(RR)
-                        {
-                        delete *RR;
-                        *RR = new strng(arg);
-                        }
-                    ret = new strng("");
-                    }
-                return ret;
-                }
 
-            const strng * translatePat2(int f,const strng * arg,strng ** patreps,int index)
-                {
-                ptrdiff_t star = arg->pos(ANY);
-                strng * ret;
-                if(star >= 0)
-                    {
-                    strng * p = arg->substr(0,star);
-                    delete patreps[index];
-                    patreps[index] = arg->substr(0,star);
-                    strng * npat = arg->substr(star+1);
-                    const strng * rem = translatePat2(f+1,npat,patreps,index+2);
-                    strng blank(" ");
-                    strng question("?");
-                    strng var(f);
-                    ret = p;
-                    ret->cat(&blank,&question,&var,&blank,rem,(const strng *)0);
-                    delete rem;
-                    delete npat;
-                    }
-                else
-                    {
-                    delete patreps[index];
-                    patreps[index] = new strng(arg);
-                    ret = new strng("");
-                    }
-                return ret;
-                }
-            /*
-        & ( translateRep
-          =   p,n,f,rem
-            .     !arg:(?n.?arg)
-                & @(!arg:?p "*" ?arg)
-                & translateRep$(!n+1.!arg):(=?rem)
-                & chr$!n:?f
-                & glf$('(!.$f)):(=?f)
-                & (   !p:~
-                    & (   '$rem:(=)
-                        & '($p ()$f)
-                      | '($p ()$f ()$rem)
-                      )
-                  | '$rem:(=)&'$f
-                  | '($f ()$rem)
-                  )
-              | '$arg
-          )
-          */
-            const strng * translateRep(int f,const strng * arg,strng ** patreps,int index)
-                {
-                ptrdiff_t star = arg->pos(ANY);
-                strng * ret;
-                if(star >= 0)
-                    {
-                    strng * p = arg->substr(0,star);
-                    patreps[index] = arg->substr(0,star);
-                    strng * narg = arg->substr(star+1);
-                    const strng * rem = translateRep(f+1,narg,patreps,index+2);
-                    strng blank(" ");
-                    strng bang("!");
-                    strng var(f);
-                    ret = p;
-                    if(star)
-                        {
-                        if(rem->length() == 0)
-                            ret->cat(&blank,&bang,&var,(const strng *)0);
-                        else
-                            ret->cat(&blank,&bang,&var,&blank,rem,(const strng *)0);
-                        }
-                    else if(rem->length() == 0)
-                        {
-                        ret->cat(&bang,&var,(const strng *)0);
-                        }
-                    else
-                        {
-                        ret->cat(&bang,&var,&blank,rem,(const strng *)0);
-                        }
-                    delete rem;
-                    delete narg;
-                    }
-                else
-                    {
-                    ret = new strng(arg);
-                    delete patreps[index];
-                    patreps[index] = new strng(arg);
-                    }
-                return ret;
-                }
-            /*
-        & ( makeNode
-          =   L R pat rep
-            .   !arg:((?pat.?rep).?L.?R)
-              & @(!pat:!L ?pat !R)
-              & ( @(!pat:?LL ("*" ?:?pat))
-                | :?LL
-                )
-              & :?RR
-              & translatePat$(asc$A.!pat):?pat
-              & ( (     !LL:~
-                      & (   !RR:~
-                          &   
-                            ' ( $LL ?W ()$RR
-                              & @(!W:$pat)
-                              )
-                        | '($LL ?W&@(!W:$pat))
-                        )
-                    |   !RR:~
-                      & '(?W ()$RR&@(!W:$pat))
-                    | '(?W:$pat)
-                  . translateRep$(asc$A.!rep)
-                  )
-                . !nr+1:?nr
-                )
-          )
-        & (makeNodeAndTrim=.makeNode$!arg.!LL.!RR)
-
-*/
-
-            strng * makeNode(strng ** patreps,int & nr,const strng * pat,const strng * rep,const strng * L,const strng * R,strng ** pLL = 0,strng ** pRR = 0)
-                {
-                strng * LL = 0;
-                strng * RR = 0;
-                const strng * npat = pat->salad(L,R);
-                ptrdiff_t star = npat->pos(ANY);
-                delete patreps[0];
-                const strng * nnnpat;
-                if(star >= 0)
-                    {
-                    LL = npat->substr(0,star);
-                    //patreps[0] = npat->substr(0,star);
-                    const strng * dummy = translatePat2('A',npat,patreps,0);
-                    delete dummy;
-                    const strng * nnpat = npat->substr(star);
-                    delete npat;
-                    npat = nnpat;
-                    }
-                else
-                    {
-                    LL = new strng("");
-                    patreps[0] = new strng("");
-                    const strng * dummy = translatePat2('A',npat,patreps,0);
-                    delete dummy;
-                    }
-                nnnpat = translatePat('A',npat,&RR);
-                delete npat;
-                LL->trim();
-                RR->trim();
-                strng blank(" ");
-                strng question("?");
-                strng bang("!");
-                strng questionW("?W");
-                strng * ret = new strng("(((=");
-                strng part2("&@(!W:");
-                strng part3(").(=");
-                strng part2bis("?W:");
-                strng rpar(")");
-                //  (((=?W g&@(!W:?A)).(=!A g)).3)
-                if(LL->length() > 0)
-                    {
-                    if(RR->length() > 0)
-                        {
-                        ret->cat(LL,&blank,&questionW,&blank,RR,&part2,nnnpat,&rpar,(const strng *)0);
-                        }
-                    else
-                        {
-                        ret->cat(LL,&blank,&questionW,&part2,nnnpat,&rpar,(const strng *)0);
-                        }
-                    }
-                else if(RR->length() > 0)
-                    {
-                    ret->cat(&questionW,&blank,RR,&part2,nnnpat,&rpar,(const strng *)0);
-                    }
-                else
-                    {
-                    ret->cat(&part2bis,nnnpat,(const strng *)0);
-                    }
-                delete nnnpat;
-                const strng * nrep = translateRep('A',rep,patreps,1);
-                ++nr;
-                char buf[12];
-                sprintf(buf,"%d",nr);
-                strng Nr(buf);
-                strng pardot(")).");
-                ret->cat(&part3,nrep,&pardot,&Nr,&rpar,(const strng *)0);
-                delete nrep;
-                if(pLL)
-                    *pLL = LL;
-                else
-                    delete LL;
-
-                if(pRR)
-                    *pRR = RR;
-                else
-                    delete RR;
-                return ret;
-                }
-            strng * makeNodeAndTrim(int & nr,const strng * pat,const strng * rep,const strng * L,const strng * R,strng *& LL,strng *& RR,strng ** patreps)
-                {
-                return makeNode(patreps,nr,pat,rep,L,R,&LL,&RR);
-                }
-
-            static int printRules
-                ( node * nd
-#if RULESASTEXTINDENTED
-                , FILE * fo
-#endif
-#if BRACMATOUTPUT
-                , FILE * fobra
-#endif
-                , FILE * folem
-                , int ind
-                , strng * L
-                , strng * R
-                , int & nr
-                );
 #if AMBIGUOUS
             void init(trainingPair ** allRight,trainingPair ** allWrong/*,trainingPair ** allAmbiguous*/,int level);
 #else
@@ -1140,5 +722,23 @@ class hash
         vertex * getVertex(rulePair * Rule,bool & New);
         bool deleteVertex(rulePair * Rule);
     };
+
+
+
+int printRules
+    ( node * nd
+#if RULESASTEXTINDENTED
+    , FILE * fo
+#endif
+#if BRACMATOUTPUT
+    , FILE * fobra
+#endif
+    , FILE * folem
+    , int ind
+    , strng * L
+    , strng * R
+    , int & nr
+    );
+
 
 #endif

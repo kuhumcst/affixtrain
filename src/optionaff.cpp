@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //        printf("usage: makeaffixrules -w <word list> -c <cutoff> -o <flexrules> -e <extra> -n <columns> -f <compfunc> [<word list> [<cutoff> [<flexrules> [<extra> [<columns> [<compfunc>]]]]]]\n");
 
 bool VERBOSE = false;
-static char opts[] = "?@:B:c:e:f:hH:i:j:L:n:o:O:p:P:s:v:W:" /* GNU: */ "wr";
+static char opts[] = "?@:B:b:c:e:f:hH:i:j:L:n:o:O:p:P:s:v:W:t:" /* GNU: */ "wr";
 static char *** Ppoptions = NULL;
 static char ** Poptions = NULL;
 static int optionSets = 0;
@@ -57,6 +57,8 @@ optionStruct::optionStruct()
     B = NULL;
     P = NULL;
     j = NULL; // temp dir
+	b = NULL;
+	t = NULL;
     computeParms = false;// compute parms
     suffixOnly = false;// suffix rules only
     verbose = false;// verbose
@@ -83,6 +85,8 @@ optionStruct::~optionStruct()
     delete [] o;
     delete [] B;
     delete [] P;
+	delete [] b;
+	delete [] t;
     }
 
 OptReturnTp optionStruct::doSwitch(int optchar,char * locoptarg,char * progname)
@@ -120,9 +124,11 @@ OptReturnTp optionStruct::doSwitch(int optchar,char * locoptarg,char * progname)
         case 'h':
         case '?':
             printf("usage:\n"
-                "makeaffixrules [-@ <option file>] -i <word list> [-c <cutoff>] [-o <flexrules>] [-e <extra>] [-n <columns>] [-f <compfunc>] [-p[-]] [-s[-]] [-v[-]] [-j <tempdir>] [-L<n>] [-H<n>]"
+                "affixtrain [-@ <option file>] -i <word list> [-c <cutoff>] [-o <flexrules>] [-e <extra>] [-n <columns>] [-f <compfunc>] [-p[-]] [-s[-]] [-v[-]] [-j <tempdir>] [-L<n>] [-H<n>]"
                 "\nor\n"
-                "makeaffixrules [<word list> [<cutoff> [<flexrules> [<extra> [<columns> [<compfunc>]]]]]]"
+                "affixtrain [<word list> [<cutoff> [<flexrules> [<extra> [<columns> [<compfunc>]]]]]]"
+                "\nor\n"
+				"affixtrain -b <rules> -t <prettyprint>"
                 "\n");
             printf("-@: Options are read from file with lines formatted as: -<option letter> <value>\n"
                    "    A semicolon comments out the rest of the line.\n"
@@ -187,6 +193,8 @@ OptReturnTp optionStruct::doSwitch(int optchar,char * locoptarg,char * progname)
             printf("  17:koud ()\n");
             printf("  18:parms0 (Use computed parameter settings.)\n");
             printf("  19:parmsoff (obsolete, same as -f18)\n");
+            printf("-b: compiled, raw rule file\n");
+            printf("-t: pretty printed output\n");
             return Leave;
         case 'i': // word list
             i = dupl(locoptarg);
@@ -237,6 +245,12 @@ OptReturnTp optionStruct::doSwitch(int optchar,char * locoptarg,char * progname)
 // << GNU
         case 'W':
             doweights = locoptarg && *locoptarg == '-' ? false : true;
+            break;
+        case 'b': // raw rules
+            b = dupl(locoptarg);
+            break;
+        case 't': // pretty printed rules
+            t = dupl(locoptarg);
             break;
         }
     return GoOn;

@@ -20,6 +20,8 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include "strng.h"
+#include "settingsaffixtrain.h"
 #include "flexcombi.h"
 #include <stdio.h>
 #include <stddef.h>
@@ -39,14 +41,31 @@ static void Strrev(char * s)
     }
 
 
-static void printpat(char ** fields,int findex,char * start,char * end,FILE * fm)
+static void printpat(char ** fields,int findex,char * start,char * end,FILE * fm
+#if BRACMATOUTPUT
+					 ,char * pattern,char * replacement
+#endif
+					 )
     {
+#if BRACMATOUTPUT
+	char * ppat = pattern;
+	char * prep = replacement;
+	int inc;
+	strcpy(pattern,start);
+	ppat += strlen(start);
+#endif
     sprintf(start+strlen(start),"%.*s",(int)(fields[1] - fields[0] - 1),fields[0]);
     fprintf(fm,"%s",start);
     for(int m = 1;2*m+3 < findex;++m)
         {
         int M = 2*m+3;
-        fprintf(fm,"*%.*s",(int)(fields[M] - fields[M-1] - 1),fields[M-1]);//,vars[m].e - vars[m].s,vars[m].s);
+        fprintf(fm,"*%.*s",(int)(fields[M] - fields[M-1] - 1),fields[M-1]);
+#if BRACMATOUTPUT
+		*ppat++ = ANY;
+		inc = (int)(fields[M] - fields[M-1] - 1);
+		strncpy(ppat,fields[M-1],inc);
+		ppat += inc;
+#endif
         }
     if(findex > 2)
         {
@@ -56,28 +75,71 @@ static void printpat(char ** fields,int findex,char * start,char * end,FILE * fm
         Strrev(end+L);
         Strrev(end);
         fprintf(fm,"*%s\t-->\t",end);
-        /*Strrev(end);
-        end[L] = 0;
-        Strrev(end);*/
+#if BRACMATOUTPUT
+		*ppat++ = ANY;
+		strcpy(ppat,end);
+#endif
         }
     else
+		{
         fprintf(fm,"%s\t-->\t",end);
+#if BRACMATOUTPUT
+		strcpy(ppat,end);
+#endif
+		}
 
+#if BRACMATOUTPUT
+	inc = (int)(fields[2] - fields[1] - 1);
+	strncpy(prep,fields[1],inc);
+	prep += inc;
+#endif
     fprintf(fm,"%.*s",(int)(fields[2] - fields[1] - 1),fields[1]);
-    for(int m = 1;2*m+3 < findex;++m)
+	int m;
+    for(m = 1;2*m+3 < findex;++m)
         {
         int M = 2*m+3;
-        fprintf(fm,"*%.*s",(int)(fields[M+1] - fields[M] - 1),fields[M]);//,vars[m].e - vars[m].s,vars[m].s);
+        fprintf(fm,"*%.*s",(int)(fields[M+1] - fields[M] - 1),fields[M]);
+#if BRACMATOUTPUT
+		*prep++ = ANY;
+		inc = (int)(fields[M+1] - fields[M] - 1);
+		strncpy(prep,fields[M],inc);
+		prep += inc;
+#endif
         }
     if(findex > 2)
         {
         fprintf(fm,"*%.*s\n",(int)(fields[4] - fields[3] - 1),fields[3]);
+#if BRACMATOUTPUT
+		inc = (int)(fields[4] - fields[3] - 1);
+		*prep++ = ANY;
+		strncpy(prep,fields[3],inc);
+		prep += inc;
+		*prep = '\0';
+#endif
         }
     else
+		{
         fprintf(fm,"\n");
+#if BRACMATOUTPUT
+		*prep = '\0';
+#endif
+		}
     }
 
-static char * printrules(char * rules,int indent,char * max,char * start,char * end,FILE * fm);
+static char * printrules
+				( char * rules
+				, int indent
+				, char * max
+				, char * start
+				, char * end
+				, FILE * fm
+#if BRACMATOUTPUT
+				, FILE * fmbra
+				, strng * L
+			    , strng * R
+			    , int & nr
+#endif
+				);
 
 static bool readRules(FILE * flexrulefile,char *& buf,long int & end)
     {
@@ -104,7 +166,7 @@ bool readRules(const char * filename,char *& buf,long int & end)
     return false;
     }
 
-int prettyPrint(char * flexrulesIn,char * filenameOut)
+int prettyPrint(const char * flexrulesIn,const char * filenameOut)
     {
     char * buf;
     long int endPos;
@@ -121,28 +183,86 @@ int prettyPrint(char * flexrulesIn,char * filenameOut)
         printf("Error (prettyPrint): Cannot open %s for writing\n",filenameOut);
         return false;
         }
-    printrules(buf,0,buf+endPos,start,end,fm);
+#if BRACMATOUTPUT
+	char brafile[1000];
+	sprintf(brafile,"%s.bra",filenameOut);
+    FILE * fmbra = fopen(brafile,"wb");
+
+	
+    int nr = 0;
+    strng L("");
+    strng R("");
+	
+	printrules(buf,0,buf+endPos,start,end,fm
+		,fmbra,&L,&R,nr
+		);
+    if(fmbra)
+		fclose(fmbra);
+#else
+	printrules(buf,0,buf+endPos,start,end,fm);
+#endif
     fclose(fm);
     return true;
     }
 
 
-static char * printlist(char * p,char * e,int indent,char * start,char * end,FILE * fm)
+static char * printlist
+				( char * p
+				, char * e
+				, int indent
+				, char * start
+				, char * end
+				, FILE * fm
+#if BRACMATOUTPUT
+				, FILE * fmbra
+				, strng * L
+			    , strng * R
+			    , int & nr
+				, bool comma
+#endif
+				)
     {
-    size_t stlen = strlen(start);
-    size_t endlen = strlen(end);
-    while(p < e)
-        {
-        p = printrules(p,indent+1,e,start,end,fm);
-        start[stlen] = '\0';
-        Strrev(end);
-        end[endlen] = 0;
-        Strrev(end);
-        }
+	if(p < e)
+		{
+#if BRACMATOUTPUT
+		if(comma)
+			fprintf(fmbra,"%*s",2+indent*2,",");
+#endif
+		size_t stlen = strlen(start);
+		size_t endlen = strlen(end);
+		while(p < e)
+			{
+			p = printrules(p,indent+1,e,start,end,fm
+#if BRACMATOUTPUT
+				,fmbra,L,R,nr
+#endif
+				);
+			start[stlen] = '\0';
+			Strrev(end);
+			end[endlen] = 0;
+			Strrev(end);
+			}
+#if BRACMATOUTPUT
+		fprintf(fmbra,"%*s\n",2+indent*2,"");
+#endif
+		}
     return e;
     }
 
-static char * printrules(char * rules,int indent,char * max,char * start,char * end,FILE * fm)
+static char * printrules
+				( char * rules
+				, int indent
+				, char * max
+				, char * start
+				, char * end
+				, FILE * fm
+#if BRACMATOUTPUT
+				, FILE * fmbra
+				, strng * L
+			    , strng * R
+			    , int & nr
+#endif
+				)
     {
     char * fields[44];
     ptrdiff_t index = *(int *)rules;
@@ -152,9 +272,16 @@ static char * printrules(char * rules,int indent,char * max,char * start,char * 
     unsigned int byt = *p;
     size_t slen = strlen(start);
     size_t elen = strlen(end);
+#if BRACMATOUTPUT
+    fprintf(fmbra,"\n%*s",indent*2,"(\n");
+#endif
     if(byt < 4)
         {
         // fork
+#if BRACMATOUTPUT
+        fprintf(fmbra,"%*s",2+indent*2,"(\n");
+        fprintf(fmbra,"%*s",2+indent*2,"\n");
+#endif
         fprintf(fm,"%*s",2+indent*2,"(\n");
         static char nix[1] = "";
         char * ret = nix;
@@ -164,26 +291,55 @@ static char * printrules(char * rules,int indent,char * max,char * start,char * 
         switch(byt)
             {
             case 1:
-                ret = printlist(p,max,indent,start,end,fm);
+                ret = printlist(p,max,indent,start,end,fm
+#if BRACMATOUTPUT
+					,fmbra,L,R,nr,false
+#endif
+					);
                 fprintf(fm,"%*s|\n%*s(parent)\n",2+indent*2,"",2+indent*2,"");
+#if BRACMATOUTPUT
+                fprintf(fmbra,"%*s\n%*s)\n",2+indent*2,".",2+indent*2,"(");
+#endif
                 break;
             case 2:
                 fprintf(fm,"%*s(parent)\n%*s|\n",2+indent*2,"",2+indent*2,"");
-                ret = printlist(p,max,indent,start,end,fm);
+#if BRACMATOUTPUT
+				fprintf(fmbra,"%*s)\n%*s\n",2+indent*2,"(",2+indent*2,".");
+#endif
+                ret = printlist(p,max,indent,start,end,fm
+#if BRACMATOUTPUT
+					,fmbra,L,R,nr,false
+#endif
+					);
                 break;
             case 3:
                 {
                 char * next = p + *(int *)p;
                 p += sizeof(int);
-                printlist(p,next,indent,start,end,fm);
+                printlist(p,next,indent,start,end,fm
+#if BRACMATOUTPUT
+					,fmbra,L,R,nr,false
+#endif
+					);
                 start[slen] = 0;
                 end[elen] = 0;
                 fprintf(fm,"%*s",2+indent*2,"|\n");
-                ret = printlist(next,max,indent,start,end,fm);
+#if BRACMATOUTPUT
+                fprintf(fmbra,"%*s",2+indent*2,".\n");
+#endif
+                ret = printlist(next,max,indent,start,end,fm
+#if BRACMATOUTPUT
+					,fmbra,L,R,nr,false
+#endif
+					);
                 break;
                 }
             }
         fprintf(fm,"%*s",2+indent*2,")\n");
+#if BRACMATOUTPUT
+        fprintf(fmbra,"%*s",2+indent*2,")\n");
+	    fprintf(fmbra,"\n%*s",indent*2,")\n");
+#endif
         return ret;
         }
     fields[0] = p;
@@ -197,41 +353,54 @@ static char * printrules(char * rules,int indent,char * max,char * start,char * 
         }
     fields[findex] = ++p; // p is now within 3 bytes from the next record.
     fprintf(fm,"%*s",indent*2,"");
+#if BRACMATOUTPUT
+    fprintf(fmbra,"%*s",indent*2,"");
+	char pattern[1000];
+	char replacement[1000];
+    printpat(fields,findex,start,end,fm,pattern,replacement);
+	strng spattern(pattern);
+	strng sreplacement(replacement);
+	strng * nLL = 0;
+	strng * nRR = 0;
+	strng * patreps[100];
+	unsigned int i;
+	for(i = 0;i < sizeof(patreps)/sizeof(patreps[0]);++i)
+		patreps[i] = 0;
+	strng * snode = makeNode(patreps,nr,&spattern,&sreplacement,L,R,&nLL,&nRR);
+	fprintf(fmbra,"(%s)",snode->itsTxt());
+	strng nL(L);
+	strng nR(nRR);
+	nL.cat(nLL,(const strng *)0);
+	nR.cat(R,(const strng *)0);
+	delete nLL;
+	delete nRR;
+#else
     printpat(fields,findex,start,end,fm);
-
-    /*start[slen] = 0;
-    end[elen] = 0;*/
-    
-
+#endif
     ptrdiff_t nxt = p - rules;
     nxt += sizeof(int) - 1;
     nxt /= sizeof(int);
     nxt *= sizeof(int);
     p = rules+nxt;
-    return printlist(p,rules+index,indent,start,end,fm);
+#if BRACMATOUTPUT
+    p = printlist(p,rules+index,indent,start,end,fm,fmbra,&nL,&nR,nr,true);
+	delete snode;
+    fprintf(fmbra,"\n%*s",indent*2,")\n");
+#else
+    p = printlist(p,rules+index,indent,start,end,fm);
+#endif
+	return p;
     }
 
 
-static void parse(char * buf,char * len,int & sibling,char *& p,char *& e,char *& child/*,char *& field_1,char *& field_3*/,char *& mmax)
+static void parse(char * buf,char * len,int & sibling,char *& p,char *& e,char *& child,char *& mmax)
     {
     assert(len > buf);
     sibling = *(int *)buf;
     p = buf + sizeof(int);
     e = p;
-    //int t = 0;
     while(*e != '\n')
         {
-        /*if(*e == '\t')
-            {
-            ++t;
-            if(t == 2)
-                field_1 = ++e;
-            else if(t == 4)
-                field_3 = ++e;
-            else
-                ++e;
-            }
-        else*/
             ++e;
         }
     ptrdiff_t ichild = e - buf;
@@ -247,7 +416,6 @@ static int merge(char * arr,
            char * len1,
            char * buf2,
            char * len2,
-           //char * p,
            int indent
            )
     {
@@ -259,21 +427,14 @@ static int merge(char * arr,
     char * e2;
     char * child1;
     char * child2;
-    /*    
-    char * field_11;
-    char * field_31;
-    char * field_12;
-    char * field_32;
-    */
     char * mmax1;
     char * mmax2;
 
-    parse(buf1,len1,sibling1,p1,e1,child1,/*field_11,field_31,*/mmax1);
-    parse(buf2,len2,sibling2,p2,e2,child2,/*field_12,field_32,*/mmax2);
+    parse(buf1,len1,sibling1,p1,e1,child1,mmax1);
+    parse(buf2,len2,sibling2,p2,e2,child2,mmax2);
 
     char * k;
     int ind = 0;
-//    printf("\n[%.*s] =?= [%.*s]\n",e1 - p1,p1,e2 - p2,p2);
     if(  e1 - p1 == e2 - p2 
       && !strncmp(p1,p2,e1-p1)
       )
@@ -281,7 +442,6 @@ static int merge(char * arr,
         // do children
         for(k = buf1;k < child1;++k)
             arr[ind++] = *k;
-        //printf("\n%*s%.*s",indent,"",e1-p1,p1);
         char * arrind = arr+ind;
         *(int *)(arrind) = 0xBABE;// test
         if(child1 < mmax1)
@@ -328,7 +488,7 @@ static int merge(char * arr,
             {
             if(sibling2)
                 {
-                ind += merge(arrind,buf1+sibling1,len1,buf2+sibling2,len2/*,p*//*,field1,field3*/,indent);
+                ind += merge(arrind,buf1+sibling1,len1,buf2+sibling2,len2,indent);
                 }
             else
                 {
@@ -365,11 +525,11 @@ static int merge(char * arr,
         ptrdiff_t offset = len1 - buf1 + sizeof(int);
         *(int *)(arr+ind) = (int)offset; // third word: number of bytes to rhs
         ind += sizeof(int);
-        for(k = buf1/*+sibling1*/;k < len1;++k)
+        for(k = buf1;k < len1;++k)
             {
             arr[ind++] = *k;
             }
-        for(k = buf2/*+sibling2*/;k < len2;++k)
+        for(k = buf2;k < len2;++k)
             arr[ind++] = *k;
         *(int *)arr = ind;
         }
@@ -399,8 +559,7 @@ bool flexcombi(const char * bestflexrules, const char * nextbestflexrules, const
         printf("Error (flexcombi): Cannot open %s for writing\n",combinedflexrules);
         return false;
         }
-    int length = merge(arr,buf1,buf1+end1,buf2,buf2+end2/*,"\t\t\t\n"*/,0);
-    //printf("length %d\n",length);
+    int length = merge(arr,buf1,buf1+end1,buf2,buf2+end2,0);
     *(int*)arr = 0;
     for(int i = 0;i < length;++i)
         fputc(arr[i],f);

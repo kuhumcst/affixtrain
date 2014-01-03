@@ -44,9 +44,7 @@ bool suffixonly = false;
 
 static const char * nil = "";
 static const char Start[2] = {START,0};
-//static const char * Start = "^";
 static const char End[2] = {END,0};
-//static const char * End = "$";
 static const int inil[1] = {0};
 static const int iStart[2] = {START,0};
 static const int iEnd[2] = {END,0};

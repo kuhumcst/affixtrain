@@ -33,7 +33,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <stddef.h> // gcc ptrdiff_t
 #include "settingsaffixtrain.h"
 
-
 extern FILE * flog;
 #define NPARMS 12
 #define ROWPARMS 4

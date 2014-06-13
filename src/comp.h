@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "settingsaffixtrain.h"
 
 class vertex;
+/*
 #if _NA
 extern int comp_fairly_good(const vertex * a,const vertex * b);
 extern int comp_even_better(const vertex * a,const vertex * b);
@@ -46,7 +47,7 @@ extern int comp_beet(const vertex * a,const vertex * b);
 #endif
 
 extern int comp_koud(const vertex * a,const vertex * b);
-/*
+
 extern int comp_parms(const vertex * a,const vertex * b);
 */
 //extern bool compute_parms;
@@ -55,7 +56,7 @@ bool setCompetitionFunction(const char * functionname,const char * extra,bool su
 void copybest();
 bool init();
 void onlyZeros(const char * parmstxt,bool suffixonly);
-bool brown(const char * parmstxt);
+bool brown(/*const char * parmstxt*/);
 void printparms(int Nnodes,double weight,const char * parmstxt);
 void betterfound(int Nnodes,double weight,int swath,int iterations,const char * besttxt);
 

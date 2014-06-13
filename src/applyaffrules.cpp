@@ -224,9 +224,10 @@ static bool readRules(FILE * flexrulefile)
     fseek(flexrulefile,0,SEEK_END);
     end = ftell(flexrulefile);
 
-    buf = new char[end];
+    buf = new char[end+1];// 20140224 +1
     rewind(flexrulefile);
     fread(buf,1,end,flexrulefile);
+    buf[end] = '\0';// 20140224 new
     fclose(flexrulefile);
     NewStyle = true;
     return true;

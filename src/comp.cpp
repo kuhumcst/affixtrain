@@ -43,7 +43,7 @@ Polish      93.88   0.08 peen sugar: 93,88 0,08 (?) no pruning
 // This error was detected after having used the weight functions for 
 // the ACL-paper.
 
-int comp_fairly_good(const vertex * a,const vertex * b)
+static int comp_fairly_good(const vertex * a,const vertex * b)
     {
     //const vertex * a = *(const vertex **)A;
     //const vertex * b = *(const vertex **)B;
@@ -65,7 +65,7 @@ int comp_fairly_good(const vertex * a,const vertex * b)
     }
 #endif
 #if _NA
-int comp_even_better(const vertex * a,const vertex * b)
+static int comp_even_better(const vertex * a,const vertex * b)
     {
     //const vertex * a = *(const vertex **)A;
     //const vertex * b = *(const vertex **)B;
@@ -89,7 +89,7 @@ int comp_even_better(const vertex * a,const vertex * b)
     }
 #endif
 #if _NA
-int comp_affiksFEW3(const vertex * a,const vertex * b)
+static int comp_affiksFEW3(const vertex * a,const vertex * b)
     {
     //const vertex * a = *(const vertex **)A;
     //const vertex * b = *(const vertex **)B;
@@ -143,7 +143,7 @@ int comp_affiksFEW3(const vertex * a,const vertex * b)
     }
 #endif
 #if _NA
-int comp_affiksFEW(const vertex * a,const vertex * b)
+static int comp_affiksFEW(const vertex * a,const vertex * b)
     {
     //const vertex * a = *(const vertex **)A;
     //const vertex * b = *(const vertex **)B;
@@ -200,7 +200,7 @@ int comp_affiksFEW(const vertex * a,const vertex * b)
     }
 #endif
 #if _NA
-int comp_affiksFEW2(const vertex * a,const vertex * b)
+static int comp_affiksFEW2(const vertex * a,const vertex * b)
     {
     //const vertex * a = *(const vertex **)A;
     //const vertex * b = *(const vertex **)B;
@@ -251,7 +251,7 @@ int comp_affiksFEW2(const vertex * a,const vertex * b)
     }
 #endif
 #if _NA
-int comp_affiksFEW2org(const vertex * a,const vertex * b)
+static int comp_affiksFEW2org(const vertex * a,const vertex * b)
     {
     // BEST Norwegian 87.494563 +/- 0.217147 at 0.9856 of dataset, 6 iterations, 101814.500000 = 21.570549% rules, cutoff = 0
     // English 88.260606 +/- 0.826699 at 0.9856 of dataset, 15 iterations, 7362.466667 = 9.785960% rules, cutoff = 1
@@ -274,7 +274,7 @@ int comp_affiksFEW2org(const vertex * a,const vertex * b)
     }
 #endif
 #if _NA
-int comp_fixNA(const vertex * a,const vertex * b)
+static int comp_fixNA(const vertex * a,const vertex * b)
     {
     /*
     Icelandic 47.982267 (at 0.8488 of dataset)
@@ -296,7 +296,7 @@ int comp_fixNA(const vertex * a,const vertex * b)
     }
 #endif
 #if _NA
-int comp_fruit(const vertex * a,const vertex * b)
+static int comp_fruit(const vertex * a,const vertex * b)
     {
     //const vertex * a = *(const vertex **)A;
     //const vertex * b = *(const vertex **)B;
@@ -316,7 +316,7 @@ int comp_fruit(const vertex * a,const vertex * b)
     }
 #endif
 #if _NA
-int comp_ice(const vertex * a,const vertex * b)
+static int comp_ice(const vertex * a,const vertex * b)
     {
     //const vertex * a = *(const vertex **)A;
     //const vertex * b = *(const vertex **)B;
@@ -333,7 +333,7 @@ int comp_ice(const vertex * a,const vertex * b)
     }
 #endif
 #if _NA
-int comp_pisang(const vertex * a,const vertex * b)
+static int comp_pisang(const vertex * a,const vertex * b)
     {
     //const vertex * a = *(const vertex **)A;
     //const vertex * b = *(const vertex **)B;
@@ -350,7 +350,7 @@ int comp_pisang(const vertex * a,const vertex * b)
     }
 #endif
 #if _NA
-int comp_kiwi(const vertex * a,const vertex * b)
+static int comp_kiwi(const vertex * a,const vertex * b)
     {
     //const vertex * a = *(const vertex **)A;
     //const vertex * b = *(const vertex **)B;
@@ -367,7 +367,7 @@ int comp_kiwi(const vertex * a,const vertex * b)
     }
 #endif
 #if _NA
-int comp_carrot(const vertex * a,const vertex * b)
+static int comp_carrot(const vertex * a,const vertex * b)
     {
     //const vertex * a = *(const vertex **)A;
     //const vertex * b = *(const vertex **)B;
@@ -384,7 +384,7 @@ int comp_carrot(const vertex * a,const vertex * b)
     }
 #endif
 #if _NA
-int comp_peen(const vertex * a,const vertex * b)
+static int comp_peen(const vertex * a,const vertex * b)
     {
     //const vertex * a = *(const vertex **)A;
     //const vertex * b = *(const vertex **)B;
@@ -455,7 +455,7 @@ ambiguous results.
     }
 #endif
 #if _NA
-int comp_sugar(const vertex * a,const vertex * b)
+static int comp_sugar(const vertex * a,const vertex * b)
     {
     //const vertex * a = *(const vertex **)A;
     //const vertex * b = *(const vertex **)B;
@@ -496,7 +496,7 @@ int comp_sugar(const vertex * a,const vertex * b)
     }
 #endif
 
-int comp_honey(const vertex * a,const vertex * b)
+static int comp_honey(const vertex * a,const vertex * b)
     {
     //const vertex * a = *(const vertex **)A;
     //const vertex * b = *(const vertex **)B;
@@ -522,7 +522,7 @@ int comp_honey(const vertex * a,const vertex * b)
     }
 
 #if _NA
-int comp_beet(const vertex * a,const vertex * b)
+static int comp_beet(const vertex * a,const vertex * b)
     {
     //const vertex * a = *(const vertex **)A;
     //const vertex * b = *(const vertex **)B;
@@ -539,7 +539,7 @@ int comp_beet(const vertex * a,const vertex * b)
     }
 #endif
 
-int comp_koud(const vertex * a,const vertex * b)
+static int comp_koud(const vertex * a,const vertex * b)
     {
     // German 91.260578 +/- 0.363285 at 0.9856 of dataset, 7 iterations, 30890.714286 = 9.939577% rules, cutoff = 0
 //AMBI:
@@ -567,6 +567,11 @@ int comp_koud(const vertex * a,const vertex * b)
     return (A1>B1)?-1:(A1<B1)?1:(A2>B2)?-1:(A2<B2)?1:(A3>B3)?-1:(A3<B3)?1:0;
     }
 
+int (*comp)(const vertex * a,const vertex * b) = comp_koud;
+// returns b > a ? 1 : b < a ? -1 : 0
+// (Chosen like this to let qsort sort in descending order.)
+
+
 // You can find a local optimum for the parameters by using comp_parms as the
 // weight function and setting compute_parms = true. The parameters parms[] 
 // can be seeded with non-zero values by hard coding. The file parms.txt
@@ -585,7 +590,7 @@ int comp_koud(const vertex * a,const vertex * b)
 //bool compute_parms = false;
 
 
-int parms[NPARMS]    = {0};
+static int parms[NPARMS]    = {0};
 
 struct bestParms
     {
@@ -600,7 +605,7 @@ struct bestParms
     // Intuitively difficult to decide!
     };
 
-bestParms  best_pl = 
+static bestParms  best_pl = 
     {
     false,
     "pl",
@@ -661,7 +666,7 @@ bests[19].rows == [3]
 //suffix only no 
     };
 
-bestParms  best_sl = 
+static bestParms  best_sl = 
     {
     false,
     "sl",
@@ -706,7 +711,7 @@ recall          0.417759
         }
     };
 
-bestParms best_sl_suffix =
+static bestParms best_sl_suffix =
     {
     true,
     "sl",
@@ -725,7 +730,7 @@ bestParms best_sl_suffix =
     };
 
 
-bestParms  best_fr = 
+static bestParms  best_fr = 
     {
 /*
 New algorithm, least wrongly lemmatised (MIN(diff)).
@@ -770,7 +775,7 @@ recall          0.208138
         }
     };
 
-bestParms best_fr_suffix =
+static bestParms best_fr_suffix =
     {
 /*
 New algorithm, least wrongly lemmatised (MIN(diff)).
@@ -816,7 +821,7 @@ recall          0.172926
     };
 
 
-bestParms  best_sv = 
+static bestParms  best_sv = 
     {
 /*
 New algorithm, least wrongly lemmatised (MIN(diff)).
@@ -860,7 +865,7 @@ recall          nan
         }
     };
 
-bestParms best_sv_suffix =
+static bestParms best_sv_suffix =
     {
 /*
 New algorithm, least wrongly lemmatised (MIN(diff)).
@@ -904,7 +909,7 @@ recall          nan
         }
     };
 
-bestParms best_is_suffix =
+static bestParms best_is_suffix =
     {
     true,
     "is",
@@ -963,7 +968,7 @@ recall          nan
     };
 
 #if 1
-bestParms best_is =
+static bestParms best_is =
     {
     false,
     "is",
@@ -1028,7 +1033,7 @@ bests[9].rows == [3]
     };
 
 #elif 0
-bestParms best_is =
+static bestParms best_is =
     {
     false,
     "is",
@@ -1092,7 +1097,7 @@ bests[9].rows == [3]
 //suffix only no 
     };
 #elif 0
-bestParms best_is =
+static bestParms best_is =
     {
     false,
     "is",
@@ -1156,7 +1161,7 @@ bests[9].rows == [3]
     };
 #elif 0
 
-bestParms best_is =
+static bestParms best_is =
     {
     false,
     "is",
@@ -1223,7 +1228,7 @@ bests[9].rows == [3]
 
 #elif 0
 
-bestParms best_is =
+static bestParms best_is =
     {
     false,
     "is",
@@ -1292,7 +1297,7 @@ Rule weighting: ret = ret + 50.0/(50.0 + rcount*rcount);
 
 
 #elif 0
-bestParms best_is =
+static bestParms best_is =
     {
     false,
     "is",
@@ -1371,7 +1376,7 @@ bests[9].rows == [3]
 
 #if 0
 // Based on list with 398930 full forms from CTS, University of Leeds (not publicly available) 
-bestParms best_ru =
+static bestParms best_ru =
     {
     false,
     "ru",
@@ -1400,7 +1405,7 @@ bestParms best_ru =
         }
     };
 
-bestParms best_ru_suffix =
+static bestParms best_ru_suffix =
     {
     true,
     "ru",
@@ -1495,7 +1500,7 @@ bests[16].rows == [3]
 #else
 // Based on much bigger data set (www.aot.ru) (https://github.com/bachan/libturglem/tree/master/share/turglem)
 // Over 3 million full forms
-bestParms best_ru =
+static bestParms best_ru =
     {
     false,
     "ru",
@@ -1617,7 +1622,7 @@ bests[15].rows == [3]
     };
 
 
-bestParms best_ru_suffix =
+static bestParms best_ru_suffix =
     {
     true,
     "ru",
@@ -1681,7 +1686,7 @@ bests[16].rows == [3]
 #endif
 
 
-bestParms best_nl =
+static bestParms best_nl =
     {
     false,
     "nl",
@@ -1702,7 +1707,7 @@ bestParms best_nl =
     };
 
 
-bestParms best_nl_suffix =
+static bestParms best_nl_suffix =
     {
     true,
     "nl",
@@ -1717,7 +1722,7 @@ bestParms best_nl_suffix =
         }
     };
 
-bestParms best_da_suffix =
+static bestParms best_da_suffix =
     {
     true,
     "da",
@@ -1764,7 +1769,7 @@ recall          0.031943
 
     };
 
-bestParms best_da =
+static bestParms best_da =
     {
     false,
     "da",
@@ -1811,7 +1816,7 @@ recall          0.063885
     };
 
 /* transform singular to plural (only nouns) */
-bestParms best_daSP =
+static bestParms best_daSP =
     {
     false,
     "daSP",
@@ -1865,7 +1870,7 @@ recall          0.630137
 
 
 
-bestParms best_daSP_suffix =
+static bestParms best_daSP_suffix =
     {
     true,
     "daSP",
@@ -1930,7 +1935,7 @@ int best_en[]       =
     1, 0, 0,-1
     };
 */
-bestParms best_en =
+static bestParms best_en =
     {
     false,
     "en",
@@ -1983,7 +1988,7 @@ bestParms best_en =
         }
     };
 
-bestParms best_ena = // English, ambiguous training pairs in training set derived from CELEX
+static bestParms best_ena = // English, ambiguous training pairs in training set derived from CELEX
     {
     false,
     "ena",
@@ -2003,7 +2008,7 @@ bestParms best_ena = // English, ambiguous training pairs in training set derive
 
 
 
-bestParms best_en_suffix =
+static bestParms best_en_suffix =
     {
     true,
     "en",
@@ -2035,7 +2040,7 @@ bestParms best_en_suffix =
         }
     };
 
-bestParms best_ge =
+static bestParms best_ge =
     {
     false,
     "ge",
@@ -2109,7 +2114,7 @@ bests[7].rows == [3]
 //based on 77566 pairs (deutsch_affix_2464_3.UTF8.txt)
 //iteration:83
 /* 11434 */
- bestParms best_ge_suffix =
+ static bestParms best_ge_suffix =
      {
      true,
      "ge",
@@ -2179,7 +2184,7 @@ bests[8].rows == [4]
 */
     };
 
-bestParms best_la =
+static bestParms best_la =
     {
     false,
     "la",
@@ -2224,7 +2229,7 @@ recall          0.044444
 */
     };
 
-bestParms best_la_suffix =
+static bestParms best_la_suffix =
     {
     true,
     "la",
@@ -2269,7 +2274,7 @@ recall          0.109259
 */
     };
 
-bestParms best_el =
+static bestParms best_el =
     {
     false,
     "el",
@@ -2314,7 +2319,7 @@ recall          0.561909
 */
     };
 
-bestParms best_el_suffix =
+static bestParms best_el_suffix =
     {
     true,
     "el",
@@ -2400,7 +2405,7 @@ static struct bestParms bests[] =
     ,best_sv_suffix
     };
 
-int best[NPARMS]    = 
+static int best[NPARMS]    = 
   {// Before a chain of sibling rules is created, there are N candidate rules.
    // For each sibling created, the number n of remaining candidates is
    // decremented.
@@ -2412,7 +2417,7 @@ int best[NPARMS]    =
 
 //int D[NPARMS]        = {0};
 
-int R[] = // 64 elements
+static int R[] = // 64 elements
     {
     1, 0, 0, 0,
     0, 1, 0, 0,
@@ -2437,13 +2442,13 @@ int R[] = // 64 elements
 #error NPARMS must be a multiple of ROWPARMS
 #endif
 
-void plus(int * dest, int * term,int cols)
+static void plus(int * dest, int * term,int cols)
     {
     for(int col = 0;col < cols;++col)
         dest[col] += term[col];
     }
 
-void copy(int * dest,int * source,int cols)
+static void copy(int * dest,int * source,int cols)
     {
     for(int col = 0;col < cols;++col)
         dest[col] = source[col];
@@ -2472,23 +2477,35 @@ void betterfound(int Nnodes,double weight,int swath,int iterations,const char * 
         }
     }
 
-int minparmsoff = 0;
+static int minparmsoff = 0;
 
 void copybest()
     {
     copy(parms,best,NPARMS); // go on with best result so far.
     }
 
-//const char * besttxt;
-//const char * parmstxt = NULL;
-int OnlyZeros = NPARMS;
+//static const char * besttxt;
+//static const char * parmstxt = NULL;
+static int OnlyZeros = NPARMS;
 
-bool brown(const char * parmstxt)
+static bool allZeros()
+    {
+    int x2 = 0;
+    int i;
+    for(i = 0;i < NPARMS;++i)
+        {
+        x2 += parms[i]*parms[i];
+        }
+    return x2 == 0;
+    }
+
+
+bool brown(/*const char * parmstxt*/)
     {
     static int it = 0;
-    assert(parmstxt);
-    FILE * f = fopen(parmstxt,"a");
-    assert(f);
+//    assert(parmstxt);
+//    FILE * f = fopen(parmstxt,"a");
+//    assert(f);
 //    D[rand() % NPARMS] += (rand() & 1) ? 1 : -1;
 
     int i;
@@ -2514,7 +2531,7 @@ bool brown(const char * parmstxt)
         parms[P0+i] += fac*R[R0+i]; // 4N <= R0+i <= 4N+3
     ++it;
 
-    fclose(f);
+//    fclose(f);
 
     for(i = 0;i < NPARMS; ++i)
         {
@@ -2525,25 +2542,19 @@ bool brown(const char * parmstxt)
             break;
             }
         }
-    return false;//OnlyZeros <= P0;
+    return allZeros();//OnlyZeros <= P0;
     }
 
 bool init()
     {
-    int x2 = 0;
-    int i;
-    for(i = 0;i < NPARMS;++i)
-        {
-        x2 += parms[i]*parms[i];
-        }
-    if(x2 == 0)
+    if(allZeros())
         {
         copy(parms,best,NPARMS);
         }
     return true;
     }
 
-int pcnt[(NPARMS >> 2)+1] = {0,0,0,0};//,0};
+static int pcnt[(NPARMS >> 2)+1] = {0,0,0,0};//,0};
 
 
 void onlyZeros(const char * parmstxt,bool suffixonly)
@@ -2593,7 +2604,7 @@ void printparms(int Nnodes,double weight,const char * parmstxt)
     fclose(f);
     }
 
-int comp_parms(const vertex * a,const vertex * b)
+static int comp_parms(const vertex * a,const vertex * b)
     {
     //for(int o = 0;o < NPARMS;o += ROWPARMS)
     if(  a->R__R != b->R__R
@@ -2624,7 +2635,7 @@ int comp_parms(const vertex * a,const vertex * b)
 
 static int nparms = 0;
 
-int comp_parms0_off(const vertex * a,const vertex * b)
+static int comp_parms0_off(const vertex * a,const vertex * b)
     {
     int off = minparmsoff;
     if(off < parmsoff)
@@ -2654,7 +2665,7 @@ struct funcstruct
     int (*comp)(const vertex * a,const vertex * b);
     };
 
-struct funcstruct funcstructs[] =
+static struct funcstruct funcstructs[] =
     {
         {true,"0","parms",comp_parms}, //makeaffix.exe mydata.txt 0 affixrules XX 123 parms
 #if _NA
@@ -2685,12 +2696,13 @@ struct funcstruct funcstructs[] =
 bool setCompetitionFunction(const char * functionname,const char * extra,bool suffixonly,bool & compute_parms,const char * parmstxt)
     {
     int i;
-	printf("setCompetitionFunction(functionname:%s,extra:%s,suffixonly:%s,parmstxt:%s)"
-		  , functionname
-		  , extra
-		  , suffixonly ? "true" : "false"
-          , parmstxt ? parmstxt : "Not defined"
-		  );
+    if(VERBOSE)
+        printf("setCompetitionFunction(functionname:%s,extra:%s,suffixonly:%s,parmstxt:%s)"
+	          , functionname
+	          , extra
+	          , suffixonly ? "true" : "false"
+              , parmstxt ? parmstxt : "Not defined"
+	          );
 
     size_t langlength = strlen(extra);
     const char * underscore = strchr(extra,'_');

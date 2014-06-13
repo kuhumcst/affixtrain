@@ -47,7 +47,7 @@ extern bool VERBOSE;
 // DOTEST 1
 // do automatic (with some percentage of data set aside for test) or manual (interactive) testing
 
-#define MAXPAIRS 1000000 //500000 //100000 //500000 
+#define MAXPAIRS 8000000 //1000000 //500000 //100000 //500000 
 // Set this number as high as possible. A high value entails very heavy use 
 // of memory!
 
@@ -58,7 +58,7 @@ extern bool VERBOSE;
 
 #define PESSIMISTIC 0
 
-#define RULESASTEXTINDENTED 1
+#define RULESASTEXTINDENTED 0
 /* RULESASTEXTINDENTED 1
 produce human readable tree:
 
@@ -83,7 +83,7 @@ threshold 0
 threshold 0:3309 words 1553 nodes 1322 nodes with words
 */
 
-#define BRACMATOUTPUT 1
+#define BRACMATOUTPUT 0
 /* BRACMATOUTPUT 1
 
 affixtrain -b binaryFlexRules -t myprettyrules
@@ -160,7 +160,7 @@ Bracmat function to lemmatise a word, given the structure stored in 'brafile'
 
 */
 
-#define RULESASTEXT 1
+#define RULESASTEXT 0
 /* RULESASTEXT 1
 Produce output as text. This format is close to the binary format, only made 
 "readable".

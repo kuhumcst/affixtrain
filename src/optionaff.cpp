@@ -112,12 +112,12 @@ OptReturnTp optionStruct::doSwitch(int optchar,char * locoptarg,char * progname)
             f = dupl(locoptarg);
             break;
         case 'L':
-            minperc = strtol(locoptarg,(char**)0,10);
+            minperc = strtod(locoptarg,(char**)0);
             if(minperc > 0 && maxperc == -1)
                 maxperc = minperc;
             break;
         case 'H':
-            maxperc = strtol(locoptarg,(char**)0,10);
+            maxperc = strtod(locoptarg,(char**)0);
             if(maxperc > 0 && minperc == -1)
                 minperc = maxperc;
             break;
@@ -140,7 +140,7 @@ OptReturnTp optionStruct::doSwitch(int optchar,char * locoptarg,char * progname)
             printf("-p: compute parameters (overrules -f)\n");
             printf("-s: create suffix-only rules\n");
             printf("-v: verbose\n");
-            printf("-j: directory to store the bulk of intermediate results, also textual presentations of rules. Must not include final (back)slash.");
+            printf("-j: directory to store the bulk of intermediate results, also textual presentations of rules. Must not include final (back)slash.\n");
             printf("-L: minimum percent (with option -f0 or -p)\n");
             printf("-H: maximum percent (with option -f0 or -p)\n");
             printf("-W: minimise weight (sum of inverse number of supporters over rules), not count (sum of rules) (with -p or -f0)\n");

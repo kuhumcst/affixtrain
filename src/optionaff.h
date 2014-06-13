@@ -46,8 +46,8 @@ struct optionStruct
     bool computeParms;// compute parms
     bool suffixOnly;// suffix only
     bool verbose;         // verbose
-    int minperc;
-    int maxperc;
+    double minperc;
+    double maxperc;
     bool doweights;
     optionStruct();
     ~optionStruct();

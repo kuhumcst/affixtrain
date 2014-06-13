@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define _CRT_SECURE_NO_DEPRECATE
 
 #include "graph.h"
+#include "comp.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
@@ -31,7 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "utf8func.h"
 #include "isofunc.h"
 
-int (*comp)(const vertex * a,const vertex * b) = 0; 
+//int (*comp)(const vertex * a,const vertex * b) = 0; 
 // returns b > a ? 1 : b < a ? -1 : 0
 // (Chosen like this to let qsort sort in descending order.)
 int parmsoff;
@@ -1478,7 +1479,8 @@ int printRules(node * nd
 		// specifies the differences with its parent pattern.
 		// pat starts with '^' and ends with '$'.
 		// Wildcards are the character in the constant ANY (currently ':')
-		printf("pat [%s] rep [%s]\n",nd->V->itsPattern(),nd->V->itsReplacement());
+        if(VERBOSE)
+		    printf("pat [%s] rep [%s]\n",nd->V->itsPattern(),nd->V->itsReplacement());
         strng * pat = nd->V->itsstrngPattern()->substr(1,strlen(nd->V->itsPattern()) - 2);
         strng * rep = nd->V->itsstrngReplacement()->substr(1,strlen(nd->V->itsReplacement()) - 2);
         strng * patreps[100];
@@ -1504,7 +1506,7 @@ int printRules(node * nd
 			}
         for(i = 0;patreps[i];i+=2)
             ;
-        /**/
+        //*
         if(i > 4)
             {
             i -= 2;
@@ -1519,7 +1521,7 @@ int printRules(node * nd
             patreps[2] = tmppat;
             patreps[3] = tmprep;
             }
-        /**/
+        //*/
         fprintf(folem,"%d\t",ind);
         if(patreps[0])
             {
@@ -2156,7 +2158,8 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
                     }
                 if(pvf == pvN)
                     {
-                    fprintf(stderr,"\n***** destroyed all remaining untested rule candidates because they have become inapplicable\n");
+                    if(VERBOSE) /* This is not really an error. */
+                        fprintf(stderr,"\n***** destroyed all remaining untested rule candidates because they have become inapplicable\n");
                     }
                 }
             if(VERBOSE && wpart >= 0)
@@ -2173,8 +2176,8 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
             ++first;
             if(first >= lastN)
                 {
-                //fprintf(stderr,"\n***** DANGER first %td >= lastN %td\n",first,lastN);
-                fprintf(stderr,"\n***** DANGER first %ld >= lastN %ld\n",(long)first,(long)lastN);
+                if(VERBOSE) /* This is not really an error. */
+                    fprintf(stderr,"\n***** DANGER first %ld >= lastN %ld\n",(long)first,(long)lastN);
                 }
             // hack:
 

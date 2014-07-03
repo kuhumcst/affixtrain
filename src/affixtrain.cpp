@@ -2965,7 +2965,7 @@ static bool doTraining
     return moreToDo;
     }
 
-void computeParms(const char * fname,const char * extra,const char * nflexrules, const char * columns,double minperc,double maxperc,int doweights,const char * parmstxt,const char * besttxt)
+void computeParms(const char * fname,const char * extra,const char * nflexrules, const char * columns,double minfraction,double maxfraction,int doweights,const char * parmstxt,const char * besttxt)
     {
     CHECK("iglobTempDir");
     int maxswath = 20;
@@ -2976,12 +2976,12 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
     double fraction = 0.0; // 0.0 <= fraction <= 1.0
     double factor = 0.0;
     char * tag = "";
-    if(minperc > 0.0)
+    if(minfraction > 0.0)
         {
-        factor = maxperc/minperc;
+        factor = maxfraction/minfraction;
         factor = pow(factor,1.0/(double)maxswath);
-        // minperc * factor^0 == minperc
-        // minperc * factor^maxswath == maxperc
+        // minfraction * factor^0 == minfraction
+        // minfraction * factor^maxswath == maxfraction
         }
     const char * filename = fname;
     const char * fbuf;
@@ -3004,12 +3004,12 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
             {
             int blobs = 1;
             int lines = 0;
-            if(minperc > 0.0)
+            if(minfraction > 0.0)
                 {
                 if(swath == maxswath)
-                    fraction = 0.01 * maxperc;
+                    fraction = /*0.01 * */maxfraction;
                 else
-                    fraction =  0.01 * minperc * pow(factor,(double)swath);
+                    fraction =  /*0.01 * */minfraction * pow(factor,(double)swath);
                 if(fraction == 1.0)
                     filename = fname;
                 else
@@ -3823,7 +3823,7 @@ int main(int argc,char **argv)
 
     if(compute_parms)
         {
-        computeParms(fname,extra,nflexrules,columns,options.minperc,options.maxperc,options.doweights,parmstxt,besttxt);
+        computeParms(fname,extra,nflexrules,columns,options.minfraction,options.maxfraction,options.doweights,parmstxt,besttxt);
         }
     else
         {

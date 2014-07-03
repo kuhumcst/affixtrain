@@ -62,8 +62,8 @@ optionStruct::optionStruct()
     computeParms = false;// compute parms
     suffixOnly = false;// suffix rules only
     verbose = false;// verbose
-    minperc = -1; // L
-    maxperc = -1; // H
+    minfraction = -1; // L
+    maxfraction = -1; // H
     doweights = false;
     }
 
@@ -112,14 +112,14 @@ OptReturnTp optionStruct::doSwitch(int optchar,char * locoptarg,char * progname)
             f = dupl(locoptarg);
             break;
         case 'L':
-            minperc = strtod(locoptarg,(char**)0);
-            if(minperc > 0 && maxperc == -1)
-                maxperc = minperc;
+            minfraction = strtod(locoptarg,(char**)0);
+            if(minfraction > 0 && maxfraction == -1)
+                maxfraction = minfraction;
             break;
         case 'H':
-            maxperc = strtod(locoptarg,(char**)0);
-            if(maxperc > 0 && minperc == -1)
-                minperc = maxperc;
+            maxfraction = strtod(locoptarg,(char**)0);
+            if(maxfraction > 0 && minfraction == -1)
+                minfraction = maxfraction;
             break;
         case 'h':
         case '?':
@@ -141,8 +141,8 @@ OptReturnTp optionStruct::doSwitch(int optchar,char * locoptarg,char * progname)
             printf("-s: create suffix-only rules\n");
             printf("-v: verbose\n");
             printf("-j: directory to store the bulk of intermediate results, also textual presentations of rules. Must not include final (back)slash.\n");
-            printf("-L: minimum percent (with option -f0 or -p)\n");
-            printf("-H: maximum percent (with option -f0 or -p)\n");
+            printf("-L: minimum fraction (with option -f0 or -p)\n");
+            printf("-H: maximum fraction (with option -f0 or -p)\n");
             printf("-W: minimise weight (sum of inverse number of supporters over rules), not count (sum of rules) (with -p or -f0)\n");
             printf("-P: write parameters to file (default parms.txt if -p or -f0, otherwise no parameter file)\n");
             printf("-n: columns (default 120):\n");

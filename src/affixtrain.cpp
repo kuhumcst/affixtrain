@@ -2963,7 +2963,7 @@ static bool doTraining
     if(cutoff >= 0 && nflexrulesFormat)
         {
         char naam[500];
-        if(sizeof(naam) <= sprintf(naam,nflexrulesFormat,0))
+        if(sizeof(naam) <= (size_t)sprintf(naam,nflexrulesFormat,0))
             {
             printf("doTraining: naam 2 small");
             exit(-1);
@@ -2976,7 +2976,7 @@ static bool doTraining
             {
             top->pruneAll(thresh);
             top = top->cleanup(NULL);
-            if(sizeof(naam) <= sprintf(naam,nflexrulesFormat,thresh))
+            if(sizeof(naam) <= (size_t)sprintf(naam,nflexrulesFormat,thresh))
                 {
                 printf("doTraining: naam 2 small");
                 exit(-1);
@@ -2990,7 +2990,7 @@ static bool doTraining
     else if(nflexrulesFormat)
         {
         char naam[500];
-        if(sizeof(naam) <= sprintf(naam,nflexrulesFormat,cutoff))
+        if(sizeof(naam) <= (size_t)sprintf(naam,nflexrulesFormat,cutoff))
             {
             printf("doTraining: naam 2 small");
             exit(-1);
@@ -3063,7 +3063,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
     ext[0] = '\0';
     /*if(extra)
         strcpy(ext,extra);*/
-    if(sizeof(ext) <= sprintf(ext,"%s",extra ? extra : ""))
+    if(sizeof(ext) <= (size_t)sprintf(ext,"%s",extra ? extra : ""))
         {
         printf("computeParms: ext 2 small");
         exit(-1);
@@ -3216,13 +3216,13 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                         else
                             copybest(); // go on with best result so far.
                         char wordsGroupedByRuleName[1024];
-                        if(sizeof(wordsGroupedByRuleName) <= sprintf(wordsGroupedByRuleName,"words_%s%s.txt",ext,tag))
+                        if(sizeof(wordsGroupedByRuleName) <= (size_t)sprintf(wordsGroupedByRuleName,"words_%s%s.txt",ext,tag))
                             {
                             printf("computeParms: wordsGroupedByRuleName 2 small");
                             exit(-1);
                             }
                         char numbersName[1024];
-                        if(sizeof(numbersName) <= sprintf(numbersName,"numbers_%s%s.tab",ext,tag))
+                        if(sizeof(numbersName) <= (size_t)sprintf(numbersName,"numbers_%s%s.tab",ext,tag))
                             {
                             printf("computeParms: numbersName 2 small");
                             exit(-1);
@@ -3283,13 +3283,13 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                     if(afile)
                         {
                         char wordsGroupedByRuleName[1024];
-                        if(sizeof(wordsGroupedByRuleName) <= sprintf(wordsGroupedByRuleName,"words_%s%s.txt",ext,tag))
+                        if(sizeof(wordsGroupedByRuleName) <= (size_t)sprintf(wordsGroupedByRuleName,"words_%s%s.txt",ext,tag))
                             {
                             printf("computeParms: wordsGroupedByRuleName 2 small");
                             exit(-1);
                             }
                         char numbersName[1024];
-                        if(sizeof(numbersName) <= sprintf(numbersName,"numbers_%s%s.tab",ext,tag))
+                        if(sizeof(numbersName) <= (size_t)sprintf(numbersName,"numbers_%s%s.tab",ext,tag))
                             {
                             printf("computeParms: numbersName 2 small");
                             exit(-1);
@@ -3398,12 +3398,12 @@ static void trainRules(const char * fname, const char * extra,int cutoff,const c
         if(extra)
             strcpy(ext,extra);
         char spass[10];
-        if(sizeof(spass) <= sprintf(spass,".pass%d",passes))
+        if(sizeof(spass) <= (size_t)sprintf(spass,".pass%d",passes))
             {
             printf("trainRules: spass 2 small");
             exit(-1);
             }
-        if(sizeof(ext) <= sprintf(ext,"%s%s",extra ? extra : "",spass))
+        if(sizeof(ext) <= (size_t)sprintf(ext,"%s%s",extra ? extra : "",spass))
             {
             printf("trainRules: ext 2 small");
             exit(-1);
@@ -3464,7 +3464,7 @@ static void trainRules(const char * fname, const char * extra,int cutoff,const c
                     }
             }
         char filename[256];
-        if(sizeof(filename) <= sprintf(filename,"statistics_%s.txt",ext))
+        if(sizeof(filename) <= (size_t)sprintf(filename,"statistics_%s.txt",ext))
             {
             printf("trainRules: filename 2 small");
             exit(-1);
@@ -3498,7 +3498,7 @@ static void trainRules(const char * fname, const char * extra,int cutoff,const c
 
         char AccumulatedFlexrulesPass[256];
         char NextAccumulatedFlexrulesPassFormat[256];
-        if(sizeof(bestRulesFormat) <= sprintf(bestRulesFormat,accumulatedFormat,nflexrules,passes))
+        if(sizeof(bestRulesFormat) <= (size_t)sprintf(bestRulesFormat,accumulatedFormat,nflexrules,passes))
             {
             printf("trainRules: bestRulesFormat 2 small");
             exit(-1);
@@ -3506,12 +3506,12 @@ static void trainRules(const char * fname, const char * extra,int cutoff,const c
         if(passes > 1)
             {
             assert(accumulatedFormatPrev != NULL);
-            if(sizeof(AccumulatedFlexrulesPass) <= sprintf(AccumulatedFlexrulesPass,accumulatedFormatPrev,nflexrules,passes-1))
+            if(sizeof(AccumulatedFlexrulesPass) <= (size_t)sprintf(AccumulatedFlexrulesPass,accumulatedFormatPrev,nflexrules,passes-1))
                 {
                 printf("trainRules: AccumulatedFlexrulesPass 2 small");
                 exit(-1);
                 }
-            if(sizeof(NextAccumulatedFlexrulesPassFormat) <= sprintf(NextAccumulatedFlexrulesPassFormat,AccumulatedFlexrulePassFormat,nflexrules,passes))
+            if(sizeof(NextAccumulatedFlexrulesPassFormat) <= (size_t)sprintf(NextAccumulatedFlexrulesPassFormat,AccumulatedFlexrulePassFormat,nflexrules,passes))
                 {
                 printf("trainRules: NextAccumulatedFlexrulesPassFormat 2 small");
                 exit(-1);
@@ -3524,12 +3524,12 @@ static void trainRules(const char * fname, const char * extra,int cutoff,const c
                 {
                 char nextbestflexrules[1150];
                 char Pretty[1150];
-                if(sizeof(nextbestflexrules) <= sprintf(nextbestflexrules,flexrulesPass,cut))
+                if(sizeof(nextbestflexrules) <= (size_t)sprintf(nextbestflexrules,flexrulesPass,cut))
                     {
                     printf("trainRules: nextbestflexrules 2 small");
                     exit(-1);
                     }
-                if(sizeof(Pretty) <= sprintf(Pretty,"%s.txt",nextbestflexrules))
+                if(sizeof(Pretty) <= (size_t)sprintf(Pretty,"%s.txt",nextbestflexrules))
                     {
                     printf("trainRules: Pretty 2 small");
                     exit(-1);
@@ -3538,12 +3538,12 @@ static void trainRules(const char * fname, const char * extra,int cutoff,const c
                 if(passes > 1)
                     {
                     char bestflexrules[1150], newbestflexrules[1150];
-                    if(sizeof(bestflexrules) <= sprintf(bestflexrules,AccumulatedFlexrulesPass,cut))
+                    if(sizeof(bestflexrules) <= (size_t)sprintf(bestflexrules,AccumulatedFlexrulesPass,cut))
                         {
                         printf("trainRules: bestflexrules 2 small");
                         exit(-1);
                         }
-                    if(sizeof(newbestflexrules) <= sprintf(newbestflexrules,NextAccumulatedFlexrulesPassFormat,cut))
+                    if(sizeof(newbestflexrules) <= (size_t)sprintf(newbestflexrules,NextAccumulatedFlexrulesPassFormat,cut))
                         {
                         printf("trainRules: newbestflexrules 2 small");
                         exit(-1);
@@ -3554,7 +3554,7 @@ static void trainRules(const char * fname, const char * extra,int cutoff,const c
                         }
                     if(!flexcombi(bestflexrules, nextbestflexrules, newbestflexrules))
                         break;
-                    if(sizeof(Pretty) <= sprintf(Pretty,"%s.txt",newbestflexrules))
+                    if(sizeof(Pretty) <= (size_t)sprintf(Pretty,"%s.txt",newbestflexrules))
                         {
                         printf("trainRules: Pretty 2 small");
                         exit(-1);

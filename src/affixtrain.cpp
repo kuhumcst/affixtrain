@@ -3039,8 +3039,7 @@ static bool doTraining
 void computeParms(const char * fname,const char * extra,const char * nflexrules, const char * columns,double minfraction,double maxfraction,int doweights,const char * parmstxt,const char * besttxt)
     {
     CHECK("iglobTempDir");
-    //int maxswath = 20;
-    int maxswath = 0;
+    int maxswath = 20;
     int currentNo = 0;
     int brownNo = 0;
     double currentweight = 0.0;

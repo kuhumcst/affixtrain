@@ -113,11 +113,21 @@ OptReturnTp optionStruct::doSwitch(int optchar,char * locoptarg,char * progname)
             break;
         case 'L':
             minfraction = strtod(locoptarg,(char**)0);
+            if(minfraction > 1.0)
+                {
+                printf("%s","Option -L: value must be less than 1.0");
+                exit(-1);
+                }
             if(minfraction > 0 && maxfraction == -1)
                 maxfraction = minfraction;
             break;
         case 'H':
             maxfraction = strtod(locoptarg,(char**)0);
+            if(maxfraction > 1.0)
+                {
+                printf("%s","Option -H: value must be less than 1.0");
+                exit(-1);
+                }
             if(maxfraction > 0 && minfraction == -1)
                 minfraction = maxfraction;
             break;

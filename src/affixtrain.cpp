@@ -3047,7 +3047,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
     double brownweight = 0.0;
     double fraction = 0.0; // 0.0 <= fraction <= 1.0
     double factor = 0.0;
-    char * tag = "";
+    const char * tag = "";
     if(minfraction > 0.0)
         {
         factor = maxfraction/minfraction;
@@ -3520,7 +3520,7 @@ static void trainRules(const char * fname, const char * extra,int cutoff,const c
 
         for(int cut = 0;cut <= cutoff;++cut)
             {
-            if(flexrulesPass)
+//            if(flexrulesPass)
                 {
                 char nextbestflexrules[1150];
                 char Pretty[1150];
@@ -3562,6 +3562,7 @@ static void trainRules(const char * fname, const char * extra,int cutoff,const c
                     prettyPrint(newbestflexrules,Pretty);
                     }
                 }
+/*
             else //rules_0.lem
                 {
                 if(passes == 1)
@@ -3597,6 +3598,7 @@ static void trainRules(const char * fname, const char * extra,int cutoff,const c
                     rename(combinedflexrules,bestflexrules);
                     }
                 }
+                */
             }
         fname = tempDir(pairsToTrainInNextPassName);
 

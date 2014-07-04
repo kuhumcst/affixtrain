@@ -193,7 +193,7 @@ class ruleTemplate
             strcpy(npatternArray,Template->npatternArray);
             strcpy(nreplacementArray,Template->nreplacementArray);
             }
-        bool makebigger(int countdown);
+        bool makebigger(int countdown,int & anihilatedGuards);
         ruleTemplate(){++RuleTemplateCount;}
         ~ruleTemplate(){--RuleTemplateCount;}
     };
@@ -270,7 +270,6 @@ class similData: public ruleTemplate
             }
         bool mergeTemplates(const char * predef)
             {
-            //printf("pattern %s\npredef  %s\n",npatternArray,predef);
             char * n = npatternArray;
             char * r = nreplacementArray - 1;
             const char * p = predef;
@@ -480,7 +479,6 @@ ptrdiff_t similData::simil(
     const char * const start,
     const char * const end)
 {
-/*#define TOLOWER(c) (c >= 'A' && c <= 'Z' ? c - 'A' + 'a' : c)*/
 const char * ls1;
 const char * s1l = NULL;
 const char * s1r = NULL;
@@ -520,8 +518,8 @@ s1l             s1r              s2l             s2r
 
 
 
-/* beschouw elk teken van s1 als mogelijk startpunt voor match */
 for(max = 0,ls1 = s1;ls1 + max < n1;ls1++)
+    /* consider each character of s1 as candidate start character for a match */
     {
     const char * ls2;
     /* vergelijk met s2 */
@@ -529,24 +527,25 @@ for(max = 0,ls1 = s1;ls1 + max < n1;ls1++)
         {
         const char * lls1;
         const char * lls2;
-        /* bepaal lengte gelijke stukken */
+        /* determine lenght of equal parts */
         for(lls1 = ls1,lls2 = ls2
-           ;
-            lls1 < n1 && lls2 < n2 && *lls1 == *lls2
+           ;     lls1 < n1 
+             &&  lls2 < n2 
+             && *lls1 == *lls2
            ;lls1++,lls2++
            )
                 ;
-        /* pas evt score aan */
+        /* adjust score, if needed */
         ptrdiff_t dif = lls1 - ls1;
         if(dif > max)
             {
             max = dif;
-            /* onthou eindpunten van linkerstrings en
-            beginpunten rechterstrings */
-            s1l = ls1;
-            s1r = lls1;
-            s2l = ls2;
-            s2r = lls2;
+            /* remember end positions of left strings
+               and start positions of right strings */
+            s1l = ls1;    /* start of longest common substring in s1 */
+            s1r = lls1;   /*   end of longest common substring in s1 */
+            s2l = ls2;    /* start of longest common substring in s2 */
+            s2r = lls2;   /*   end of longest common substring in s2 */
             }
         }
     }
@@ -565,7 +564,8 @@ if(max)
         if(!*start)
             {
             /*Problem: empty pattern somewhere in the middle.
-            Solution: borrow to the left or to the right.*/
+            Solution: borrow to the left or to the right, 
+            'reducing' the common substring.*/
             s1l++;
             s2l++;
             /*Caveat: By borrowing the left and right may touch. 
@@ -722,33 +722,34 @@ s1l             s1r              s2l             s2r
 
 
 
-/* beschouw elk teken van s1 als mogelijk startpunt voor match */
 for(max = 0,ls1 = s1;ls1 + max < n1;ls1++)
+    /* consider each character of s1 as candidate start character for a match */
     {
     const int * ls2;
-    /* vergelijk met s2 */
+    /* compare with s2 */
     for(ls2 = s2;ls2 + max < n2;ls2++)
         {
         const int * lls1;
         const int * lls2;
-        /* bepaal lengte gelijke stukken */
+        /* determine lenght of equal parts */
         for(lls1 = ls1,lls2 = ls2
-           ;
-            lls1 < n1 && lls2 < n2 && *lls1 == *lls2
+           ;    lls1 < n1 
+             && lls2 < n2 
+             && *lls1 == *lls2
            ;lls1++,lls2++
            )
                 ;
-        /* pas evt score aan */
+        /* adjust score, if needed */
         ptrdiff_t dif = lls1 - ls1;
         if(dif > max)
             {
             max = dif;
-            /* onthou eindpunten van linkerstrings en
-            beginpunten rechterstrings */
-            s1l = ls1;
-            s1r = lls1;
-            s2l = ls2;
-            s2r = lls2;
+            /* remember end positions of left strings
+               and start positions of right strings */
+            s1l = ls1;    /* start of longest common substring in s1 */
+            s1r = lls1;   /*   end of longest common substring in s1 */
+            s2l = ls2;    /* start of longest common substring in s2 */
+            s2r = lls2;   /*   end of longest common substring in s2 */
             }
         }
     }
@@ -767,7 +768,8 @@ if(max)
         if(!*start)
             {
             /*Problem: empty pattern somewhere in the middle.
-            Solution: borrow to the left or to the right.*/
+            Solution: borrow to the left or to the right, 
+            'reducing' the common substring.*/
             s1l++;
             s2l++;
             /*Caveat: By borrowing the left and right may touch. 
@@ -1307,8 +1309,45 @@ void shortRulePair::trim()
             }
         }
     }
+/*
+Reykjarnesbjarga
+============#==#
+============#==
+Reykjarnesbjörg
+Notice the substring "jar", which occurs twice in the inflected form.
+The second "jar" changes to "jör" in the lemma. So these rules would all fail:
+============#==#
+      *     a *a
+============#==
+      *     ö *
+
+
+===========##==#
+      *    ja *a
+===========##==
+      *    jö *
+
+
+============##=#
+      *     ar*a
+============##=
+      *     ör*
+
+===========###=#
+      *    jar*a
+===========###=
+      *    jör*
+
+In this case, the best solution is to sacrifice the last two =
+============####
+      *     arga
+============###
+      *     örg
+
+*/
+
 #if 1
-bool ruleTemplate::makebigger(int countdown)
+bool ruleTemplate::makebigger(int countdown,int & anihilatedGuards)
     {
     CHECK("MglobTempDir");
     /*
@@ -1320,6 +1359,7 @@ bool ruleTemplate::makebigger(int countdown)
         return false;
     char * pattern = npatternArray;
     char * replacement = nreplacementArray;
+    anihilatedGuards = 0;
     while(countdown)
         {
         if(*pattern == equal) // =
@@ -1359,6 +1399,36 @@ bool ruleTemplate::makebigger(int countdown)
                     {
                     *pattern = unequal; // #
                     *replacement = unequal; // Replace the =s with #s and return
+                    /* Ways to get rid of a guard
+                        =#  -> ##           (1)
+                        #=  -> ##           (2)
+                        #=# -> ###          (3)
+                        ==# -> =##          (4)
+                        #== -> ##=          (5)
+                        #==# -> ##=#        (6)
+                        #==# -> #=##        (7)
+                    */
+                    if(  (  pattern == npatternArray // 1
+                         || pattern[-1] == unequal   // 2, 3
+                         )
+                      && (  !pattern[1]              // 2
+                         || pattern[1] == unequal    // 1, 3
+                         )
+                      )
+                        anihilatedGuards = 1;
+                    else if(  pattern[1] == equal       // 5, 6
+                           && (  !pattern[2]            // 5
+                              || pattern[2] == unequal  // 6
+                              )
+                           )
+                        anihilatedGuards = 1;
+                    else if(  pattern > npatternArray 
+                           && pattern[-1] == equal              // 4, 7
+                           && (  pattern == npatternArray + 1   // 4
+                              || pattern[-2] == unequal         // 7
+                              )
+                           )
+                        anihilatedGuards = 1;
                     return true;
                     }
                 --countdown;
@@ -1375,7 +1445,7 @@ bool ruleTemplate::makebigger(int countdown)
     }
 
 #else
-bool ruleTemplate::makebigger(int countdown)
+bool ruleTemplate::makebigger(int countdown,int & anihilatedGuards)
     {
     /*
     Change a = to a # if
@@ -1531,10 +1601,11 @@ int trainingPair::makeCorrectRules(hash * Hash,ruleTemplate * Template,const cha
     of heuristics.)*/
     int ret = 0;
     bool different = true;
+    int anihilatedGuards;
     ruleTemplate locTemplate;
     locTemplate.copy(Template);
     for( int m = mlow
-       ; locTemplate.makebigger(m)
+       ; locTemplate.makebigger(m,anihilatedGuards)
        ;   ++m
          , locTemplate.copy(Template)
        )
@@ -1561,13 +1632,13 @@ int trainingPair::makeCorrectRules(hash * Hash,ruleTemplate * Template,const cha
         {
         locTemplate.copy(Template);
         for( int m = mlow
-           ; locTemplate.makebigger(m)
+           ; locTemplate.makebigger(m,anihilatedGuards)
            ;   ++m
              , locTemplate.copy(Template)
            )
             {
             /*Recurse with template that has one more #*/
-            ret += makeCorrectRules(Hash,&locTemplate,similar,parent,m+1,recurse);
+            ret += makeCorrectRules(Hash,&locTemplate,similar,parent,m+1-anihilatedGuards,recurse);
             }
         }
     /*else
@@ -2968,7 +3039,8 @@ static bool doTraining
 void computeParms(const char * fname,const char * extra,const char * nflexrules, const char * columns,double minfraction,double maxfraction,int doweights,const char * parmstxt,const char * besttxt)
     {
     CHECK("iglobTempDir");
-    int maxswath = 20;
+    //int maxswath = 20;
+    int maxswath = 0;
     int currentNo = 0;
     int brownNo = 0;
     double currentweight = 0.0;
@@ -3635,6 +3707,8 @@ FILE * flog = NULL;
 
 static void initOutput(const char * path)
     {
+    if(!path)
+        return;
     FILE * fp = fopen(path,"w");
     if(!fp)
         {

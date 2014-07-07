@@ -58,7 +58,8 @@ bool init();
 void onlyZeros(const char * parmstxt,bool suffixonly);
 bool brown(/*const char * parmstxt*/);
 void printparms(int Nnodes,double weight,const char * parmstxt);
-void betterfound(int Nnodes,double weight,int swath,int iterations,const char * besttxt);
+void betterfound(int Nnodes,double weight,int swath,int iterations,const char * besttxt,int blobs,int lines,double fraction,int fraclines);
+void worsefound();
 
 extern int (*comp)(const vertex * a,const vertex * b);
 

@@ -590,14 +590,208 @@ int (*comp)(const vertex * a,const vertex * b) = comp_koud;
 //bool compute_parms = false;
 
 
-static int parms[NPARMS]    = {0};
+static double parms[NPARMS]    =
+   /* R_R  W_R  R_W  W_W */   
+    { 0.0, 1.0, 0.0, 0.0
+    ,-1.0, 0.0, 0.0, 0.0
+    , 0.0, 0.0, 0.0,-1.2
+    , 0.0, 0.0,-1.2, 0.0
+    };
+
+static void printmatrix(const char * msg,double * arr)
+    {
+    printf("%s\n",msg);
+    for(int i = 0;i < ROWPARMS;++i)
+        {
+        for(int j = 0;j < ROWPARMS;++j)
+            {
+            printf("%f ",arr[ROWPARMS * i+j]);
+            }
+        putchar('\n');
+        }
+    putchar('\n');
+    }
+
+static void normalise(double * ROW)
+    {
+    double modulus = 0.0;
+    for(int i = 0;i < ROWPARMS;++i)
+        modulus += ROW[i] * ROW[i];
+    modulus = sqrt(modulus);
+    for(int i = 0;i < ROWPARMS;++i)
+        ROW[i] /= modulus;
+    }
+
+static void orthogonalise(const char * Msg)
+    {
+    if(VERBOSE)
+        {
+        printf("%s: ",Msg);
+        printmatrix("before orthogonalisation",parms);
+        }
+    for(int i = 1;i < sizeof(parms)/(sizeof(parms[0]) * ROWPARMS);++i)
+        {
+        int I = i * ROWPARMS;
+        for(int j = 0; j < i;++j)
+            {
+            int J = j * ROWPARMS;
+            double inner = 0.0;
+            double Jmodulus = 0.0;
+            for(int k = 0;k < ROWPARMS;++k)
+                {
+                inner += parms[I+k]*parms[J+k];
+                Jmodulus += parms[J+k]*parms[J+k];
+                }
+            inner /= Jmodulus;
+            for(int k = 0;k < ROWPARMS;++k)
+                {
+                parms[I+k] -= inner * parms[J+k];
+                }
+            }
+        }
+    for(int row = 0;row < ROWPARMS;++row)
+        {
+        normalise(parms+row*ROWPARMS);
+        }
+    if(VERBOSE)
+        {
+        printf("%s: ",Msg);
+        printmatrix("after orthogonalisation",parms);
+        }
+    }
+
+static double rotationMatrix[ROWPARMS*ROWPARMS];
+void makeRotationMatrix(int r, double pone, double delta) // 0 <= r < 6
+    {
+    assert(-1.0 < delta && delta < 1.0);
+    assert(0 <= r && r < 6);
+    assert(pone == -1.0 || pone == 1.0);
+    double contradelta = sqrt(1.0 - delta*delta);
+    for(int i = 0;i < sizeof(rotationMatrix)/sizeof(rotationMatrix[0]);++i)
+        {
+        int col = i % ROWPARMS;
+        int row = i / ROWPARMS;
+        if(col == row)
+            { // diagonal. 1 or something between 0 and 1
+            switch(r)
+                {
+            case 0:
+                if(col == 0 || col == 1)
+                    rotationMatrix[i] = contradelta; 
+                else
+                    rotationMatrix[i] = 1.0; 
+                break;
+            case 1:
+                if(col == 1 || col == 2)
+                    rotationMatrix[i] = contradelta; 
+                else
+                    rotationMatrix[i] = 1.0; 
+                break;
+            case 2:
+                if(col == 2 || col == 3)
+                    rotationMatrix[i] = contradelta; 
+                else
+                    rotationMatrix[i] = 1.0; 
+                break;
+            case 3:
+                if(col == 0 || col == 2)
+                    rotationMatrix[i] = contradelta; 
+                else
+                    rotationMatrix[i] = 1.0; 
+                break;
+            case 4:
+                if(col == 1 || col == 3)
+                    rotationMatrix[i] = contradelta; 
+                else
+                    rotationMatrix[i] = 1.0; 
+                break;
+            case 5:
+                if(col == 0 || col == 3)
+                    rotationMatrix[i] = contradelta; 
+                else
+                    rotationMatrix[i] = 1.0; 
+                break;
+                }
+            }
+        else
+            {
+            switch(r)
+                {
+            case 0:
+                if(row == 0 && col == 1)
+                    rotationMatrix[i] = pone*delta; 
+                else if(row == 1 && col == 0)
+                    rotationMatrix[i] = -pone*delta;
+                else
+                    rotationMatrix[i] = 0.0; 
+                break;
+            case 1:
+                if(row == 1 && col == 2)
+                    rotationMatrix[i] = pone*delta; 
+                else if(row == 2 && col == 1)
+                    rotationMatrix[i] = -pone*delta;
+                else
+                    rotationMatrix[i] = 0.0; 
+                break;
+            case 2:
+                if(row == 2 && col == 3)
+                    rotationMatrix[i] = pone*delta; 
+                else if(row == 3 && col == 2)
+                    rotationMatrix[i] = -pone*delta;
+                else
+                    rotationMatrix[i] = 0.0; 
+                break;
+            case 3:
+                if(row == 0 && col == 2)
+                    rotationMatrix[i] = pone*delta; 
+                else if(row == 2 && col == 0)
+                    rotationMatrix[i] = -pone*delta;
+                else
+                    rotationMatrix[i] = 0.0; 
+                break;
+            case 4:
+                if(row == 1 && col == 3)
+                    rotationMatrix[i] = pone*delta; 
+                else if(row == 3 && col == 1)
+                    rotationMatrix[i] = -pone*delta;
+                else
+                    rotationMatrix[i] = 0.0; 
+                break;
+            case 5:
+                if(row == 0 && col == 3)
+                    rotationMatrix[i] = pone*delta; 
+                else if(row == 3 && col == 0)
+                    rotationMatrix[i] = -pone*delta;
+                else
+                    rotationMatrix[i] = 0.0; 
+                break;
+                }
+            }
+        }
+    }
+
+void rotate(double * parms,double * rotationMatrix)
+    {
+    double newparms[ROWPARMS*ROWPARMS];
+    for(int row = 0;row < ROWPARMS;++row)
+        {
+        for(int col = 0;col < ROWPARMS;++col)
+            {
+            newparms[row * ROWPARMS + col] = 0.0;
+            for(int i = 0;i < ROWPARMS;++i)
+                newparms[row * ROWPARMS + col] += parms[row * ROWPARMS + i] * rotationMatrix[i * ROWPARMS + col];
+            }
+        }
+    for(int L = 0;L < ROWPARMS*ROWPARMS;++L)
+        parms[L] = newparms[L];
+    }
 
 struct bestParms
     {
     bool suffixonly;
     const char * langbase;
     int rows;
-    int val[NPARMS];
+    double val[NPARMS];
     // Each row:
     // R__R W__R R__W W__W
     // Generally, good that Wrongs change to Rights (W__R > 0) and that Rights don't change to Wrongs (R__W < 0)
@@ -2459,7 +2653,8 @@ static struct bestParms bests[] =
     ,best_sv_suffix
     };
 
-static int best[NPARMS]    = 
+#if 0
+static double best[NPARMS]    = 
   {// Before a chain of sibling rules is created, there are N candidate rules.
    // For each sibling created, the number n of remaining candidates is
    // decremented.
@@ -2468,10 +2663,50 @@ static int best[NPARMS]    =
 //0,  0,  0,  0, // n >= exp(N,0.25)
   0,  0,  0,  0  // n <  exp(N,0.25)
   };
+#else
+static double best[NPARMS]    =
+   /* R_R  W_R  R_W  W_W */   
+    { 1.0, 0.0, 0.0, 0.0
+    , 0.0, 1.0, 0.0, 0.0
+    , 0.0, 0.0,-1.0, 0.0
+    , 0.0, 0.0, 0.0, 1.0
+    };
+#endif
+//iteration:19.63
+/* 387 381.726058 */
+/*
+0.000000,	10.000000,	-10.000000,	2.000000,
+-13.581532,	-5.623026,	-4.283725,	6.696503,
+-2.889162,	1.349916,	0.464059,	-4.429286,
+-0.305579,	0.715326,	0.815889,	0.502817
+*/
+//iteration:19.63
+/* 391 387.069724 */
+/*
+0.000000,	6.000000,	-6.000000,	2.000000,
+-6.337474,	0.399136,	-1.608900,	-6.024108,
+-3.947893,	0.883151,	2.100111,	3.650880,
+0.463499,	1.732265,	1.476537,	-0.767184
+*/
+
+// Orthogonalised:
+
+//iteration:19.39
+/* number of nodes: 386, nodes/line: 0.387550 weight: 381.768147 blobs 1 lines 1254 * fraction 0.794328 = 996 lines*/
+/*
+        {         	         	         	          // # decisions
+        0.000000,	4.100000,	-6.000000,	1.000000, //9886
+        -4.167700,	0.043205,	-0.140436,	-1.019756, //784
+        0.040775,	0.183468,	0.096672,	-0.172187, //17
+        0.001182,	-0.003050,	-0.002846,	-0.004568  //0
+        }         	         	         	          //(0 unresolved comparisons)
+*/
+
+
 
 //int D[NPARMS]        = {0};
 
-static int R[] = // 64 elements
+static double  R[] = // 64 elements
     {
     1, 0, 0, 0,
     0, 1, 0, 0,
@@ -2496,41 +2731,53 @@ static int R[] = // 64 elements
 #error NPARMS must be a multiple of ROWPARMS
 #endif
 
-static void plus(int * dest, int * term,int cols)
+static void plus(double * dest, double * term,int cols)
     {
     for(int col = 0;col < cols;++col)
         dest[col] += term[col];
     }
 
-static void copy(int * dest,int * source,int cols)
+static void copy(double * dest,double * source,int cols)
     {
     for(int col = 0;col < cols;++col)
         dest[col] = source[col];
     }
 
-void betterfound(int Nnodes,double weight,int swath,int iterations,const char * besttxt)
+static int pcnt[(NPARMS >> 2)+1] = {0,0,0,0,0};
+
+void betterfound(int Nnodes,double weight,int swath,int iterations,const char * besttxt,int blobs,int lines,double fraction,int fraclines)
     {
     copy(best,parms,NPARMS);
     FILE * f = fopen(besttxt,"a");
     if(f)
         {
         fprintf(f,"//iteration:%d.%d\n",swath,iterations);
-        fprintf(f,"/* %d %f */\n",Nnodes,weight);
-        for(int i = 0;i < NPARMS;++i)
+        fprintf(f,"/* number of nodes: %d, nodes/line: %f weight: %f blobs %d lines %d * fraction %f = %d lines*/\n",
+            Nnodes,(double)Nnodes/(double)fraclines,weight,blobs,lines,fraction,fraclines);
+        fprintf(f,"        {         \t         \t         \t          // # decisions\n        ");
+        int i = 0;
+        for(;i < NPARMS;++i)
             {
-            fprintf(f,"%d",parms[i]);
+            fprintf(f,"%f",parms[i]);
             if(((i+1) % ROWPARMS) == 0)
+                {
                 if(i == NPARMS - 1)
-                    fprintf(f,"\n");
+                    fprintf(f,"  //%d\n        ",pcnt[i >> 2]);
                 else
-                    fprintf(f,",\n");
+                    fprintf(f,", //%d\n        ",pcnt[i >> 2]);
+                }
             else
                 fprintf(f,",\t");
             }
+        fprintf(f,"}         \t         \t         \t          //(%d unresolved comparisons)\n\n",pcnt[NPARMS >> 2]);
         fclose(f);
         }
     }
 
+void worsefound()
+    {
+    copy(parms,best,NPARMS);
+    }
 static int minparmsoff = 0;
 
 void copybest()
@@ -2540,85 +2787,61 @@ void copybest()
 
 //static const char * besttxt;
 //static const char * parmstxt = NULL;
-static int OnlyZeros = NPARMS;
-
+//static int OnlyZeros = NPARMS;
+/*
 static bool allZeros()
     {
-    int x2 = 0;
+    double x2 = 0;
     int i;
     for(i = 0;i < NPARMS;++i)
         {
         x2 += parms[i]*parms[i];
         }
-    return x2 == 0;
+    return x2 <= 0;
     }
-
+*/
 
 bool brown(/*const char * parmstxt*/)
     {
     static int it = 0;
-//    assert(parmstxt);
-//    FILE * f = fopen(parmstxt,"a");
-//    assert(f);
-//    D[rand() % NPARMS] += (rand() & 1) ? 1 : -1;
-
-    int i;
-    int T = it;
-    int R0 = (T % NUMBER_OF_ROWS_IN_R) * ROWPARMS;   // row selector in R[]: 0 4 8 12 ... 60 0 4 8 12 ... 60 0 4 ...
-    T /= NUMBER_OF_ROWS_IN_R;                 // strip lowest 4 bits (it / 16)
-    int P0 = (NPARMS - ROWPARMS) - (T % ROWPARMS) * ROWPARMS;   // row selector in parms. After NUMBER_OF_ROWS_IN_R iterations, the previous row is modified:  [...] 8 8 ... (NPARMSx) 4 ... (NPARMSx) 0 ... (NPARMSx) 12 ..
-	T /= ROWPARMS;
-    int fac = (T & 1) ? -1 : 1;  // 1 1 1 ... ((NUMBER_OF_ROWS_IN_R x ROWPARMS)x) -1 -1 -1 ... ((NUMBER_OF_ROWS_IN_R x ROWPARMS)x) 1 ...
-	T /= 2;
-    if(T * (int)(NUMBER_OF_ROWS_IN_R * ROWPARMS * 2) == it)            // it = 0 (16 x 8) (16 x 8) x 2 ...
-        {                        // double all parms of the best parameter setting and start a new round
-        for(i = 0;i < NPARMS;++i)
-            best[i] *= 2;        
-        }
-    /* NOT a good idea.
-    if((it % 16) == 0) // After handling one row,
-        copy(parms,best,NPARMS); // go on with best result so far.
-        */
-    copybest();
-    //copy(parms,best,NPARMS); // go on with best result so far.
-    for(i = 0;i < ROWPARMS;++i)
-        parms[P0+i] += fac*R[R0+i]; // 4N <= R0+i <= 4N+3
+    static double delta = 0.9;
+    int r = (it / 2) % 6;
+    double pone;
+    if(it & 1)
+        pone = 1.0;
+    else
+        pone = -1.0;
+    makeRotationMatrix(r, pone, delta);
+    printf("delta %f\n",delta);
+    delta -= 0.0001;
+    if(delta <= 0.0)
+        delta = 0.001;
+    copy(parms,best,NPARMS); // go on with best result so far.
+    orthogonalise("brownStart");
+    rotate(parms,rotationMatrix);
     ++it;
-
-//    fclose(f);
-
-    for(i = 0;i < NPARMS; ++i)
-        {
-        if(parms[i])
-            {
-            minparmsoff = i / ROWPARMS;
-            minparmsoff *= ROWPARMS;
-            break;
-            }
-        }
-    return allZeros();//OnlyZeros <= P0;
+    return false;
     }
 
 bool init()
     {
-    if(allZeros())
+//    if(allZeros())
         {
         copy(parms,best,NPARMS);
         }
     return true;
     }
 
-static int pcnt[(NPARMS >> 2)+1] = {0,0,0,0};//,0};
 
 
 void onlyZeros(const char * parmstxt,bool suffixonly)
     {
-    OnlyZeros = 0;
+//    OnlyZeros = 0;
     for(unsigned int i = 0;i < sizeof(pcnt)/sizeof(pcnt[0]);++i)
         {
         if(pcnt[i] != 0)
             {
-            OnlyZeros = (i+1) << 2;
+  //          OnlyZeros = (i+1) << 2;
             pcnt[i] = 0;
             }
         }
@@ -2626,7 +2849,7 @@ void onlyZeros(const char * parmstxt,bool suffixonly)
         {
         FILE * f = fopen(parmstxt,"a");
         assert(f);
-        fprintf(f,"//OnlyZeros %d \n",OnlyZeros);
+    //    fprintf(f,"//OnlyZeros %d \n",OnlyZeros);
         fprintf(f,"//suffix only %s \n",suffixonly ? "yes" : "no");
         fclose(f);
         }
@@ -2642,7 +2865,7 @@ void printparms(int Nnodes,double weight,const char * parmstxt)
     fprintf(f,"        {\n        ");
     for(i = 0;i < NPARMS;++i)
         {
-        fprintf(f,"%5d",parms[i]);
+        fprintf(f,"%f",parms[i]);
         if(((i+1) % ROWPARMS) == 0)
             {
             if(i == NPARMS - 1)
@@ -2672,8 +2895,8 @@ static int comp_parms(const vertex * a,const vertex * b)
             off = parmsoff;
         for(int o = off;o < NPARMS;o += ROWPARMS)
             {
-            int A = parms[o]*a->R__R + parms[o+1]*a->W__R + parms[o+2]*a->R__W + parms[o+3]*a->W__W;
-            int B = parms[o]*b->R__R + parms[o+1]*b->W__R + parms[o+2]*b->R__W + parms[o+3]*b->W__W;
+            double A = parms[o]*a->R__R + parms[o+1]*a->W__R + parms[o+2]*a->R__W + parms[o+3]*a->W__W;
+            double B = parms[o]*b->R__R + parms[o+1]*b->W__R + parms[o+2]*b->R__W + parms[o+3]*b->W__W;
             if(A != B)
                 {
                 ++pcnt[o >> 2]; // For counting the number of times the first, second, third or fourth condition has been used.
@@ -2691,6 +2914,7 @@ static int nparms = 0;
 
 static int comp_parms0_off(const vertex * a,const vertex * b)
     {
+
     int off = minparmsoff;
     if(off < parmsoff)
         off = parmsoff;
@@ -2701,8 +2925,8 @@ static int comp_parms0_off(const vertex * a,const vertex * b)
         }
     for(int o = off;o < nparms;o += ROWPARMS)
         {
-        int A = parms[o]*a->R__R + parms[o+1]*a->W__R + parms[o+2]*a->R__W + parms[o+3]*a->W__W;
-        int B = parms[o]*b->R__R + parms[o+1]*b->W__R + parms[o+2]*b->R__W + parms[o+3]*b->W__W;
+        double A = parms[o]*a->R__R + parms[o+1]*a->W__R + parms[o+2]*a->R__W + parms[o+3]*a->W__W;
+        double B = parms[o]*b->R__R + parms[o+1]*b->W__R + parms[o+2]*b->R__W + parms[o+3]*b->W__W;
         if(A != B)
             {
             return A > B ? -1 : 1;

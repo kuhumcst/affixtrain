@@ -1604,6 +1604,9 @@ int trainingPair::makeCorrectRules(hash * Hash,ruleTemplate * Template,const cha
     int anihilatedGuards;
     ruleTemplate locTemplate;
     locTemplate.copy(Template);
+
+    mlow = 1; // 20140706
+
     for( int m = mlow
        ; locTemplate.makebigger(m,anihilatedGuards)
        ;   ++m
@@ -3049,8 +3052,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
     const char * tag = "";
     if(minfraction > 0.0)
         {
-        factor = maxfraction/minfraction;
-        factor = pow(factor,1.0/(double)maxswath);
+        factor = pow(maxfraction/minfraction,1.0/(double)maxswath);
         // minfraction * factor^0 == minfraction
         // minfraction * factor^maxswath == maxfraction
         }
@@ -3075,6 +3077,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
             {
             int blobs = 1;
             int lines = 0;
+            int fraclines = 0;
             if(minfraction > 0.0)
                 {
                 if(swath == maxswath)
@@ -3186,23 +3189,22 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                     f2 = fopen(fbuf,"r");
                     if(!f2)
                         fprintf(stderr,"Error (computeParms): Cannot open \"%s\" for writing\n",fbuf);
-                    lines = 0;
                     while((kar = fgetc(f2)) != EOF)
                         {
                         if(kar == '\n')
-                            ++lines;
+                            ++fraclines;
                         }
                     fclose(f2);
                     if(parmstxt && !flog)
                         {
                         flog = fopen(parmstxt,"a");
-                        fprintf(flog,"Read %d lines\n",lines);
+                        fprintf(flog,"Use %d lines of %d\n",fraclines,lines);
                         fclose(flog);
                         flog = 0;
                         }
                     if(VERBOSE)
                         {
-                        printf("reading %d lines\n",lines);
+                        printf("reading %d lines\n",fraclines);
                         printf("tmpnam %s\n",fbuf);
                         }
                     CHECK("D1globTempDir");
@@ -3233,7 +3235,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                         currentNo = brownNo;
                         brownweight = weight;
                         currentweight = brownweight;
-                        betterfound(currentNo,currentweight,swath,-1,besttxt);
+                        betterfound(currentNo,currentweight,swath,-1,besttxt,blobs,lines,fraction,fraclines);
                         printparms(Nnodes,weight,parmstxt);
                         onlyZeros(parmstxt,suffixonly);
                         }
@@ -3248,12 +3250,13 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                 else*/
                     skip = brown(/*parmstxt*/);
                     CHECK("D2bglobTempDir");
+
                 if(swath + iterations > 0 && skip)
                     {
                     if(parmstxt && !flog)
                         {
                         flog = fopen(parmstxt,"a");
-                        fprintf(flog,"//fraction: %f  blobs:%d  lines: %d\n",fraction,blobs,lines);
+                        fprintf(flog,"//fraction: %f  blobs:%d  lines: %d fraclines: %d\n",fraction,blobs,lines,fraclines);
                         fprintf(flog,"//iteration:%d.%d SKIPPED\n",swath,iterations);
                         fclose(flog);
                         flog = 0;
@@ -3306,14 +3309,16 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                         {
                         brownNo = Nnodes;
                         brownweight = weight;
-                        if(  (!doweights && brownNo     <= currentNo)
-                          || ( doweights && brownweight <= currentweight)
+                        if(  (!doweights && brownNo     < currentNo)
+                          || ( doweights && brownweight < currentweight)
                           )
                             {
                             currentNo = brownNo;
                             currentweight = brownweight;
-                            betterfound(currentNo,currentweight,swath,iterations,besttxt);
+                            betterfound(currentNo,currentweight,swath,iterations,besttxt,blobs,lines,fraction,fraclines);
                             }
+                        else
+                            worsefound();
                         }
                     printparms(Nnodes,weight,parmstxt);
                     if(VERBOSE)

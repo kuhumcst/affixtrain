@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "settingsaffixtrain.h"
 
 extern FILE * flog;
-#define NPARMS 12
+#define NPARMS 16
 #define ROWPARMS 4
 extern int parmsoff;
 /*

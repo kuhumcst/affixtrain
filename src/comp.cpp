@@ -2801,21 +2801,115 @@ static bool allZeros()
     }
 */
 
+
+static double integral(double x,int n)
+        {
+        if(n > 1)
+            return (-1.0/(double)n) * pow(sin(x),n-1) * cos(x) + ((n-1)/(double)n) * integral(x,n-2);
+        else if(n == 1)
+            return 1 - cos(x);
+        else
+            return x;
+        }
+
+static double maxintegral;
+static double minintegral;
+
+#define pi 3.14159265358979323846
+
+void setMinMaxIntegral(int dimensions)
+        {
+        assert(dimensions >= 2); // dimension of embedding space. So dimensions == 2 is for a circle.
+        maxintegral = integral(pi,dimensions - 2);
+        minintegral = integral(0.0,dimensions - 2);
+        }
+
+static double expectationValueA(double angle,int dimensions)
+        {
+        double ret;
+        if(dimensions == 3)
+            ret = cos(angle);
+        else if(dimensions == 2)
+            {
+            ret = 1.0 - (angle / (pi*0.5));
+            }
+        else
+            {
+            double inp = integral(angle,dimensions - 2);
+            ret = 1.0 - 2.0*(inp - minintegral)/(maxintegral - minintegral); 
+            }
+        return ret;
+        }
+
+static double angle(double expectectationvalue,int dim)
+        {
+        double mina = 0.0;
+        double maxa = pi;
+        double mine = expectationValueA(mina,dim);
+        double maxe = expectationValueA(maxa,dim);
+        if(expectectationvalue == mine)
+            return mina;
+        else if(expectectationvalue == maxe)
+            return maxa;
+        else
+            {
+            double h = 0.0;
+            int i;
+            for(i = 0;i < 100 && maxa - mina > 0.0000000001;++i)
+                {
+                h = (mina+maxa)/2.0;
+                double e = expectationValueA(h,dim);
+                if(e > expectectationvalue)
+                    {
+                    mine = e;
+                    mina = h;
+                    }
+                else if(e < expectectationvalue)
+                    {
+                    maxe = e;
+                    maxa = h;
+                    }
+                else
+                    break;
+                }
+            return h;
+            }
+        }
+
+void testAngle()
+    {
+    for(int d = 2;d <= 4;++d)
+        {
+        setMinMaxIntegral(d);
+        for(double z = 1.0;z >= -1.0;z -= 0.25)
+            {
+            double ang = angle(z,d);
+            printf("%d %2.3f -> %2.3f: %2.2f\n",d,z,cos(ang),180.0/pi*ang);
+            }
+        }
+    getchar();
+    }
+
 bool brown(/*const char * parmstxt*/)
     {
+//    testAngle();
     static int it = 0;
-    static double delta = 0.9;
+    static double delta = 0.8;
+    static double inc = (1.0 - delta) / 1365.0;
     int r = (it / 2) % 6;
     double pone;
     if(it & 1)
         pone = 1.0;
     else
         pone = -1.0;
-    makeRotationMatrix(r, pone, delta);
-    printf("delta %f\n",delta);
-    delta -= 0.0001;
-    if(delta <= 0.0)
-        delta = 0.001;
+    setMinMaxIntegral(4);
+    double ang = angle(delta,4);
+    printf("%d delta %1.4f angle %3.2f\n",it,delta,(180.0/pi)*ang);
+    makeRotationMatrix(r, pone, sin(ang));
+
+    delta += inc;//0.0001;
+    if(delta > 1.0 - inc)
+        delta = 1.0 - inc;
     copy(parms,best,NPARMS); // go on with best result so far.
     orthogonalise("brownStart");
     rotate(parms,rotationMatrix);
@@ -2881,6 +2975,48 @@ void printparms(int Nnodes,double weight,const char * parmstxt)
     fclose(f);
     }
 
+#if 1
+static int comp_parms(const vertex * a,const vertex * b)
+    {
+    //for(int o = 0;o < NPARMS;o += ROWPARMS)
+    if(  a->R__R != b->R__R
+      || a->W__R != b->W__R
+      || a->R__W != b->R__W
+      || a->W__W != b->W__W
+      )
+        {
+        int off = minparmsoff;
+        if(off < parmsoff)
+            off = parmsoff;
+        double A = 0.0;
+        double B = 0.0;
+        double N = a->R__R + a->W__R + a->R__W + a->W__W;
+        //double N = sqrt((double)(a->R__R*a->R__R + a->W__R*a->W__R + a->R__W*a->R__W + a->W__W*a->W__W));
+        double D = 20.0/N;
+        double e = 4.0;
+        for(int o = 0;o < NPARMS;o += ROWPARMS)
+            {
+            double x = parms[o]*a->R__R + parms[o+1]*a->W__R + parms[o+2]*a->R__W + parms[o+3]*a->W__W;
+            double y = parms[o]*b->R__R + parms[o+1]*b->W__R + parms[o+2]*b->R__W + parms[o+3]*b->W__W;
+
+            if(x < 0.0)
+                A -= pow(D*-x,e);
+            else
+                A += pow(D*x,e);
+
+            if(y < 0.0)
+                B -= pow(D*-y,e);
+            else
+                B += pow(D*y,e);
+
+            e -= 1.0;
+            }
+        ++pcnt[NPARMS >> 2];
+        return A > B ? -1 : 1;
+        }
+    return 0;
+    }
+#else
 static int comp_parms(const vertex * a,const vertex * b)
     {
     //for(int o = 0;o < NPARMS;o += ROWPARMS)
@@ -2909,6 +3045,7 @@ static int comp_parms(const vertex * a,const vertex * b)
         }
     return 0;
     }
+#endif
 
 static int nparms = 0;
 

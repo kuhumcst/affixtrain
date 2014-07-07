@@ -3073,6 +3073,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
     double weight = 0.0;
     //if(compute_parms)
         {
+        int br1 = 0, br2 = 0;
         for(int swath = 0;swath <= maxswath;++swath)
             {
             int blobs = 1;
@@ -3207,38 +3208,41 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                         printf("reading %d lines\n",fraclines);
                         printf("tmpnam %s\n",fbuf);
                         }
-                    CHECK("D1globTempDir");
-                    struct aFile * afile = readFile(filename);
-                    if(afile)
+                    }
+                CHECK("D1globTempDir");
+                struct aFile * afile = readFile(filename);
+                if(afile)
+                    {
+                    if(lines == 0)
+                        fraclines = lines = afile->lines;
+                    while(brown()); // until not all parms are zero
+                    ++br1;
+                    if(swath == 0)
+                        init();
+                    else
+                        copybest(); // go on with best result so far.
+                    char wordsGroupedByRuleName[1024];
+                    if(sizeof(wordsGroupedByRuleName) <= (size_t)sprintf(wordsGroupedByRuleName,"words_%s%s.txt",ext,tag))
                         {
-                        while(brown()); // until not all parms are zero
-                        if(swath == 0)
-                            init();
-                        else
-                            copybest(); // go on with best result so far.
-                        char wordsGroupedByRuleName[1024];
-                        if(sizeof(wordsGroupedByRuleName) <= (size_t)sprintf(wordsGroupedByRuleName,"words_%s%s.txt",ext,tag))
-                            {
-                            printf("computeParms: wordsGroupedByRuleName 2 small");
-                            exit(-1);
-                            }
-                        char numbersName[1024];
-                        if(sizeof(numbersName) <= (size_t)sprintf(numbersName,"numbers_%s%s.tab",ext,tag))
-                            {
-                            printf("computeParms: numbersName 2 small");
-                            exit(-1);
-                            }
-                        doTraining(afile,ext,0,nflexrules,columns,NULL,NULL,NULL,NULL,wordsGroupedByRuleName,numbersName,Nnodes,weight,tag); // sets Nnodes
-                        delete afile;
-                        afile = NULL;
-                        brownNo = Nnodes;
-                        currentNo = brownNo;
-                        brownweight = weight;
-                        currentweight = brownweight;
-                        betterfound(currentNo,currentweight,swath,-1,besttxt,blobs,lines,fraction,fraclines);
-                        printparms(Nnodes,weight,parmstxt);
-                        onlyZeros(parmstxt,suffixonly);
+                        printf("computeParms: wordsGroupedByRuleName 2 small");
+                        exit(-1);
                         }
+                    char numbersName[1024];
+                    if(sizeof(numbersName) <= (size_t)sprintf(numbersName,"numbers_%s%s.tab",ext,tag))
+                        {
+                        printf("computeParms: numbersName 2 small");
+                        exit(-1);
+                        }
+                    doTraining(afile,ext,0,nflexrules,columns,NULL,NULL,NULL,NULL,wordsGroupedByRuleName,numbersName,Nnodes,weight,tag); // sets Nnodes
+                    delete afile;
+                    afile = NULL;
+                    brownNo = Nnodes;
+                    currentNo = brownNo;
+                    brownweight = weight;
+                    currentweight = brownweight;
+                    betterfound(currentNo,currentweight,swath,-1,besttxt,blobs,lines,fraction,fraclines);
+                    printparms(Nnodes,weight,parmstxt);
+                    onlyZeros(parmstxt,suffixonly);
                     }
                 }
             for(int iterations = 0;iterations < 64;++iterations)
@@ -3249,6 +3253,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                     init();
                 else*/
                     skip = brown(/*parmstxt*/);
+                    ++br2;
                     CHECK("D2bglobTempDir");
 
                 if(swath + iterations > 0 && skip)
@@ -3266,7 +3271,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                 else
                     {
                     CHECK("D2cglobTempDir");
-                    if(0 && parmstxt && !flog)
+                    if(parmstxt && !flog)
                         {
                         flog = fopen(parmstxt,"a");
                         CHECK("D2dglobTempDir");
@@ -3284,6 +3289,9 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                     struct aFile * afile = readFile(filename);
                     if(afile)
                         {
+                        if(lines == 0)
+                            fraclines = lines = afile->lines;
+
                         char wordsGroupedByRuleName[1024];
                         if(sizeof(wordsGroupedByRuleName) <= (size_t)sprintf(wordsGroupedByRuleName,"words_%s%s.txt",ext,tag))
                             {
@@ -3309,6 +3317,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                         {
                         brownNo = Nnodes;
                         brownweight = weight;
+                        printf("swath %d brownNo %d currentNo %d\n",swath,brownNo,currentNo);
                         if(  (!doweights && brownNo     < currentNo)
                           || ( doweights && brownweight < currentweight)
                           )
@@ -3328,6 +3337,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                     onlyZeros(parmstxt,suffixonly);
                     }
                 }
+            printf("br1 %d br2 %d\n",br1,br2);
             }
         }
     remove(fbuf);

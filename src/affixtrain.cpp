@@ -3073,7 +3073,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
     double weight = 0.0;
     //if(compute_parms)
         {
-        int br1 = 0, br2 = 0;
+        //int br1 = 0, br2 = 0;
         for(int swath = 0;swath <= maxswath;++swath)
             {
             int blobs = 1;
@@ -3216,7 +3216,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                     if(lines == 0)
                         fraclines = lines = afile->lines;
                     while(brown()); // until not all parms are zero
-                    ++br1;
+                    //++br1;
                     if(swath == 0)
                         init();
                     else
@@ -3253,7 +3253,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                     init();
                 else*/
                     skip = brown(/*parmstxt*/);
-                    ++br2;
+                    //++br2;
                     CHECK("D2bglobTempDir");
 
                 if(swath + iterations > 0 && skip)
@@ -3317,11 +3317,19 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                         {
                         brownNo = Nnodes;
                         brownweight = weight;
-                        printf("swath %d brownNo %d currentNo %d\n",swath,brownNo,currentNo);
-                        if(  (!doweights && brownNo     < currentNo)
-                          || ( doweights && brownweight < currentweight)
+                        //printf("swath %d brownNo %d currentNo %d\n",swath,brownNo,currentNo);
+                        if(  (!doweights && brownNo     <= currentNo)
+                          || ( doweights && brownweight <= currentweight)
                           )
                             {
+                            if(  (!doweights && brownNo     < currentNo)
+                              || ( doweights && brownweight < currentweight)
+                              )
+                                {
+                                printf("%d.%d nodes: %d nodes/line: %f fraction: %f lines: %d\n",
+                                    swath,iterations,Nnodes,(double)Nnodes/(double)fraclines,fraction,fraclines);
+
+                                }
                             currentNo = brownNo;
                             currentweight = brownweight;
                             betterfound(currentNo,currentweight,swath,iterations,besttxt,blobs,lines,fraction,fraclines);
@@ -3337,7 +3345,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                     onlyZeros(parmstxt,suffixonly);
                     }
                 }
-            printf("br1 %d br2 %d\n",br1,br2);
+            //printf("br1 %d br2 %d\n",br1,br2);
             }
         }
     remove(fbuf);

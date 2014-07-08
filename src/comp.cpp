@@ -573,7 +573,7 @@ int (*comp)(const vertex * a,const vertex * b) = comp_koud;
 
 
 // You can find a local optimum for the parameters by using comp_parms as the
-// weight function and setting compute_parms = true. The parameters parms[] 
+// weight function and setting compute_parms = true. The parameters parms.Matrix[] 
 // can be seeded with non-zero values by hard coding. The file parms.txt
 // will contain the currently best parameters.
 
@@ -589,23 +589,27 @@ int (*comp)(const vertex * a,const vertex * b) = comp_koud;
 
 //bool compute_parms = false;
 
+struct rotation
+    {
+    double Matrix[ROWPARMS*ROWPARMS];
+    } rotation;
 
-static double parms[NPARMS]    =
+static struct rotation parms    =
    /* R_R  W_R  R_W  W_W */   
-    { 0.0, 1.0, 0.0, 0.0
+    {{ 0.0, 1.0, 0.0, 0.0
     ,-1.0, 0.0, 0.0, 0.0
     , 0.0, 0.0, 0.0,-1.2
     , 0.0, 0.0,-1.2, 0.0
-    };
+    }};
 
-static void printmatrix(const char * msg,double * arr)
+static void printmatrix(const char * msg,struct rotation arr)
     {
     printf("%s\n",msg);
     for(int i = 0;i < ROWPARMS;++i)
         {
         for(int j = 0;j < ROWPARMS;++j)
             {
-            printf("%f ",arr[ROWPARMS * i+j]);
+            printf("%f ",arr.Matrix[ROWPARMS * i+j]);
             }
         putchar('\n');
         }
@@ -629,7 +633,7 @@ static void orthogonalise(const char * Msg)
         printf("%s: ",Msg);
         printmatrix("before orthogonalisation",parms);
         }
-    for(int i = 1;i < sizeof(parms)/(sizeof(parms[0]) * ROWPARMS);++i)
+    for(int i = 1;i < sizeof(parms.Matrix)/(sizeof(parms.Matrix[0]) * ROWPARMS);++i)
         {
         int I = i * ROWPARMS;
         for(int j = 0; j < i;++j)
@@ -639,19 +643,19 @@ static void orthogonalise(const char * Msg)
             double Jmodulus = 0.0;
             for(int k = 0;k < ROWPARMS;++k)
                 {
-                inner += parms[I+k]*parms[J+k];
-                Jmodulus += parms[J+k]*parms[J+k];
+                inner += parms.Matrix[I+k]*parms.Matrix[J+k];
+                Jmodulus += parms.Matrix[J+k]*parms.Matrix[J+k];
                 }
             inner /= Jmodulus;
             for(int k = 0;k < ROWPARMS;++k)
                 {
-                parms[I+k] -= inner * parms[J+k];
+                parms.Matrix[I+k] -= inner * parms.Matrix[J+k];
                 }
             }
         }
     for(int row = 0;row < ROWPARMS;++row)
         {
-        normalise(parms+row*ROWPARMS);
+        normalise(parms.Matrix+row*ROWPARMS);
         }
     if(VERBOSE)
         {
@@ -660,14 +664,15 @@ static void orthogonalise(const char * Msg)
         }
     }
 
-static double rotationMatrix[ROWPARMS*ROWPARMS];
-void makeRotationMatrix(int r, double pone, double delta) // 0 <= r < 6
+
+struct rotation makeRotationMatrix(int r, double pone, double delta) // 0 <= r < 6
     {
     assert(-1.0 < delta && delta < 1.0);
     assert(0 <= r && r < 6);
     assert(pone == -1.0 || pone == 1.0);
     double contradelta = sqrt(1.0 - delta*delta);
-    for(int i = 0;i < sizeof(rotationMatrix)/sizeof(rotationMatrix[0]);++i)
+    struct rotation Rotation;
+    for(int i = 0;i < sizeof(Rotation.Matrix)/sizeof(Rotation.Matrix[0]);++i)
         {
         int col = i % ROWPARMS;
         int row = i / ROWPARMS;
@@ -677,39 +682,39 @@ void makeRotationMatrix(int r, double pone, double delta) // 0 <= r < 6
                 {
             case 0:
                 if(col == 0 || col == 1)
-                    rotationMatrix[i] = contradelta; 
+                    Rotation.Matrix[i] = contradelta; 
                 else
-                    rotationMatrix[i] = 1.0; 
+                    Rotation.Matrix[i] = 1.0; 
                 break;
             case 1:
                 if(col == 1 || col == 2)
-                    rotationMatrix[i] = contradelta; 
+                    Rotation.Matrix[i] = contradelta; 
                 else
-                    rotationMatrix[i] = 1.0; 
+                    Rotation.Matrix[i] = 1.0; 
                 break;
             case 2:
                 if(col == 2 || col == 3)
-                    rotationMatrix[i] = contradelta; 
+                    Rotation.Matrix[i] = contradelta; 
                 else
-                    rotationMatrix[i] = 1.0; 
+                    Rotation.Matrix[i] = 1.0; 
                 break;
             case 3:
                 if(col == 0 || col == 2)
-                    rotationMatrix[i] = contradelta; 
+                    Rotation.Matrix[i] = contradelta; 
                 else
-                    rotationMatrix[i] = 1.0; 
+                    Rotation.Matrix[i] = 1.0; 
                 break;
             case 4:
                 if(col == 1 || col == 3)
-                    rotationMatrix[i] = contradelta; 
+                    Rotation.Matrix[i] = contradelta; 
                 else
-                    rotationMatrix[i] = 1.0; 
+                    Rotation.Matrix[i] = 1.0; 
                 break;
             case 5:
                 if(col == 0 || col == 3)
-                    rotationMatrix[i] = contradelta; 
+                    Rotation.Matrix[i] = contradelta; 
                 else
-                    rotationMatrix[i] = 1.0; 
+                    Rotation.Matrix[i] = 1.0; 
                 break;
                 }
             }
@@ -719,71 +724,71 @@ void makeRotationMatrix(int r, double pone, double delta) // 0 <= r < 6
                 {
             case 0:
                 if(row == 0 && col == 1)
-                    rotationMatrix[i] = pone*delta; 
+                    Rotation.Matrix[i] = pone*delta; 
                 else if(row == 1 && col == 0)
-                    rotationMatrix[i] = -pone*delta;
+                    Rotation.Matrix[i] = -pone*delta;
                 else
-                    rotationMatrix[i] = 0.0; 
+                    Rotation.Matrix[i] = 0.0; 
                 break;
             case 1:
                 if(row == 1 && col == 2)
-                    rotationMatrix[i] = pone*delta; 
+                    Rotation.Matrix[i] = pone*delta; 
                 else if(row == 2 && col == 1)
-                    rotationMatrix[i] = -pone*delta;
+                    Rotation.Matrix[i] = -pone*delta;
                 else
-                    rotationMatrix[i] = 0.0; 
+                    Rotation.Matrix[i] = 0.0; 
                 break;
             case 2:
                 if(row == 2 && col == 3)
-                    rotationMatrix[i] = pone*delta; 
+                    Rotation.Matrix[i] = pone*delta; 
                 else if(row == 3 && col == 2)
-                    rotationMatrix[i] = -pone*delta;
+                    Rotation.Matrix[i] = -pone*delta;
                 else
-                    rotationMatrix[i] = 0.0; 
+                    Rotation.Matrix[i] = 0.0; 
                 break;
             case 3:
                 if(row == 0 && col == 2)
-                    rotationMatrix[i] = pone*delta; 
+                    Rotation.Matrix[i] = pone*delta; 
                 else if(row == 2 && col == 0)
-                    rotationMatrix[i] = -pone*delta;
+                    Rotation.Matrix[i] = -pone*delta;
                 else
-                    rotationMatrix[i] = 0.0; 
+                    Rotation.Matrix[i] = 0.0; 
                 break;
             case 4:
                 if(row == 1 && col == 3)
-                    rotationMatrix[i] = pone*delta; 
+                    Rotation.Matrix[i] = pone*delta; 
                 else if(row == 3 && col == 1)
-                    rotationMatrix[i] = -pone*delta;
+                    Rotation.Matrix[i] = -pone*delta;
                 else
-                    rotationMatrix[i] = 0.0; 
+                    Rotation.Matrix[i] = 0.0; 
                 break;
             case 5:
                 if(row == 0 && col == 3)
-                    rotationMatrix[i] = pone*delta; 
+                    Rotation.Matrix[i] = pone*delta; 
                 else if(row == 3 && col == 0)
-                    rotationMatrix[i] = -pone*delta;
+                    Rotation.Matrix[i] = -pone*delta;
                 else
-                    rotationMatrix[i] = 0.0; 
+                    Rotation.Matrix[i] = 0.0; 
                 break;
                 }
             }
         }
+    return Rotation;
     }
 
-void rotate(double * parms,double * rotationMatrix)
+struct rotation rotate(struct rotation parms,struct rotation Rotation)
     {
-    double newparms[ROWPARMS*ROWPARMS];
+    struct rotation newparms;
     for(int row = 0;row < ROWPARMS;++row)
         {
         for(int col = 0;col < ROWPARMS;++col)
             {
-            newparms[row * ROWPARMS + col] = 0.0;
+            newparms.Matrix[row * ROWPARMS + col] = 0.0;
             for(int i = 0;i < ROWPARMS;++i)
-                newparms[row * ROWPARMS + col] += parms[row * ROWPARMS + i] * rotationMatrix[i * ROWPARMS + col];
+                newparms.Matrix[row * ROWPARMS + col] += parms.Matrix[row * ROWPARMS + i] * Rotation.Matrix[i * ROWPARMS + col];
             }
         }
-    for(int L = 0;L < ROWPARMS*ROWPARMS;++L)
-        parms[L] = newparms[L];
+    return newparms;
     }
 
 struct bestParms
@@ -2744,10 +2749,12 @@ static void copy(double * dest,double * source,int cols)
     }
 
 static int pcnt[(NPARMS >> 2)+1] = {0,0,0,0,0};
+static int improvements = 0;
 
 void betterfound(int Nnodes,double weight,int swath,int iterations,const char * besttxt,int blobs,int lines,double fraction,int fraclines)
     {
-    copy(best,parms,NPARMS);
+    ++improvements;
+    copy(best,parms.Matrix,NPARMS);
     FILE * f = fopen(besttxt,"a");
     if(f)
         {
@@ -2758,7 +2765,7 @@ void betterfound(int Nnodes,double weight,int swath,int iterations,const char * 
         int i = 0;
         for(;i < NPARMS;++i)
             {
-            fprintf(f,"%f",parms[i]);
+            fprintf(f,"%f",parms.Matrix[i]);
             if(((i+1) % ROWPARMS) == 0)
                 {
                 if(i == NPARMS - 1)
@@ -2776,13 +2783,13 @@ void betterfound(int Nnodes,double weight,int swath,int iterations,const char * 
 
 void worsefound()
     {
-    copy(parms,best,NPARMS);
+    copy(parms.Matrix,best,NPARMS);
     }
 static int minparmsoff = 0;
 
 void copybest()
     {
-    copy(parms,best,NPARMS); // go on with best result so far.
+    copy(parms.Matrix,best,NPARMS); // go on with best result so far.
     }
 
 //static const char * besttxt;
@@ -2795,7 +2802,7 @@ static bool allZeros()
     int i;
     for(i = 0;i < NPARMS;++i)
         {
-        x2 += parms[i]*parms[i];
+        x2 += parms.Matrix[i]*parms.Matrix[i];
         }
     return x2 <= 0;
     }
@@ -2894,25 +2901,37 @@ bool brown(/*const char * parmstxt*/)
     {
 //    testAngle();
     static int it = 0;
-    static double delta = 0.8;
+    static double delta = 0.95;
     static double inc = (1.0 - delta) / 1365.0;
-    int r = (it / 2) % 6;
+    int index = it;// - improvements; // to ensure that successful transformation is repeated.
+    int r = (index / 2) % 6;
     double pone;
-    if(it & 1)
+    if(index & 1)
         pone = 1.0;
     else
         pone = -1.0;
     setMinMaxIntegral(4);
     double ang = angle(delta,4);
-    printf("%d delta %1.4f angle %3.2f\n",it,delta,(180.0/pi)*ang);
-    makeRotationMatrix(r, pone, sin(ang));
+//    printf("%d delta %1.4f angle %3.2f\n",it,delta,(180.0/pi)*ang);
+    struct rotation Rotation;
+    Rotation = makeRotationMatrix(r, pone, sin(ang));
+    if((rand() % 3) == 2)
+        {
+        int G;
+        do {G = rand() % 6;} while(G == r);
+        double bigang = angle(0.5,4);
+        struct rotation Forth = makeRotationMatrix(G, 1.0, sin(bigang));
+        struct rotation Back = makeRotationMatrix(G, -1.0, sin(bigang));
+        Rotation = rotate(Rotation,Forth);
+        Rotation = rotate(Back,Rotation);
+        }
 
-    delta += inc;//0.0001;
+    delta += inc;
     if(delta > 1.0 - inc)
         delta = 1.0 - inc;
-    copy(parms,best,NPARMS); // go on with best result so far.
+    copy(parms.Matrix,best,NPARMS); // go on with best result so far.
     orthogonalise("brownStart");
-    rotate(parms,rotationMatrix);
+    parms = rotate(parms,Rotation);
     ++it;
     return false;
     }
@@ -2921,7 +2940,7 @@ bool init()
     {
 //    if(allZeros())
         {
-        copy(parms,best,NPARMS);
+        copy(parms.Matrix,best,NPARMS);
         }
     return true;
     }
@@ -2959,7 +2978,7 @@ void printparms(int Nnodes,double weight,const char * parmstxt)
     fprintf(f,"        {\n        ");
     for(i = 0;i < NPARMS;++i)
         {
-        fprintf(f,"%f",parms[i]);
+        fprintf(f,"%f",parms.Matrix[i]);
         if(((i+1) % ROWPARMS) == 0)
             {
             if(i == NPARMS - 1)
@@ -2975,7 +2994,7 @@ void printparms(int Nnodes,double weight,const char * parmstxt)
     fclose(f);
     }
 
-#if 1
+#if 0
 static int comp_parms(const vertex * a,const vertex * b)
     {
     //for(int o = 0;o < NPARMS;o += ROWPARMS)
@@ -2996,8 +3015,8 @@ static int comp_parms(const vertex * a,const vertex * b)
         double e = 4.0;
         for(int o = 0;o < NPARMS;o += ROWPARMS)
             {
-            double x = parms[o]*a->R__R + parms[o+1]*a->W__R + parms[o+2]*a->R__W + parms[o+3]*a->W__W;
-            double y = parms[o]*b->R__R + parms[o+1]*b->W__R + parms[o+2]*b->R__W + parms[o+3]*b->W__W;
+            double x = parms.Matrix[o]*a->R__R + parms.Matrix[o+1]*a->W__R + parms.Matrix[o+2]*a->R__W + parms.Matrix[o+3]*a->W__W;
+            double y = parms.Matrix[o]*b->R__R + parms.Matrix[o+1]*b->W__R + parms.Matrix[o+2]*b->R__W + parms.Matrix[o+3]*b->W__W;
 
             if(x < 0.0)
                 A -= pow(D*-x,e);
@@ -3031,8 +3050,8 @@ static int comp_parms(const vertex * a,const vertex * b)
             off = parmsoff;
         for(int o = off;o < NPARMS;o += ROWPARMS)
             {
-            double A = parms[o]*a->R__R + parms[o+1]*a->W__R + parms[o+2]*a->R__W + parms[o+3]*a->W__W;
-            double B = parms[o]*b->R__R + parms[o+1]*b->W__R + parms[o+2]*b->R__W + parms[o+3]*b->W__W;
+            double A = parms.Matrix[o]*a->R__R + parms.Matrix[o+1]*a->W__R + parms.Matrix[o+2]*a->R__W + parms.Matrix[o+3]*a->W__W;
+            double B = parms.Matrix[o]*b->R__R + parms.Matrix[o+1]*b->W__R + parms.Matrix[o+2]*b->R__W + parms.Matrix[o+3]*b->W__W;
             if(A != B)
                 {
                 ++pcnt[o >> 2]; // For counting the number of times the first, second, third or fourth condition has been used.
@@ -3062,8 +3081,8 @@ static int comp_parms0_off(const vertex * a,const vertex * b)
         }
     for(int o = off;o < nparms;o += ROWPARMS)
         {
-        double A = parms[o]*a->R__R + parms[o+1]*a->W__R + parms[o+2]*a->R__W + parms[o+3]*a->W__W;
-        double B = parms[o]*b->R__R + parms[o+1]*b->W__R + parms[o+2]*b->R__W + parms[o+3]*b->W__W;
+        double A = parms.Matrix[o]*a->R__R + parms.Matrix[o+1]*a->W__R + parms.Matrix[o+2]*a->R__W + parms.Matrix[o+3]*a->W__W;
+        double B = parms.Matrix[o]*b->R__R + parms.Matrix[o+1]*b->W__R + parms.Matrix[o+2]*b->R__W + parms.Matrix[o+3]*b->W__W;
         if(A != B)
             {
             return A > B ? -1 : 1;
@@ -3149,7 +3168,7 @@ bool setCompetitionFunction(const char * functionname,const char * extra,bool su
                             exit(-1);
                             }
                         for(int k = 0;k < nparms;++k)
-                            parms[k] = bests[j].val[k];
+                            parms.Matrix[k] = bests[j].val[k];
                         if(parmstxt)
                             {
                             FILE * f = fopen(parmstxt,"w");
@@ -3163,7 +3182,7 @@ bool setCompetitionFunction(const char * functionname,const char * extra,bool su
                                     {
                                     if(k % ROWPARMS == 0)
                                         fprintf(f,"\n");
-                                    fprintf(f,"%6d",parms[k]);
+                                    fprintf(f,"%6d",parms.Matrix[k]);
                                     }
                                 fprintf(f,"\n");
                                 fclose(f);
@@ -3190,7 +3209,7 @@ bool setCompetitionFunction(const char * functionname,const char * extra,bool su
                 }
             for(i = 0;i < nparms; ++i)
                 {
-                if(parms[i])
+                if(parms.Matrix[i])
                     {
                     minparmsoff = i / ROWPARMS;
                     minparmsoff *= ROWPARMS;

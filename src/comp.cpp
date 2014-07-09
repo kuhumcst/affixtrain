@@ -2645,10 +2645,11 @@ static double best[NPARMS]    =
   };
 #else
 static double best[NPARMS]    =
-   /* R_R  W_R  R_W  W_W */   
+   ///* R_R  W_R  R_W  W_W */   
+   /* W_R  R_W  W_W  R_R */   
     { 1.0, 0.0, 0.0, 0.0
     , 0.0, 1.0, 0.0, 0.0
-    , 0.0, 0.0,-1.0, 0.0
+    , 0.0, 0.0, 1.0, 0.0
     , 0.0, 0.0, 0.0, 1.0
     };
 #endif
@@ -2876,7 +2877,7 @@ bool brown(/*const char * parmstxt*/)
     {
 //    testAngle();
     static int it = 0;
-    static double delta = 0.95;
+    static double delta = 0.99;
     static double inc = (1.0 - delta) / 1365.0;
     int index = it;// - improvements; // to ensure that successful transformation is repeated.
     int r = (index / 2) % 6;
@@ -3025,8 +3026,10 @@ static int comp_parms(const vertex * a,const vertex * b)
             off = parmsoff;
         for(int o = off;o < NPARMS;o += ROWPARMS)
             {
-            double A = parms.Matrix[o]*a->R__R + parms.Matrix[o+1]*a->W__R + parms.Matrix[o+2]*a->R__W + parms.Matrix[o+3]*a->W__W;
-            double B = parms.Matrix[o]*b->R__R + parms.Matrix[o+1]*b->W__R + parms.Matrix[o+2]*b->R__W + parms.Matrix[o+3]*b->W__W;
+            //double A = parms.Matrix[o]*a->R__R + parms.Matrix[o+1]*a->W__R + parms.Matrix[o+2]*a->R__W + parms.Matrix[o+3]*a->W__W;
+            //double B = parms.Matrix[o]*b->R__R + parms.Matrix[o+1]*b->W__R + parms.Matrix[o+2]*b->R__W + parms.Matrix[o+3]*b->W__W;
+            double A = parms.Matrix[o+3]*a->R__R + parms.Matrix[o+0]*a->W__R + parms.Matrix[o+1]*a->R__W + parms.Matrix[o+2]*a->W__W;
+            double B = parms.Matrix[o+3]*b->R__R + parms.Matrix[o+0]*b->W__R + parms.Matrix[o+1]*b->R__W + parms.Matrix[o+2]*b->W__W;
             if(A != B)
                 {
                 ++pcnt[o >> 2]; // For counting the number of times the first, second, third or fourth condition has been used.
@@ -3056,8 +3059,10 @@ static int comp_parms0_off(const vertex * a,const vertex * b)
         }
     for(int o = off;o < nparms;o += ROWPARMS)
         {
-        double A = parms.Matrix[o]*a->R__R + parms.Matrix[o+1]*a->W__R + parms.Matrix[o+2]*a->R__W + parms.Matrix[o+3]*a->W__W;
-        double B = parms.Matrix[o]*b->R__R + parms.Matrix[o+1]*b->W__R + parms.Matrix[o+2]*b->R__W + parms.Matrix[o+3]*b->W__W;
+            //double A = parms.Matrix[o]*a->R__R + parms.Matrix[o+1]*a->W__R + parms.Matrix[o+2]*a->R__W + parms.Matrix[o+3]*a->W__W;
+            //double B = parms.Matrix[o]*b->R__R + parms.Matrix[o+1]*b->W__R + parms.Matrix[o+2]*b->R__W + parms.Matrix[o+3]*b->W__W;
+            double A = parms.Matrix[o+3]*a->R__R + parms.Matrix[o+0]*a->W__R + parms.Matrix[o+1]*a->R__W + parms.Matrix[o+2]*a->W__W;
+            double B = parms.Matrix[o+3]*b->R__R + parms.Matrix[o+0]*b->W__R + parms.Matrix[o+1]*b->R__W + parms.Matrix[o+2]*b->W__W;
         if(A != B)
             {
             return A > B ? -1 : 1;

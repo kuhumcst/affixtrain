@@ -633,27 +633,27 @@ static void orthogonalise(const char * Msg)
         printf("%s: ",Msg);
         printmatrix("before orthogonalisation",parms);
         }
-    for(int i = 1;i < sizeof(parms.Matrix)/(sizeof(parms.Matrix[0]) * ROWPARMS);++i)
+    for(unsigned int i = 1;i < sizeof(parms.Matrix)/(sizeof(parms.Matrix[0]) * ROWPARMS);++i)
         {
-        int I = i * ROWPARMS;
-        for(int j = 0; j < i;++j)
+        unsigned int I = i * ROWPARMS;
+        for(unsigned int j = 0; j < i;++j)
             {
-            int J = j * ROWPARMS;
+            unsigned int J = j * ROWPARMS;
             double inner = 0.0;
             double Jmodulus = 0.0;
-            for(int k = 0;k < ROWPARMS;++k)
+            for(unsigned int k = 0;k < ROWPARMS;++k)
                 {
                 inner += parms.Matrix[I+k]*parms.Matrix[J+k];
                 Jmodulus += parms.Matrix[J+k]*parms.Matrix[J+k];
                 }
             inner /= Jmodulus;
-            for(int k = 0;k < ROWPARMS;++k)
+            for(unsigned int k = 0;k < ROWPARMS;++k)
                 {
                 parms.Matrix[I+k] -= inner * parms.Matrix[J+k];
                 }
             }
         }
-    for(int row = 0;row < ROWPARMS;++row)
+    for(unsigned int row = 0;row < ROWPARMS;++row)
         {
         normalise(parms.Matrix+row*ROWPARMS);
         }
@@ -3157,7 +3157,7 @@ bool setCompetitionFunction(const char * functionname,const char * extra,bool su
                                     {
                                     if(k % ROWPARMS == 0)
                                         fprintf(f,"\n");
-                                    fprintf(f,"%6d",parms.Matrix[k]);
+                                    fprintf(f,"%6f",parms.Matrix[k]);
                                     }
                                 fprintf(f,"\n");
                                 fclose(f);

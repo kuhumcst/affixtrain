@@ -1175,10 +1175,10 @@ static bestParms best_is =
 //iteration:12.-1
 /* number of nodes: 60151, nodes/line: 0.162086 weight: 57935.959065 blobs 1 lines 5881633 * fraction 0.063096 = 371105 lines*/
         {                                                         // # decisions
-        0.712282,       -0.695044,      0.096930,  0.013188,       //2283425
-        0.552619,       0.471857,       -0.645334, -0.235599,      //43635
-        -0.386280,      -0.498239,      -0.757301, 0.170415,       //2353
-        -0.195077,      -0.214532,      0.025362,  -0.956702      //0
+        0.013188,       0.712282,       -0.695044,      0.096930, //2283425
+        -0.235599,      0.552619,       0.471857,       -0.645334, //43635
+        0.170415,       -0.386280,      -0.498239,      -0.757301, //2353
+        -0.956702,      -0.195077,      -0.214532,      0.025362  //0
         }                                                         //(0 unresolved comparisons)
 // Same parameters since:
 //iteration:1.41
@@ -2645,11 +2645,10 @@ static double best[NPARMS]    =
   };
 #else
 static double best[NPARMS]    =
-   ///* R_R  W_R  R_W  W_W */   
-   /* W_R  R_W  W_W  R_R */   
+   /* R_R  W_R  R_W  W_W */   
     { 1.0, 0.0, 0.0, 0.0
     , 0.0, 1.0, 0.0, 0.0
-    , 0.0, 0.0, 1.0, 0.0
+    , 0.0, 0.0,-1.0, 0.0
     , 0.0, 0.0, 0.0, 1.0
     };
 #endif
@@ -2877,7 +2876,7 @@ bool brown(/*const char * parmstxt*/)
     {
 //    testAngle();
     static int it = 0;
-    static double delta = 0.99;
+    static double delta = 0.95;
     static double inc = (1.0 - delta) / 1365.0;
     int index = it;// - improvements; // to ensure that successful transformation is repeated.
     int r = (index / 2) % 6;
@@ -3026,10 +3025,8 @@ static int comp_parms(const vertex * a,const vertex * b)
             off = parmsoff;
         for(int o = off;o < NPARMS;o += ROWPARMS)
             {
-            //double A = parms.Matrix[o]*a->R__R + parms.Matrix[o+1]*a->W__R + parms.Matrix[o+2]*a->R__W + parms.Matrix[o+3]*a->W__W;
-            //double B = parms.Matrix[o]*b->R__R + parms.Matrix[o+1]*b->W__R + parms.Matrix[o+2]*b->R__W + parms.Matrix[o+3]*b->W__W;
-            double A = parms.Matrix[o+3]*a->R__R + parms.Matrix[o+0]*a->W__R + parms.Matrix[o+1]*a->R__W + parms.Matrix[o+2]*a->W__W;
-            double B = parms.Matrix[o+3]*b->R__R + parms.Matrix[o+0]*b->W__R + parms.Matrix[o+1]*b->R__W + parms.Matrix[o+2]*b->W__W;
+            double A = parms.Matrix[o]*a->R__R + parms.Matrix[o+1]*a->W__R + parms.Matrix[o+2]*a->R__W + parms.Matrix[o+3]*a->W__W;
+            double B = parms.Matrix[o]*b->R__R + parms.Matrix[o+1]*b->W__R + parms.Matrix[o+2]*b->R__W + parms.Matrix[o+3]*b->W__W;
             if(A != B)
                 {
                 ++pcnt[o >> 2]; // For counting the number of times the first, second, third or fourth condition has been used.
@@ -3059,10 +3056,8 @@ static int comp_parms0_off(const vertex * a,const vertex * b)
         }
     for(int o = off;o < nparms;o += ROWPARMS)
         {
-            //double A = parms.Matrix[o]*a->R__R + parms.Matrix[o+1]*a->W__R + parms.Matrix[o+2]*a->R__W + parms.Matrix[o+3]*a->W__W;
-            //double B = parms.Matrix[o]*b->R__R + parms.Matrix[o+1]*b->W__R + parms.Matrix[o+2]*b->R__W + parms.Matrix[o+3]*b->W__W;
-            double A = parms.Matrix[o+3]*a->R__R + parms.Matrix[o+0]*a->W__R + parms.Matrix[o+1]*a->R__W + parms.Matrix[o+2]*a->W__W;
-            double B = parms.Matrix[o+3]*b->R__R + parms.Matrix[o+0]*b->W__R + parms.Matrix[o+1]*b->R__W + parms.Matrix[o+2]*b->W__W;
+        double A = parms.Matrix[o]*a->R__R + parms.Matrix[o+1]*a->W__R + parms.Matrix[o+2]*a->R__W + parms.Matrix[o+3]*a->W__W;
+        double B = parms.Matrix[o]*b->R__R + parms.Matrix[o+1]*b->W__R + parms.Matrix[o+2]*b->R__W + parms.Matrix[o+3]*b->W__W;
         if(A != B)
             {
             return A > B ? -1 : 1;

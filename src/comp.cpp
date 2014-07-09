@@ -672,10 +672,10 @@ struct rotation makeRotationMatrix(int r, double pone, double delta) // 0 <= r <
     assert(pone == -1.0 || pone == 1.0);
     double contradelta = sqrt(1.0 - delta*delta);
     struct rotation Rotation;
-    for(int i = 0;i < sizeof(Rotation.Matrix)/sizeof(Rotation.Matrix[0]);++i)
+    for(unsigned int i = 0;i < sizeof(Rotation.Matrix)/sizeof(Rotation.Matrix[0]);++i)
         {
-        int col = i % ROWPARMS;
-        int row = i / ROWPARMS;
+        unsigned int col = i % ROWPARMS;
+        unsigned int row = i / ROWPARMS;
         if(col == row)
             { // diagonal. 1 or something between 0 and 1
             switch(r)

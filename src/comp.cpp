@@ -795,7 +795,7 @@ struct bestParms
     {
     bool suffixonly;
     const char * langbase;
-    int rows;
+    int rowss;
     double val[NPARMS];
     // Each row:
     // R__R W__R R__W W__W
@@ -1171,7 +1171,7 @@ static bestParms best_is =
     {
     false,
     "is",
-    3,
+    4,
 //iteration:12.-1
 /* number of nodes: 60151, nodes/line: 0.162086 weight: 57935.959065 blobs 1 lines 5881633 * fraction 0.063096 = 371105 lines*/
         {                                                         // # decisions
@@ -2760,7 +2760,7 @@ void worsefound()
     {
     copy(parms.Matrix,best,NPARMS);
     }
-static int minparmsoff = 0;
+//static int minparmsoff = 0;
 
 void copybest()
     {
@@ -2969,6 +2969,11 @@ void printparms(int Nnodes,double weight,const char * parmstxt)
     fclose(f);
     }
 
+#define RR 0
+#define WR 1
+#define RW 2
+#define WW 3
+
 #if 0
 static int comp_parms(const vertex * a,const vertex * b)
     {
@@ -2979,9 +2984,11 @@ static int comp_parms(const vertex * a,const vertex * b)
       || a->W__W != b->W__W
       )
         {
+        /*
         int off = minparmsoff;
         if(off < parmsoff)
             off = parmsoff;
+        */
         double A = 0.0;
         double B = 0.0;
         double N = a->R__R + a->W__R + a->R__W + a->W__W;
@@ -2990,8 +2997,8 @@ static int comp_parms(const vertex * a,const vertex * b)
         double e = 4.0;
         for(int o = 0;o < NPARMS;o += ROWPARMS)
             {
-            double x = parms.Matrix[o]*a->R__R + parms.Matrix[o+1]*a->W__R + parms.Matrix[o+2]*a->R__W + parms.Matrix[o+3]*a->W__W;
-            double y = parms.Matrix[o]*b->R__R + parms.Matrix[o+1]*b->W__R + parms.Matrix[o+2]*b->R__W + parms.Matrix[o+3]*b->W__W;
+            double x = parms.Matrix[o+RR]*a->R__R + parms.Matrix[o+WR]*a->W__R + parms.Matrix[o+RW]*a->R__W + parms.Matrix[o+WW]*a->W__W;
+            double y = parms.Matrix[o+RR]*b->R__R + parms.Matrix[o+WR]*b->W__R + parms.Matrix[o+RW]*b->R__W + parms.Matrix[o+WW]*b->W__W;
 
             if(x < 0.0)
                 A -= pow(D*-x,e);
@@ -3020,13 +3027,15 @@ static int comp_parms(const vertex * a,const vertex * b)
       || a->W__W != b->W__W
       )
         {
+        /*
         int off = minparmsoff;
         if(off < parmsoff)
             off = parmsoff;
-        for(int o = off;o < NPARMS;o += ROWPARMS)
+        */
+        for(int o = 0/*off*/;o < NPARMS;o += ROWPARMS)
             {
-            double A = parms.Matrix[o]*a->R__R + parms.Matrix[o+1]*a->W__R + parms.Matrix[o+2]*a->R__W + parms.Matrix[o+3]*a->W__W;
-            double B = parms.Matrix[o]*b->R__R + parms.Matrix[o+1]*b->W__R + parms.Matrix[o+2]*b->R__W + parms.Matrix[o+3]*b->W__W;
+            double A = parms.Matrix[o+RR]*a->R__R + parms.Matrix[o+WR]*a->W__R + parms.Matrix[o+RW]*a->R__W + parms.Matrix[o+WW]*a->W__W;
+            double B = parms.Matrix[o+RR]*b->R__R + parms.Matrix[o+WR]*b->W__R + parms.Matrix[o+RW]*b->R__W + parms.Matrix[o+WW]*b->W__W;
             if(A != B)
                 {
                 ++pcnt[o >> 2]; // For counting the number of times the first, second, third or fourth condition has been used.
@@ -3045,7 +3054,7 @@ static int nparms = 0;
 
 static int comp_parms0_off(const vertex * a,const vertex * b)
     {
-
+    /*
     int off = minparmsoff;
     if(off < parmsoff)
         off = parmsoff;
@@ -3054,10 +3063,11 @@ static int comp_parms0_off(const vertex * a,const vertex * b)
         fprintf(stderr,"parmsoff is set to high. There are not enough rows of parameters. Fix in graph.cpp\n");
         exit(-1);
         }
-    for(int o = off;o < nparms;o += ROWPARMS)
+    */
+    for(int o = 0/*off*/;o < nparms;o += ROWPARMS)
         {
-        double A = parms.Matrix[o]*a->R__R + parms.Matrix[o+1]*a->W__R + parms.Matrix[o+2]*a->R__W + parms.Matrix[o+3]*a->W__W;
-        double B = parms.Matrix[o]*b->R__R + parms.Matrix[o+1]*b->W__R + parms.Matrix[o+2]*b->R__W + parms.Matrix[o+3]*b->W__W;
+        double A = parms.Matrix[o+RR]*a->R__R + parms.Matrix[o+WR]*a->W__R + parms.Matrix[o+RW]*a->R__W + parms.Matrix[o+WW]*a->W__W;
+        double B = parms.Matrix[o+RR]*b->R__R + parms.Matrix[o+WR]*b->W__R + parms.Matrix[o+RW]*b->R__W + parms.Matrix[o+WW]*b->W__W;
         if(A != B)
             {
             return A > B ? -1 : 1;
@@ -3116,7 +3126,7 @@ bool setCompetitionFunction(const char * functionname,const char * extra,bool su
     size_t langlength = strlen(extra);
     const char * underscore = strchr(extra,'_');
     if(underscore != NULL)
-        langlength = underscore - extra;
+        langlength = (size_t)(underscore - extra);
 
     for(i = 0;funcstructs[i].number;++i)
         if(!strcmp(functionname,funcstructs[i].number) || !strcmp(functionname,funcstructs[i].name))
@@ -3135,8 +3145,8 @@ bool setCompetitionFunction(const char * functionname,const char * extra,bool su
                         printf("bests[%d].suffixonly == [%s] bests[%d].langbase == [%s]\n",j,bests[j].suffixonly ? "true" : "false",j,bests[j].langbase);
                         printf("comp = comp_parms0_off\n");
                         comp = comp_parms0_off;
-                        printf("bests[%d].rows == [%d]\n",j,bests[j].rows);
-                        nparms = bests[j].rows * ROWPARMS;
+                        printf("bests[%d].rows == [%d]\n",j,bests[j].rowss);
+                        nparms = bests[j].rowss * ROWPARMS;
                         if(nparms > NPARMS)
                             {
                             fprintf(stderr,"Too many rows of parameters in bestParms struct for %s (%d, max allowed %d)\n",extra,nparms,NPARMS);
@@ -3151,7 +3161,7 @@ bool setCompetitionFunction(const char * functionname,const char * extra,bool su
                                 {
                                 fprintf(f,"bests[%d].suffixonly == [%s]\nbests[%d].langbase == [%s]\n",j,bests[j].suffixonly ? "true" : "false",j,bests[j].langbase);
                                 fprintf(f,"comp = comp_parms0_off\n");
-                                fprintf(f,"bests[%d].rows == [%d]\n",j,bests[j].rows);
+                                fprintf(f,"bests[%d].rows == [%d]\n",j,bests[j].rowss);
                                 fprintf(f,"  R->R  W->R  R->W  W->W\n");
                                 for(int k = 0;k < nparms;++k)
                                     {
@@ -3182,6 +3192,7 @@ bool setCompetitionFunction(const char * functionname,const char * extra,bool su
                     printf("comp_parms0_off\n");
                     }
                 }
+            /*
             for(i = 0;i < nparms; ++i)
                 {
                 if(parms.Matrix[i])
@@ -3193,6 +3204,7 @@ bool setCompetitionFunction(const char * functionname,const char * extra,bool su
                 }
             if(VERBOSE)
                 printf("minparmsoff = %d \n",minparmsoff);
+            */
             return true;
             }
     return false;

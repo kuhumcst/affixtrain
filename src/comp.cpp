@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "comp.h"
 #include "graph.h"
-
+#include <float.h>
 /*
 ACL 2009 paper:
 Icelandic   71.3    1.5 even_better (71,30 1,51 iflg. D:\dokumenter\tvärsök\even_better\icelandic.xls) peen 71,51 1,65 sugar 70,93 1,86 affiksFEW3 71,02 2,16 no pruning
@@ -609,7 +609,7 @@ static void printmatrix(const char * msg,struct rotation arr)
         {
         for(int j = 0;j < ROWPARMS;++j)
             {
-            printf("%f ",arr.Matrix[ROWPARMS * i+j]);
+            printf("%.*e ", DBL_DIG+2,arr.Matrix[ROWPARMS * i+j]);
             }
         putchar('\n');
         }
@@ -2734,13 +2734,13 @@ void betterfound(int Nnodes,double weight,int swath,int iterations,const char * 
     if(f)
         {
         fprintf(f,"//iteration:%d.%d\n",swath,iterations);
-        fprintf(f,"/* number of nodes: %d, nodes/line: %f weight: %f blobs %d lines %d * fraction %f = %d lines*/\n",
-            Nnodes,(double)Nnodes/(double)fraclines,weight,blobs,lines,fraction,fraclines);
+        fprintf(f,"/* number of nodes: %d, nodes/line: %.*e weight: %.*e blobs %d lines %d * fraction %.*e = %d lines*/\n",
+            Nnodes,DBL_DIG+2,(double)Nnodes/(double)fraclines,DBL_DIG+2,weight,blobs,lines,DBL_DIG+2,fraction,fraclines);
         fprintf(f,"        {         \t         \t         \t          // # decisions\n        ");
         int i = 0;
         for(;i < NPARMS;++i)
             {
-            fprintf(f,"%f",parms.Matrix[i]);
+            fprintf(f,"%.*e", DBL_DIG+2,parms.Matrix[i]);
             if(((i+1) % ROWPARMS) == 0)
                 {
                 if(i == NPARMS - 1)
@@ -2949,11 +2949,11 @@ void printparms(int Nnodes,double weight,const char * parmstxt)
     int i;
     FILE * f = fopen(parmstxt,"a");
     assert(f);
-    fprintf(f,"/* %d %f */\n",Nnodes,weight);
+    fprintf(f,"/* %d %.*e */\n",Nnodes,DBL_DIG+2,weight);
     fprintf(f,"        {\n        ");
     for(i = 0;i < NPARMS;++i)
         {
-        fprintf(f,"%f",parms.Matrix[i]);
+        fprintf(f,"%.*e", DBL_DIG+2,parms.Matrix[i]);
         if(((i+1) % ROWPARMS) == 0)
             {
             if(i == NPARMS - 1)

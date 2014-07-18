@@ -594,6 +594,12 @@ struct rotation
     double Matrix[ROWPARMS*ROWPARMS];
     } rotation;
 
+#if ONEROW
+static struct rotation parms    =
+   /* R_R  W_R  R_W  W_W */   
+    {{ 0.0, 3.0, -2.0, 1.0
+    }};
+#else
 static struct rotation parms    =
    /* R_R  W_R  R_W  W_W */   
     {{ 0.0, 1.0, 0.0, 0.0
@@ -601,6 +607,18 @@ static struct rotation parms    =
     , 0.0, 0.0, 0.0,-1.2
     , 0.0, 0.0,-1.2, 0.0
     }};
+#endif
+
+static void printvector(const char * msg,double * row,int cols)
+    {
+    printf("%s\t: ",msg);
+    for(int i = 0;i < cols;++i)
+        {
+        printf("%f ", row[i]);
+        }
+    putchar('\n');
+    }
+
 
 static void printmatrix(const char * msg,struct rotation arr)
     {
@@ -624,6 +642,20 @@ static void normalise(double * ROW)
     modulus = sqrt(modulus);
     for(int i = 0;i < ROWPARMS;++i)
         ROW[i] /= modulus;
+    }
+
+static double inner(double * a, double * b)
+    {
+    double ret = 0;
+    for(int i = 0;i < ROWPARMS;++i)
+        ret += a[i]*b[i];
+    return ret;
+    }
+
+static void times(double * a, double f)
+    {
+    for(int i = 0;i < ROWPARMS;++i)
+        a[i] *= f;
     }
 
 static void orthogonalise(const char * Msg)
@@ -796,7 +828,7 @@ struct bestParms
     bool suffixonly;
     const char * langbase;
     int rowss;
-    double val[NPARMS];
+    double val[NPARMS+12];
     // Each row:
     // R__R W__R R__W W__W
     // Generally, good that Wrongs change to Rights (W__R > 0) and that Rights don't change to Wrongs (R__W < 0)
@@ -2719,6 +2751,11 @@ static double best[NPARMS]    =
 //0,  0,  0,  0, // n >= exp(N,0.25)
   0,  0,  0,  0  // n <  exp(N,0.25)
   };
+#elif ONEROW
+static double best[NPARMS]    =
+   /* R_R  W_R  R_W  W_W */   
+    { 0.0, 3.0, -3.0, 1.0
+    };
 #else
 static double best[NPARMS]    =
    /* R_R  W_R  R_W  W_W */   
@@ -2799,7 +2836,7 @@ static void copy(double * dest,double * source,int cols)
         dest[col] = source[col];
     }
 
-static int pcnt[(NPARMS >> 2)+1] = {0,0,0,0,0};
+static int pcnt[(NPARMS >> 2)+1] = {0};//,0,0,0,0};
 static int improvements = 0;
 
 void betterfound(int Nnodes,double weight,int swath,int iterations,const char * besttxt,int blobs,int lines,double fraction,int fraclines)
@@ -2948,6 +2985,54 @@ void testAngle()
     getchar();
     }
 
+#if ONEROW
+bool brown()
+    {
+    static int it = 0;
+    if(it++ < 2)
+        {
+        normalise(parms.Matrix);
+        return false;
+        }
+    double tangens = 0.1*pow(0.9981,it);
+    printf("tangens %f ",tangens);
+    double vector[ROWPARMS];
+    double radius2 = 0.0;
+    //printvector("parms",parms.Matrix,ROWPARMS);
+    do
+        {
+        int i;
+        radius2 = 0.0;
+        for(i = 0;i < ROWPARMS;++i)
+            {
+            vector[i] = rand() - (RAND_MAX/2);
+            radius2 += vector[i]*vector[i]; 
+            }
+        }
+    while(radius2 > ((double)RAND_MAX/2.0)*((double)RAND_MAX/2.0));
+    //printvector("vector1",vector,ROWPARMS);
+    normalise(vector);
+    //printvector("vector2",vector,ROWPARMS);
+    double inproduct = inner(parms.Matrix,vector); // Only first row. Ignore the rest.
+    //printf("inproduct: %f\n",inproduct);
+    struct rotation diff = parms;
+    times(diff.Matrix,-inproduct);
+    //printvector("diff",diff.Matrix,ROWPARMS);
+    plus(vector,diff.Matrix,ROWPARMS);
+    //printvector("vector3",vector,ROWPARMS);
+    normalise(vector);
+    //printvector("vector4",vector,ROWPARMS);
+    times(vector,tangens);
+    //printvector("vector5",vector,ROWPARMS);
+    //printf("test %f\n",inner(vector,parms.Matrix));
+    plus(parms.Matrix,vector,ROWPARMS);
+    //printvector("parms2",parms.Matrix,ROWPARMS);
+    normalise(parms.Matrix);
+    printvector("parms3",parms.Matrix,ROWPARMS);
+    //getchar();
+    return false;
+    }
+#else
 bool brown(/*const char * parmstxt*/)
     {
 //    testAngle();
@@ -2986,6 +3071,7 @@ bool brown(/*const char * parmstxt*/)
     ++it;
     return false;
     }
+#endif
 
 bool init()
     {

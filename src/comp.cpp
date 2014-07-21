@@ -1146,6 +1146,48 @@ static bestParms best_is_suffix =
     true,
     "is",
     1,
+/*
+0	0.985600	2	2831993.000000	471048.500000	306036.000000	16.633110	10.806383	36063.500000	712.500000	528.500000	83.000000	3989.500000	36948.000000	188.500000	140.500000	0.000000	4100.000000	0.176020	0.158931	0.029052	0.006836	0.052977	0.102536	0.039306	0.042723	0.000000	0.105954	87.158325	1.721971	1.277280	0.200595	9.641830	3.905551	89.295986	0.455567	0.339561	0.000000	9.908887	1.377577	1.841603	33.482369	2.063949	62.612079	0.359125	0.058064	0.424149	34.592890	0.953428	64.029533	0.529175	0.026822
+1	0.985600	2	2831993.000000	128789.000000	168125.000000	4.547645	5.936632	36520.000000	0.000000	0.000000	0.000000	4857.000000	37099.500000	273.500000	263.000000	0.000000	3741.000000	0.051268	0.000000	0.000000	0.000000	0.051268	0.032470	0.001709	0.047850	0.000000	0.082029	88.261595	0.000000	0.000000	0.000000	11.738405	0.000000	89.662131	0.660995	0.635619	0.000000	9.041255	1.598714	0.000000	35.546318	0.000000	64.453682	0.000000	0.000000	0.493028	34.440631	1.105687	63.960654	0.528596	0.031106
+2	0.985600	2	2831993.000000	84003.000000	52867.500000	2.966215	1.866795	36089.500000	0.000000	0.000000	0.000000	5287.500000	37338.500000	236.500000	207.000000	0.000000	3595.000000	0.063231	0.000000	0.000000	0.000000	0.063231	0.029052	0.049559	0.037597	0.000000	0.041014	87.221162	0.000000	0.000000	0.000000	12.778838	0.000000	90.239747	0.571574	0.500278	0.000000	8.688402	1.203567	0.000000	35.546318	0.000000	64.453682	0.000000	0.000000	0.420523	34.763274	0.783044	64.033159	0.482143	0.022029
+3	0.985600	2	2831993.000000	63704.000000	38416.000000	2.249441	1.356501	35649.000000	0.000000	0.000000	0.000000	5728.000000	37204.000000	219.500000	209.500000	0.000000	3744.000000	0.017089	0.000000	0.000000	0.000000	0.017089	0.088865	0.022216	0.025634	0.000000	0.085447	86.156560	0.000000	0.000000	0.000000	13.843440	0.000000	89.914687	0.530488	0.506320	0.000000	9.048505	1.185441	0.000000	35.546318	0.000000	64.453682	0.000000	0.000000	0.422940	34.783817	0.762501	64.030742	0.474080	0.021451
+4	0.985600	2	2831993.000000	51623.000000	31338.500000	1.822851	1.106588	35334.000000	0.000000	0.000000	0.000000	6043.000000	37065.500000	224.000000	188.000000	0.000000	3899.500000	0.061522	0.000000	0.000000	0.000000	0.061522	0.097409	0.006836	0.023925	0.000000	0.080320	85.395268	0.000000	0.000000	0.000000	14.604732	0.000000	89.579960	0.541364	0.454359	0.000000	9.424318	1.152814	0.000000	35.546318	0.000000	64.453682	0.000000	0.000000	0.435024	34.828528	0.717790	64.018658	0.452055	0.020193
+5	0.985600	2	2831993.000000	43987.500000	27450.500000	1.553235	0.969300	35034.500000	0.000000	0.000000	0.000000	6342.500000	36936.000000	219.500000	179.000000	0.000000	4042.500000	0.093992	0.000000	0.000000	0.000000	0.093992	0.082029	0.015380	0.003418	0.000000	0.100827	84.671436	0.000000	0.000000	0.000000	15.328564	0.000000	89.266984	0.530488	0.432607	0.000000	9.769920	1.125021	0.000000	35.546318	0.000000	64.453682	0.000000	0.000000	0.408439	34.829736	0.716582	64.045243	0.467297	0.020159
+
+New (old) algorithm, least wrongly lemmatised (MIN(diff)).
+Suffix only     yes
+cutoff          2
+fraction        9856.000000
+iterations      2
+trainlines      2831993.000000
+rules           52867.500000 (84003.000000)
+rules%         1.866795 (2.966215)
+same%stdev     0.029052
+ambi1%stdev    0.049559
+ambi2%stdev    0.037597
+ambi3%stdev    0.000000
+diff%stdev     0.041014
+same%          90.239747 (87.221162)
+ambi1%         0.571574 (0.000000)
+ambi2%         0.500278 (0.000000)
+ambi3%         0.000000 (0.000000)
+diff%          8.688402 (12.778838)
+amb.rules%     1.203567 (0.000000)
+false_amb%     0.420523 (0.000000)
+false_not_amb% 34.763274 (35.546318)
+true_amb%      0.783044 (0.000000)
+true_not_amb%  64.033159 (64.453682)
+precision       0.482143 (0.000000)
+recall          0.022029 (0.000000)
+
+bests[11].suffixonly == [true]
+bests[11].langbase == [is]
+comp = comp_parms0_off
+bests[11].rows == [1]
+  R->R  W->R  R->W  W->W
+
+0.0085050.669878-0.7383730.077434
+*/
 //iteration:14.-1
 /* number of nodes: 88858, nodes/line: 1.20004915909585078e-01 weight: 8.44399637102287234e+04 blobs 1 lines 5881633 * fraction 1.25892541179416839e-01 = 740453 lines*/
         {         	         	         	          // # decisions
@@ -2836,35 +2878,67 @@ static void copy(double * dest,double * source,int cols)
         dest[col] = source[col];
     }
 
-static int pcnt[(NPARMS >> 2)+1] = {0};//,0,0,0,0};
+//static int pcnt[(NPARMS >> 2)+1] = {0};//,0,0,0,0};
 static int improvements = 0;
 
-void betterfound(int Nnodes,double weight,int swath,int iterations,const char * besttxt,int blobs,int lines,double fraction,int fraclines)
+void betterfound(int Nnodes,double weight,int swath,int iterations,const char * besttxt,const char * parmstxt,int blobs,int lines,double fraction,int fraclines,bool suffixonly,bool doweights,bool improvement)
     {
-    ++improvements;
+    if(improvement)
+        {
+        ++improvements;
+        FILE * f = fopen(parmstxt,"a");
+        assert(f);
+        fprintf(f,"//-> IMPROVEMENT #%d\n",improvements);
+        fclose(f);
+        }
     copy(best,parms.Matrix,NPARMS);
     FILE * f = fopen(besttxt,"a");
     if(f)
         {
         fprintf(f,"//iteration:%d.%d\n",swath,iterations);
-        fprintf(f,"/* number of nodes: %d, nodes/line: %.*e weight: %.*e blobs %d lines %d * fraction %.*e = %d lines*/\n",
-            Nnodes,DBL_DIG+2,(double)Nnodes/(double)fraclines,DBL_DIG+2,weight,blobs,lines,DBL_DIG+2,fraction,fraclines);
-        fprintf(f,"        {         \t         \t         \t          // # decisions\n        ");
+        fprintf(f
+               ,"/*weight (%s used): %.*e suffix only: %s */\n"
+               ,doweights ? "" : "not "
+               ,DBL_DIG+2
+               ,weight
+               ,suffixonly ? "yes" : "no"
+               );
+
+        fprintf(f
+               ,"/* number of nodes: %d, nodes/line: %.*e weight (%s used): %.*e blobs %d lines %d * fraction %.*e = %d lines*/\n"
+               ,Nnodes
+               ,DBL_DIG+2,(double)Nnodes/(double)fraclines
+               ,doweights ? "" : "not "
+               ,DBL_DIG+2,weight
+               ,blobs
+               ,lines
+               ,DBL_DIG+2,fraction
+               ,fraclines
+               );
+//        fprintf(f,"        {         \t         \t         \t          // # decisions\n        ");
+        fprintf(f,"        {\n        ");
         int i = 0;
         for(;i < NPARMS;++i)
             {
             fprintf(f,"%.*e", DBL_DIG+2,parms.Matrix[i]);
             if(((i+1) % ROWPARMS) == 0)
                 {
+                /*
                 if(i == NPARMS - 1)
                     fprintf(f,"  //%d\n        ",pcnt[i >> 2]);
                 else
                     fprintf(f,", //%d\n        ",pcnt[i >> 2]);
+                */
+                if(i == NPARMS - 1)
+                    fprintf(f,"\n        ");
+                else
+                    fprintf(f,",\n        ");
                 }
             else
                 fprintf(f,",\t");
             }
-        fprintf(f,"}         \t         \t         \t          //(%d unresolved comparisons)\n\n",pcnt[NPARMS >> 2]);
+//        fprintf(f,"}         \t         \t         \t          //(%d unresolved comparisons)\n\n",pcnt[NPARMS >> 2]);
+        fprintf(f,"}\n\n");
         fclose(f);
         }
     }
@@ -2994,7 +3068,8 @@ bool brown()
         normalise(parms.Matrix);
         return false;
         }
-    double tangens = 0.1*pow(0.9981,it);
+//    double tangens = 0.1*pow(0.9981,it);
+    double tangens = 0.1*pow(0.995,it);
     printf("tangens %f ",tangens);
     double vector[ROWPARMS];
     double radius2 = 0.0;
@@ -3003,7 +3078,12 @@ bool brown()
         {
         int i;
         radius2 = 0.0;
+#if PARMS3
+        vector[0] = 0; // R__R seems to be irrelevant
+        for(i = 1;i < ROWPARMS;++i)
+#else
         for(i = 0;i < ROWPARMS;++i)
+#endif
             {
             vector[i] = rand() - (RAND_MAX/2);
             radius2 += vector[i]*vector[i]; 
@@ -3083,51 +3163,51 @@ bool init()
     }
 
 
-
-void onlyZeros(const char * parmstxt,bool suffixonly)
+/*
+void onlyZeros(const char * parmstxt)
     {
-//    OnlyZeros = 0;
     for(unsigned int i = 0;i < sizeof(pcnt)/sizeof(pcnt[0]);++i)
         {
-        if(pcnt[i] != 0)
-            {
-  //          OnlyZeros = (i+1) << 2;
-            pcnt[i] = 0;
-            }
-        }
-    if(parmstxt)
-        {
-        FILE * f = fopen(parmstxt,"a");
-        assert(f);
-    //    fprintf(f,"//OnlyZeros %d \n",OnlyZeros);
-        fprintf(f,"//suffix only %s \n",suffixonly ? "yes" : "no");
-        fclose(f);
+        pcnt[i] = 0;
         }
     }
+*/
 
-
-void printparms(int Nnodes,double weight,const char * parmstxt)
+void printparms(int Nnodes,double weight,const char * parmstxt,bool suffixonly,bool doweights)
     {
     int i;
     FILE * f = fopen(parmstxt,"a");
     assert(f);
-    fprintf(f,"/* %d %.*e */\n",Nnodes,DBL_DIG+2,weight);
+    fprintf(f
+           ,"/*#nodes in tree: %d weight (%s used): %.*e suffix only: %s */\n"
+           ,Nnodes
+           ,doweights ? "" : "not "
+           ,DBL_DIG+2
+           ,weight
+           ,suffixonly ? "yes" : "no"
+           );
     fprintf(f,"        {\n        ");
     for(i = 0;i < NPARMS;++i)
         {
         fprintf(f,"%.*e", DBL_DIG+2,parms.Matrix[i]);
         if(((i+1) % ROWPARMS) == 0)
-            {
+            {/*
             if(i == NPARMS - 1)
                 fprintf(f,"  //%d\n        ",pcnt[i >> 2]);
             else
                 fprintf(f,", //%d\n        ",pcnt[i >> 2]);
+                */
+            if(i == NPARMS - 1)
+                fprintf(f,"\n        ");
+            else
+                fprintf(f,",\n        ");
             }
         else
             fprintf(f,",");
         }
-    fprintf(f,"                         //%9d\n",pcnt[i >> 2]);
-    fprintf(f,"        }\n");
+//    fprintf(f,"                         //%9d\n",pcnt[i >> 2]);
+ //   fprintf(f,"\n");
+    fprintf(f,"}\n");
     fclose(f);
     }
 
@@ -3174,7 +3254,7 @@ static int comp_parms(const vertex * a,const vertex * b)
 
             e -= 1.0;
             }
-        ++pcnt[NPARMS >> 2];
+//        ++pcnt[NPARMS >> 2];
         return A > B ? -1 : 1;
         }
     return 0;
@@ -3200,13 +3280,13 @@ static int comp_parms(const vertex * a,const vertex * b)
             double B = parms.Matrix[o+RR]*b->R__R + parms.Matrix[o+WR]*b->W__R + parms.Matrix[o+RW]*b->R__W + parms.Matrix[o+WW]*b->W__W;
             if(A != B)
                 {
-                ++pcnt[o >> 2]; // For counting the number of times the first, second, third or fourth condition has been used.
+//                ++pcnt[o >> 2]; // For counting the number of times the first, second, third or fourth condition has been used.
                 // (Hypothesis: with parms as doubles the first condition is used and only in very special cases the second.
                 //  Addendum: This hypothesis holds.)
                 return A > B ? -1 : 1;
                 }
             }
-        ++pcnt[NPARMS >> 2];
+//        ++pcnt[NPARMS >> 2];
         }
     return 0;
     }

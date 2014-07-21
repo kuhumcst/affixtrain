@@ -55,10 +55,10 @@ extern int comp_parms(const vertex * a,const vertex * b);
 bool setCompetitionFunction(const char * functionname,const char * extra,bool suffixonly,bool & compute_parms,const char * parmstxt);
 void copybest();
 bool init();
-void onlyZeros(const char * parmstxt,bool suffixonly);
+//void onlyZeros(const char * parmstxt);
 bool brown(/*const char * parmstxt*/);
-void printparms(int Nnodes,double weight,const char * parmstxt);
-void betterfound(int Nnodes,double weight,int swath,int iterations,const char * besttxt,int blobs,int lines,double fraction,int fraclines);
+void printparms(int Nnodes,double weight,const char * parmstxt,bool suffixonly,bool doweights);
+void betterfound(int Nnodes,double weight,int swath,int iterations,const char * besttxt,const char * parmstxt,int blobs,int lines,double fraction,int fraclines,bool suffixonly,bool doweights,bool improvement);
 void worsefound();
 
 extern int (*comp)(const vertex * a,const vertex * b);

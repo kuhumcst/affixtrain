@@ -3240,9 +3240,9 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                     currentNo = brownNo;
                     brownweight = weight;
                     currentweight = brownweight;
-                    betterfound(currentNo,currentweight,swath,-1,besttxt,blobs,lines,fraction,fraclines);
-                    printparms(Nnodes,weight,parmstxt);
-                    onlyZeros(parmstxt,suffixonly);
+                    betterfound(currentNo,currentweight,swath,-1,besttxt,parmstxt,blobs,lines,fraction,fraclines,suffixonly,doweights,false);
+                    printparms(Nnodes,weight,parmstxt,suffixonly,doweights);
+                    //onlyZeros(parmstxt);
                     }
                 }
             for(int iterations = 0;iterations < 64;++iterations)
@@ -3266,7 +3266,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                         fclose(flog);
                         flog = 0;
                         }
-                    printparms(Nnodes,weight,parmstxt);
+                    printparms(Nnodes,weight,parmstxt,suffixonly,doweights);
                     }
                 else
                     {
@@ -3308,6 +3308,13 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                         delete afile;
                         afile = NULL;
                         }
+
+                    printparms(Nnodes,weight,parmstxt,suffixonly,doweights);
+                    if(VERBOSE)
+                        {
+                        printf("\r%d %d %f %d %f           \n",iterations,currentNo,currentweight,brownNo,brownweight);
+                        }
+
                     if(currentNo == 0)
                         {
                         currentNo = Nnodes;
@@ -3322,19 +3329,18 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                           || ( doweights && brownweight <= currentweight)
                           )
                             {
+                            bool improvement = 
+                                (!doweights && (brownNo     < currentNo))
+                             || ( doweights && (brownweight < currentweight));
+                            printf("%s\n",improvement ? "IMPROVEMENT" : "same");
                             currentNo = brownNo;
                             currentweight = brownweight;
-                            betterfound(currentNo,currentweight,swath,iterations,besttxt,blobs,lines,fraction,fraclines);
+                            betterfound(currentNo,currentweight,swath,iterations,besttxt,parmstxt,blobs,lines,fraction,fraclines,suffixonly,doweights,improvement);
                             }
                         else
                             worsefound();
                         }
-                    printparms(Nnodes,weight,parmstxt);
-                    if(VERBOSE)
-                        {
-                        printf("\r%d %d %f %d %f           \n",iterations,currentNo,currentweight,brownNo,brownweight);
-                        }
-                    onlyZeros(parmstxt,suffixonly);
+                    //onlyZeros(parmstxt);
                     }
                 }
             printf("br1 %d br2 %d\n",br1,br2);

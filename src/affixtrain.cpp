@@ -3039,16 +3039,19 @@ static bool doTraining
     return moreToDo;
     }
 
-void computeParms(const char * fname,const char * extra,const char * nflexrules, const char * columns,double minfraction,double maxfraction,int doweights,const char * parmstxt,const char * besttxt)
+void computeParms(const char * fname,const char * extra,const char * nflexrules, const char * columns,double minfraction,double maxfraction,bool doweights,const char * parmstxt,const char * besttxt)
     {
     CHECK("iglobTempDir");
-    int maxswath = 20;
+    int maxswath = MAXSWATH;
     int currentNo = 0;
     int brownNo = 0;
     double currentweight = 0.0;
     double brownweight = 0.0;
     double fraction = 0.0; // 0.0 <= fraction <= 1.0
     double factor = 0.0;
+    double iterationsfactor = 1;
+    double miniterations = MINITERATIONS;
+    double maxiterations = MAXITERATIONS;
     const char * tag = "";
     if(minfraction > 0.0)
         {
@@ -3056,6 +3059,15 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
         // minfraction * factor^0 == minfraction
         // minfraction * factor^maxswath == maxfraction
         }
+    
+    if(miniterations > 0)
+        {
+        iterationsfactor = pow(maxiterations/miniterations,1.0/(double)maxswath);
+        // maxiterations * iterationsfactor^0 == maxiterations
+        // maxiterations * iterationsfactor^-maxswath == miniterations
+        }
+    else
+        iterationsfactor = 1;
     const char * filename = fname;
     const char * fbuf;
     fbuf = dup(tempDir("trainFraction"));//tmpnam(0);
@@ -3245,7 +3257,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                     //onlyZeros(parmstxt);
                     }
                 }
-            for(int iterations = 0;iterations < 64;++iterations)
+            for(int iterations = 0;iterations < (int)(maxiterations*pow(iterationsfactor,-swath));++iterations)
                 {
                     CHECK("D2aglobTempDir");
                 bool skip = false;

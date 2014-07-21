@@ -233,6 +233,9 @@ Read word class from file.
 #define START '^'
 #define END '$'
 
+#define MAXSWATH 20
+#define MAXITERATIONS 100
+#define MINITERATIONS 10
 #define ROWPARMS 4
 #define ONEROW 1
 #define PARMS3 1

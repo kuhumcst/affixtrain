@@ -1266,6 +1266,18 @@ static bestParms best_is =
     false,
     "is",
     1,
+//iteration:15.7
+/* number of nodes: 109966, nodes/line: 1.05138261316852749e-01 weight: 1.03871798524372411e+05 blobs 1 lines 5881633 * fraction 1.77827941003892431e-01 = 1045918 lines*/
+        {         	         	         	          // # decisions
+        9.90889902938789282e-04,	6.95630807894368153e-01,	-7.11979415655366821e-01,	9.58233214226644897e-02  //4920735
+        }         	         	         	          //(0 unresolved comparisons)
+    };
+#elif 1
+static bestParms best_is =
+    {
+    false,
+    "is",
+    1,
 //iteration:15.-1
 /* number of nodes: 111593, nodes/line: 1.06693832594907057e-01 weight: 1.05561353388409800e+05 blobs 1 lines 5881633 * fraction 1.77827941003892431e-01 = 1045918 lines*/
         {         	         	         	          // # decisions

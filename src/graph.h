@@ -34,14 +34,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "settingsaffixtrain.h"
 
 extern FILE * flog;
-#define ROWPARMS 4
-#define ONEROW 0
-#define PARMS3 0
-#if ONEROW
-#define NPARMS ROWPARMS
-#else
-#define NPARMS 16
-#endif
 extern int parmsoff;
 /*
 parmsoff, the idea:

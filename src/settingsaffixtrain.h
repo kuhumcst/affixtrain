@@ -233,4 +233,14 @@ Read word class from file.
 #define START '^'
 #define END '$'
 
+#define ROWPARMS 4
+#define ONEROW 1
+#define PARMS3 1
+#if ONEROW
+#define NPARMS ROWPARMS
+#else
+#define NPARMS 16
+#endif
+
+
 #endif

@@ -1266,11 +1266,12 @@ static bestParms best_is =
     false,
     "is",
     1,
-//iteration:15.7
-/* number of nodes: 109966, nodes/line: 1.05138261316852749e-01 weight: 1.03871798524372411e+05 blobs 1 lines 5881633 * fraction 1.77827941003892431e-01 = 1045918 lines*/
-        {         	         	         	          // # decisions
-        9.90889902938789282e-04,	6.95630807894368153e-01,	-7.11979415655366821e-01,	9.58233214226644897e-02  //4920735
-        }         	         	         	          //(0 unresolved comparisons)
+//iteration:12.0
+/*weight (not  used): 3.09072013007138085e+04 suffix only: no */
+/* number of nodes: 32528, nodes/line: 1.79481661728272457e-01 weight (not  used): 3.09072013007138085e+04 blobs 2809220 lines 2873370 * fraction 6.30957344480193721e-02 = 181233 lines*/
+        {
+        0.00000000000000000e+00,        7.04722964067779345e-01,        -7.05629153519126029e-01,       7.38447128737378389e-02
+        }
     };
 #elif 1
 static bestParms best_is =

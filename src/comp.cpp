@@ -2457,11 +2457,11 @@ static bestParms best_en =
     7, 77, -63,47   //38334
         }
     };
-#if 1
-static bestParms best_ena = // English, ambiguous training pairs in training set derived from CELEX
+
+static bestParms best_en3 = // English, ambiguous training pairs in training set derived from CELEX, PARMS3 == 1
     {
     false,
-    "ena",
+    "en3",
     3,
 //iteration:20.9
 /*weight (not  used): 1.05518609635120429e+04 suffix only: no */
@@ -2470,7 +2470,20 @@ static bestParms best_ena = // English, ambiguous training pairs in training set
         0.00000000000000000e+00,	7.80504869708012139e-01,	-5.43959942196694413e-01,	3.08090456923689693e-01
         }
     };
-#else
+
+static bestParms best_en3_suffix = // English, ambiguous training pairs in training set derived from CELEX, PARMS3 == 1
+    {
+    true,
+    "en3",
+    3,
+//iteration:20.-1
+/*weight (not  used): 1.32207616522597491e+04 suffix only: yes */
+/* number of nodes: 14173, nodes/line: 1.81015875448612334e-01 weight (not  used): 1.32207616522597491e+04 blobs 1 lines 78297 * fraction 1.00000000000000000e+00 = 78297 lines*/
+        {
+        0.00000000000000000e+00,	7.83577395239696162e-01,	-2.95063999131523147e-01,	5.46757443557822298e-01
+        }
+    };
+
 static bestParms best_ena = // English, ambiguous training pairs in training set derived from CELEX
     {
     false,
@@ -2487,13 +2500,6 @@ static bestParms best_ena = // English, ambiguous training pairs in training set
                                  //        0
         }
     };
-//iteration:20.9
-/*weight (not  used): 1.05518609635120429e+04 suffix only: no */
-/* number of nodes: 11217, nodes/line: 1.43262193953791334e-01 weight (not  used): 1.05518609635120429e+04 blobs 1 lines 78297 * fraction 1.00000000000000000e+00 = 78297 lines*/
-        {
-        0.00000000000000000e+00,	7.80504869708012139e-01,	-5.43959942196694413e-01,	3.08090456923689693e-01
-        }
-#endif
 
 static bestParms best_en_suffix =
     {
@@ -2871,6 +2877,8 @@ static struct bestParms bests[] =
     ,best_en_suffix
     ,best_ena
 
+    ,best_en3
+    ,best_en3_suffix
     ,best_fr
     ,best_fr_suffix
     ,best_ge

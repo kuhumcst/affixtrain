@@ -2462,7 +2462,7 @@ static bestParms best_en3 = // English, ambiguous training pairs in training set
     {
     false,
     "en3",
-    3,
+    1,
 //iteration:20.9
 /*weight (not  used): 1.05518609635120429e+04 suffix only: no */
 /* number of nodes: 11217, nodes/line: 1.43262193953791334e-01 weight (not  used): 1.05518609635120429e+04 blobs 1 lines 78297 * fraction 1.00000000000000000e+00 = 78297 lines*/
@@ -2475,7 +2475,7 @@ static bestParms best_en3_suffix = // English, ambiguous training pairs in train
     {
     true,
     "en3",
-    3,
+    1,
 //iteration:20.-1
 /*weight (not  used): 1.32207616522597491e+04 suffix only: yes */
 /* number of nodes: 14173, nodes/line: 1.81015875448612334e-01 weight (not  used): 1.32207616522597491e+04 blobs 1 lines 78297 * fraction 1.00000000000000000e+00 = 78297 lines*/

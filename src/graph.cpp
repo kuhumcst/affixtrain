@@ -754,6 +754,7 @@ int trainingPair::printAll(FILE * f,const char * h,int s)
             }
         fprintf(f,"\n");
         }
+    fprintf(f,"# of training pairs listed:%d\n",n);
     return n;
     }
 
@@ -2083,7 +2084,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
                     }
                 fprintf(stderr,"***** (List of unmatched words that need better lemmatisation rule(s):)\n");
                 fprintf(stderr,"\n***** Wrong:\n");
-                Wrong->printAll(stderr,"",'\n');
+                Wrong->printAll(stderr,"unmatched words that need better lemmatisation rule(s)",'\n');
                 //fclose(flog);
                 if(VERBOSE)
                     {

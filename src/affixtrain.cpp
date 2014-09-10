@@ -1,7 +1,7 @@
 /*
 AFFIXTRAIN - supervised learning of affix rules for CSTLEMMA
 
-Copyright (C) 2012  Center for Sprogteknologi, University of Copenhagen
+Copyright (C) 2014  Center for Sprogteknologi, University of Copenhagen
 
 This file is part of AFFIXTRAIN.
 
@@ -20,7 +20,7 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "1.7"
+#define VERSION "1.71"
 
 static int PERC = 1;
 static int RECURSE = 1;
@@ -1874,6 +1874,8 @@ static int readLines(struct aFile * afile,trainingPair * TrainingPair,const char
         if(Word && doUse)
             {
             doUse = ((tag == NULL) || !*tag);
+            while(wordlength > 0 && isSpace(Word[wordlength - 1]))
+                --wordlength;
             while(lemmalength > 0 && isSpace(LemmaHead[lemmalength - 1]))
                 --lemmalength;
 #if WORDCLASS
@@ -1884,23 +1886,27 @@ static int readLines(struct aFile * afile,trainingPair * TrainingPair,const char
             while(lemmaclasslength > 0 && isSpace(LemmaClass[lemmaclasslength - 1]))
                 --lemmaclasslength;
 #endif
-            TrainingPair[pairs].init(Word
-                ,wordlength
-                ,LemmaHead
-                ,lemmalength
+            if(wordlength > 0 && lemmalength > 0)
+                {
+                TrainingPair[pairs].init
+                    (Word
+                    ,wordlength
+                    ,LemmaHead
+                    ,lemmalength
 #if WORDCLASS
-                ,WordClass
-                ,wordclasslength
+                    ,WordClass
+                    ,wordclasslength
 #endif
 #if LEMMACLASS
-                ,LemmaClass
-                ,lemmaclasslength
+                    ,LemmaClass
+                    ,lemmaclasslength
 #endif
 #if LEMMAINL
-                ,Inl,Lemma_Inl
+                    ,Inl,Lemma_Inl
 #endif
-                );
-            ++pairs;
+                    );
+                ++pairs;
+                }
             }
         }
     return pairs;

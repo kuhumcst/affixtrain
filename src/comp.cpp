@@ -2405,6 +2405,20 @@ int best_en[]       =
     1, 0, 0,-1
     };
 */
+
+static bestParms best_da3 =
+    {
+    false,
+    "da3",
+    1,
+//iteration:20.5
+/*weight (not  used): 5.00470146882884801e+04 suffix only: no */
+/* number of nodes: 54059, nodes/line: 9.10723521394649072e-02 weight (not  used): 5.00470146882884801e+04 blobs 1 lines 593583 * fraction 1.00000000000000000e+00 = 593583 lines*/
+        { // LOWEST fraction 0.001
+        0.00000000000000000e+00,        7.35136672243838163e-01,        -6.17008258102692664e-01,       2.80846724309429585e-01
+        }
+    };
+
 static bestParms best_en =
     {
     false,
@@ -2527,14 +2541,12 @@ bests[6].rows == [1]
         }
     };
 
-static bestParms best_en3_suffix = // English, ambiguous training pairs in training set derived from CELEX, PARMS3 == 1
+#if 0
+static bestParms best_en3_suffix = // English, ambiguous training pairs in training set derived from CELEX, PARMS3 == 1, lowest fraction 0.001
     {
     true,
     "en3",
     1,
-//iteration:20.-1
-/*weight (not  used): 1.32207616522597491e+04 suffix only: yes */
-/* number of nodes: 14173, nodes/line: 1.81015875448612334e-01 weight (not  used): 1.32207616522597491e+04 blobs 1 lines 78297 * fraction 1.00000000000000000e+00 = 78297 lines*/
 /*
 0	0.985600	14	77169.000000	14451.285714	14139.142857	18.726802	18.322309	935.285714	5.428571	15.500000	0.000000	171.785714	935.142857	6.071429	6.785714	0.000000	180.000000	1.122684	0.142160	0.476458	0.000000	1.182352	1.009511	0.164809	0.187831	0.000000	1.067234	82.915400	0.481256	1.374113	0.000000	15.229230	1.994681	82.902736	0.538247	0.601570	0.000000	15.957447	1.336120	1.956687	4.951874	0.037994	93.053445	0.009615	0.007614	1.298126	4.951874	0.037994	93.712006	0.014423	0.007614
 1	0.985600	14	77169.000000	2563.357143	8444.714286	3.321745	10.943143	975.428571	0.000000	0.000000	0.000000	152.571429	941.071429	8.000000	8.785714	0.000000	170.142857	1.082261	0.000000	0.000000	0.000000	1.082261	1.087138	0.214351	0.225829	0.000000	1.003505	86.474164	0.000000	0.000000	0.000000	13.525836	0.000000	83.428318	0.709220	0.778875	0.000000	15.083587	1.792047	0.000000	4.989868	0.000000	95.010132	0.000000	0.000000	1.310790	4.508612	0.481256	93.699341	0.155102	0.096447
@@ -2589,10 +2601,41 @@ bests[7].rows == [1]
 
 0.000000 0.783577 -0.295064 0.546757 
 */
-        {
+//iteration:20.-1
+/*weight (not  used): 1.32207616522597491e+04 suffix only: yes */
+/* number of nodes: 14173, nodes/line: 1.81015875448612334e-01 weight (not  used): 1.32207616522597491e+04 blobs 1 lines 78297 * fraction 1.00000000000000000e+00 = 78297 lines*/
+        { // LOWEST FRACTION 0.001
         0.00000000000000000e+00,	7.83577395239696162e-01,	-2.95063999131523147e-01,	5.46757443557822298e-01
         }
     };
+#else
+static bestParms best_en3_suffix = // English, ambiguous training pairs in training set derived from CELEX, PARMS3 == 1, lowest fraction 0.01
+    {
+    true,
+    "en3",
+    1,
+//iteration:20.8
+/*weight (not  used): 1.25926437193262009e+04 suffix only: yes */
+/* number of nodes: 13451, nodes/line: 1.71794577059146580e-01 weight (not  used): 1.25926437193262009e+04 blobs 1 lines 78297 * fraction 1.00000000000000000e+00 = 78297 lines*/
+/*        { LOWEST FRACTION 0.01
+        0.00000000000000000e+00,        7.37871477730652203e-01,        -6.64729936801612187e-01,       1.16960649242848158e-01
+        } */
+//iteration:20.9
+/*weight (not  used): 1.26246596701543367e+04 suffix only: yes */
+/* number of nodes: 13472, nodes/line: 1.72062786569089493e-01 weight (not  used): 1.26246596701543367e+04 blobs 1 lines 78297 * fraction 1.00000000000000000e+00 = 78297 lines*/
+/*
+        { // LOWEST FRACTION 0.05
+        0.00000000000000000e+00,        7.28882948244000684e-01,        -6.79739746492379560e-01,       8.17528274594168380e-02
+        }*/
+//iteration:20.0
+/*weight (not  used): 1.20213934796043850e+04 suffix only: yes */
+/* number of nodes: 12826, nodes/line: 1.63812151167988557e-01 weight (not  used): 1.20213934796043850e+04 blobs 1 lines 78297 * fraction 1.00000000000000000e+00 = 78297 lines*/
+        {// LOWEST FRACTION 0.1
+        0.00000000000000000e+00,        7.05993374083430658e-01,        -7.06014238094235580e-01,       5.58323504655617309e-02
+        }
+
+    };
+#endif
 
 static bestParms best_ena = // English, ambiguous training pairs in training set derived from CELEX
     {
@@ -2983,6 +3026,8 @@ static struct bestParms bests[] =
     {best_da
     ,best_da_suffix
     ,best_daSP
+    ,best_da3
+
     ,best_en
     ,best_en_suffix
     ,best_ena

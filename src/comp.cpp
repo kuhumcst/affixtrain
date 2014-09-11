@@ -2477,10 +2477,6 @@ static bestParms best_en3 = // English, ambiguous training pairs in training set
     false,
     "en3",
     1,
-//iteration:20.9
-/*weight (not  used): 1.05518609635120429e+04 suffix only: no */
-/* number of nodes: 11217, nodes/line: 1.43262193953791334e-01 weight (not  used): 1.05518609635120429e+04 blobs 1 lines 78297 * fraction 1.00000000000000000e+00 = 78297 lines*/
-
 /*
 0	0.985600	14	77169.000000	14451.285714	10509.142857	18.726802	13.618348	935.285714	5.428571	15.500000	0.000000	171.785714	935.785714	8.928571	12.000000	0.000000	171.285714	1.122684	0.142160	0.476458	0.000000	1.182352	0.853999	0.261289	0.260213	0.000000	0.861224	82.915400	0.481256	1.374113	0.000000	15.229230	1.994681	82.959726	0.791540	1.063830	0.000000	15.184904	2.039007	1.956687	4.951874	0.037994	93.053445	0.009615	0.007614	2.001013	4.951874	0.037994	93.009119	0.009404	0.007614
 1	0.985600	14	77169.000000	2563.357143	5908.285714	3.321745	7.656294	975.428571	0.000000	0.000000	0.000000	152.571429	954.857143	8.428571	11.142857	0.000000	153.571429	1.082261	0.000000	0.000000	0.000000	1.082261	0.931651	0.176328	0.380685	0.000000	0.987630	86.474164	0.000000	0.000000	0.000000	13.525836	0.000000	84.650456	0.747214	0.987842	0.000000	13.614488	1.956687	0.000000	4.989868	0.000000	95.010132	0.000000	0.000000	1.342452	4.375633	0.614235	93.667680	0.186180	0.123096
@@ -2535,7 +2531,9 @@ bests[6].rows == [1]
 
 0.000000 0.780505 -0.543960 0.308090 
 */
-
+//iteration:20.9
+/*weight (not  used): 1.05518609635120429e+04 suffix only: no */
+/* number of nodes: 11217, nodes/line: 1.43262193953791334e-01 weight (not  used): 1.05518609635120429e+04 blobs 1 lines 78297 * fraction 1.00000000000000000e+00 = 78297 lines*/
         {
         0.00000000000000000e+00,	7.80504869708012139e-01,	-5.43959942196694413e-01,	3.08090456923689693e-01
         }
@@ -2636,6 +2634,32 @@ static bestParms best_en3_suffix = // English, ambiguous training pairs in train
 
     };
 #endif
+
+static bestParms best_en4 = // English, ambiguous training pairs in training set derived from CELEX, PARMS3 == 0
+    {
+    false,
+    "en4",
+    1,
+//iteration:20.5
+/*weight (not  used): 1.02754092132184778e+04 suffix only: no */
+/* number of nodes: 10801, nodes/line: 1.37949091280636538e-01 weight (not  used): 1.02754092132184778e+04 blobs 1 lines 78297 * fraction 1.00000000000000000e+00 = 78297 lines*/
+        {
+        1.06322242479528462e-03,        7.78077313282915517e-01,        -5.98834680747542203e-01,       1.89714494033809300e-01
+        }
+    };
+
+static bestParms best_en4_suffix = // English, ambiguous training pairs in training set derived from CELEX, PARMS3 == 0
+    {
+    true,
+    "en4",
+    1,
+//iteration:20.5
+/*weight (not  used): 1.23994408913745046e+04 suffix only: yes */
+/* number of nodes: 13281, nodes/line: 1.69623357216751591e-01 weight (not  used): 1.23994408913745046e+04 blobs 1 lines 78297 * fraction 1.00000000000000000e+00 = 78297 lines*/
+        {
+        7.47138752010872206e-03,        7.20070629992721201e-01,        -6.91457516803205441e-01,       5.76972152426369414e-02
+        }
+    };
 
 static bestParms best_ena = // English, ambiguous training pairs in training set derived from CELEX
     {
@@ -3034,6 +3058,8 @@ static struct bestParms bests[] =
 
     ,best_en3
     ,best_en3_suffix
+    ,best_en4
+    ,best_en4_suffix
     ,best_fr
     ,best_fr_suffix
     ,best_ge

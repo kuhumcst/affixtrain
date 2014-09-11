@@ -238,7 +238,7 @@ Read word class from file.
 #define MINITERATIONS 10
 #define ROWPARMS 4
 #define ONEROW 1
-#define PARMS3 1
+#define PARMS3 0
 #if ONEROW
 #define NPARMS ROWPARMS
 #else

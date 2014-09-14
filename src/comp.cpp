@@ -23,6 +23,19 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "comp.h"
 #include "graph.h"
 #include <float.h>
+#if FLOATINGPOINTPARMS
+#define PARMS3 0
+//#define ROWPARMS 4
+//#define NPARMS ROWPARMS
+static int ROWPARMS = 4;
+#define NPARMS ROWPARMS
+#else
+#define NUMBER_OF_ROWS_IN_R (sizeof(R)/(ROWPARMS*sizeof(R[0])))
+#if NPARMS % ROWPARMS != 0
+#error NPARMS must be a multiple of ROWPARMS
+#endif
+#endif
+
 /*
 ACL 2009 paper:
 Icelandic   71.3    1.5 even_better (71,30 1,51 iflg. D:\dokumenter\tvärsök\even_better\icelandic.xls) peen 71,51 1,65 sugar 70,93 1,86 affiksFEW3 71,02 2,16 no pruning
@@ -589,26 +602,17 @@ int (*comp)(const vertex * a,const vertex * b) = comp_koud;
 
 //bool compute_parms = false;
 
-struct rotation
-    {
-    double Matrix[ROWPARMS*ROWPARMS];
-    } rotation;
 
 #if FLOATINGPOINTPARMS
-#if ONEROW
-static struct rotation parms    =
-   /* R_R  W_R  R_W  W_W */   
-    {{ 0.0, 3.0, -2.0, 1.0
-    }};
-#else
-static struct rotation parms    =
-   /* R_R  W_R  R_W  W_W */   
-    {{ 0.0, 1.0, 0.0, 0.0
-    ,-1.0, 0.0, 0.0, 0.0
-    , 0.0, 0.0, 0.0,-1.2
-    , 0.0, 0.0,-1.2, 0.0
-    }};
-#endif
+struct rotation
+    {
+    double Matrix[6];
+    } rotation;
+
+static struct rotation parms = 
+   /* R_R   W_R   R_W   W_W  R_NA  W_NA */   
+    {{  0.0,  3.0, -2.0,  1.0,  0.0,  0.0}}
+    ;
 #else
 static int parms[NPARMS]    = {0};
 #endif
@@ -620,21 +624,6 @@ static void printvector(const char * msg,double * row,int cols)
     for(int i = 0;i < cols;++i)
         {
         printf("%f ", row[i]);
-        }
-    putchar('\n');
-    }
-
-
-static void printmatrix(const char * msg,struct rotation arr)
-    {
-    printf("%s\n",msg);
-    for(int i = 0;i < ROWPARMS;++i)
-        {
-        for(int j = 0;j < ROWPARMS;++j)
-            {
-            printf("%.*e ", DBL_DIG+2,arr.Matrix[ROWPARMS * i+j]);
-            }
-        putchar('\n');
         }
     putchar('\n');
     }
@@ -662,179 +651,29 @@ static void times(double * a, double f)
     for(int i = 0;i < ROWPARMS;++i)
         a[i] *= f;
     }
-
-static void orthogonalise(const char * Msg)
-    {
-    if(VERBOSE)
-        {
-        printf("%s: ",Msg);
-        printmatrix("before orthogonalisation",parms);
-        }
-    for(unsigned int i = 1;i < sizeof(parms.Matrix)/(sizeof(parms.Matrix[0]) * ROWPARMS);++i)
-        {
-        unsigned int I = i * ROWPARMS;
-        for(unsigned int j = 0; j < i;++j)
-            {
-            unsigned int J = j * ROWPARMS;
-            double inner = 0.0;
-            double Jmodulus = 0.0;
-            for(unsigned int k = 0;k < ROWPARMS;++k)
-                {
-                inner += parms.Matrix[I+k]*parms.Matrix[J+k];
-                Jmodulus += parms.Matrix[J+k]*parms.Matrix[J+k];
-                }
-            inner /= Jmodulus;
-            for(unsigned int k = 0;k < ROWPARMS;++k)
-                {
-                parms.Matrix[I+k] -= inner * parms.Matrix[J+k];
-                }
-            }
-        }
-    for(unsigned int row = 0;row < ROWPARMS;++row)
-        {
-        normalise(parms.Matrix+row*ROWPARMS);
-        }
-    if(VERBOSE)
-        {
-        printf("%s: ",Msg);
-        printmatrix("after orthogonalisation",parms);
-        }
-    }
-
-
-struct rotation makeRotationMatrix(int r, double pone, double delta) // 0 <= r < 6
-    {
-    assert(-1.0 < delta && delta < 1.0);
-    assert(0 <= r && r < 6);
-    assert(pone == -1.0 || pone == 1.0);
-    double contradelta = sqrt(1.0 - delta*delta);
-    struct rotation Rotation;
-    for(unsigned int i = 0;i < sizeof(Rotation.Matrix)/sizeof(Rotation.Matrix[0]);++i)
-        {
-        unsigned int col = i % ROWPARMS;
-        unsigned int row = i / ROWPARMS;
-        if(col == row)
-            { // diagonal. 1 or something between 0 and 1
-            switch(r)
-                {
-            case 0:
-                if(col == 0 || col == 1)
-                    Rotation.Matrix[i] = contradelta; 
-                else
-                    Rotation.Matrix[i] = 1.0; 
-                break;
-            case 1:
-                if(col == 1 || col == 2)
-                    Rotation.Matrix[i] = contradelta; 
-                else
-                    Rotation.Matrix[i] = 1.0; 
-                break;
-            case 2:
-                if(col == 2 || col == 3)
-                    Rotation.Matrix[i] = contradelta; 
-                else
-                    Rotation.Matrix[i] = 1.0; 
-                break;
-            case 3:
-                if(col == 0 || col == 2)
-                    Rotation.Matrix[i] = contradelta; 
-                else
-                    Rotation.Matrix[i] = 1.0; 
-                break;
-            case 4:
-                if(col == 1 || col == 3)
-                    Rotation.Matrix[i] = contradelta; 
-                else
-                    Rotation.Matrix[i] = 1.0; 
-                break;
-            case 5:
-                if(col == 0 || col == 3)
-                    Rotation.Matrix[i] = contradelta; 
-                else
-                    Rotation.Matrix[i] = 1.0; 
-                break;
-                }
-            }
-        else
-            {
-            switch(r)
-                {
-            case 0:
-                if(row == 0 && col == 1)
-                    Rotation.Matrix[i] = pone*delta; 
-                else if(row == 1 && col == 0)
-                    Rotation.Matrix[i] = -pone*delta;
-                else
-                    Rotation.Matrix[i] = 0.0; 
-                break;
-            case 1:
-                if(row == 1 && col == 2)
-                    Rotation.Matrix[i] = pone*delta; 
-                else if(row == 2 && col == 1)
-                    Rotation.Matrix[i] = -pone*delta;
-                else
-                    Rotation.Matrix[i] = 0.0; 
-                break;
-            case 2:
-                if(row == 2 && col == 3)
-                    Rotation.Matrix[i] = pone*delta; 
-                else if(row == 3 && col == 2)
-                    Rotation.Matrix[i] = -pone*delta;
-                else
-                    Rotation.Matrix[i] = 0.0; 
-                break;
-            case 3:
-                if(row == 0 && col == 2)
-                    Rotation.Matrix[i] = pone*delta; 
-                else if(row == 2 && col == 0)
-                    Rotation.Matrix[i] = -pone*delta;
-                else
-                    Rotation.Matrix[i] = 0.0; 
-                break;
-            case 4:
-                if(row == 1 && col == 3)
-                    Rotation.Matrix[i] = pone*delta; 
-                else if(row == 3 && col == 1)
-                    Rotation.Matrix[i] = -pone*delta;
-                else
-                    Rotation.Matrix[i] = 0.0; 
-                break;
-            case 5:
-                if(row == 0 && col == 3)
-                    Rotation.Matrix[i] = pone*delta; 
-                else if(row == 3 && col == 0)
-                    Rotation.Matrix[i] = -pone*delta;
-                else
-                    Rotation.Matrix[i] = 0.0; 
-                break;
-                }
-            }
-        }
-    return Rotation;
-    }
-
-struct rotation rotate(struct rotation parms,struct rotation Rotation)
-    {
-    struct rotation newparms;
-    for(int row = 0;row < ROWPARMS;++row)
-        {
-        for(int col = 0;col < ROWPARMS;++col)
-            {
-            newparms.Matrix[row * ROWPARMS + col] = 0.0;
-            for(int i = 0;i < ROWPARMS;++i)
-                newparms.Matrix[row * ROWPARMS + col] += parms.Matrix[row * ROWPARMS + i] * Rotation.Matrix[i * ROWPARMS + col];
-            }
-        }
-    return newparms;
-    }
 #endif
 
+
+#if FLOATINGPOINTPARMS
 struct bestParms
     {
     bool suffixonly;
     const char * langbase;
     int rowss;
-    double val[NPARMS+12];
+    struct rotation val;
+    // Each row:
+    // R__R W__R R__W W__W R__NA W__NA
+    // Generally, good that Wrongs change to Rights (W__R > 0) and that Rights don't change to Wrongs (R__W < 0)
+    // But what about rules that don't improve lemmatisation? (R__R > 0 or W__W > 0)
+    // Intuitively difficult to decide!
+    };
+#else
+struct bestParms
+    {
+    bool suffixonly;
+    const char * langbase;
+    int rowss;
+    int val[NPARMS+12];
     // Each row:
     // R__R W__R R__W W__W
     // Generally, good that Wrongs change to Rights (W__R > 0) and that Rights don't change to Wrongs (R__W < 0)
@@ -842,9 +681,6 @@ struct bestParms
     // Intuitively difficult to decide!
     };
 
-#if FLOATINGPOINTPARMS
-/**/
-#else
 static bestParms  best_pl = 
     {
     false,
@@ -1181,9 +1017,9 @@ static bestParms best_is_suffix =
 //iteration:18.1
 /*weight (not  used): 1.41244386452166131e+05 suffix only: yes */
 /* number of nodes: 152108, nodes/line: 1.05629895368709495e-01 weight (not  used): 1.41244386452166131e+05 blobs 2809220 lines 2873370 * fraction 5.01187233627272799e-01 = 1440009 lines*/
-        {
+        {{
         0.00000000000000000e+00,	6.94542434383270568e-01,	-7.18112257666929654e-01,	4.38815704990783637e-02
-        }
+        }}
     };
 #elif 1
 static bestParms best_is_suffix =
@@ -1316,9 +1152,9 @@ static bestParms best_is =
 //iteration:18.2
 /*weight (not  used): 1.34340843669173279e+05 suffix only: no */
 /* number of nodes: 145852, nodes/line: 1.01285478076873131e-01 weight (not  used): 1.34340843669173279e+05 blobs 2809220 lines 2873370 * fraction 5.01187233627272799e-01 = 1440009 lines*/
-        {
+        {{
         0.00000000000000000e+00,	6.96451349087997107e-01,	-7.13849249589145862e-01,	7.33128038921041919e-02
-        }
+        }}
     };
 #elif 1
 static bestParms best_is =
@@ -2484,9 +2320,9 @@ static bestParms best_da3 =
 //iteration:20.5
 /*weight (not  used): 5.00470146882884801e+04 suffix only: no */
 /* number of nodes: 54059, nodes/line: 9.10723521394649072e-02 weight (not  used): 5.00470146882884801e+04 blobs 1 lines 593583 * fraction 1.00000000000000000e+00 = 593583 lines*/
-        { // LOWEST fraction 0.001
+        {{ // LOWEST fraction 0.001
         0.00000000000000000e+00,        7.35136672243838163e-01,        -6.17008258102692664e-01,       2.80846724309429585e-01
-        }
+        }}
     };
 #endif
 
@@ -2610,9 +2446,9 @@ bests[6].rows == [1]
 //iteration:20.9
 /*weight (not  used): 1.05518609635120429e+04 suffix only: no */
 /* number of nodes: 11217, nodes/line: 1.43262193953791334e-01 weight (not  used): 1.05518609635120429e+04 blobs 1 lines 78297 * fraction 1.00000000000000000e+00 = 78297 lines*/
-        {
+        {{
         0.00000000000000000e+00,	7.80504869708012139e-01,	-5.43959942196694413e-01,	3.08090456923689693e-01
-        }
+        }}
     };
 #endif
 
@@ -2706,9 +2542,9 @@ static bestParms best_en3_suffix = // English, ambiguous training pairs in train
 //iteration:20.0
 /*weight (not  used): 1.20213934796043850e+04 suffix only: yes */
 /* number of nodes: 12826, nodes/line: 1.63812151167988557e-01 weight (not  used): 1.20213934796043850e+04 blobs 1 lines 78297 * fraction 1.00000000000000000e+00 = 78297 lines*/
-        {// LOWEST FRACTION 0.1
+        {{// LOWEST FRACTION 0.1
         0.00000000000000000e+00,        7.05993374083430658e-01,        -7.06014238094235580e-01,       5.58323504655617309e-02
-        }
+        }}
 
     };
 #endif
@@ -2723,9 +2559,9 @@ static bestParms best_en4 = // English, ambiguous training pairs in training set
 //iteration:20.5
 /*weight (not  used): 1.02754092132184778e+04 suffix only: no */
 /* number of nodes: 10801, nodes/line: 1.37949091280636538e-01 weight (not  used): 1.02754092132184778e+04 blobs 1 lines 78297 * fraction 1.00000000000000000e+00 = 78297 lines*/
-        {
+        {{
         1.06322242479528462e-03,        7.78077313282915517e-01,        -5.98834680747542203e-01,       1.89714494033809300e-01
-        }
+        }}
     };
 #endif
 
@@ -2738,9 +2574,9 @@ static bestParms best_en4_suffix = // English, ambiguous training pairs in train
 //iteration:20.5
 /*weight (not  used): 1.23994408913745046e+04 suffix only: yes */
 /* number of nodes: 13281, nodes/line: 1.69623357216751591e-01 weight (not  used): 1.23994408913745046e+04 blobs 1 lines 78297 * fraction 1.00000000000000000e+00 = 78297 lines*/
-        {
+        {{
         7.47138752010872206e-03,        7.20070629992721201e-01,        -6.91457516803205441e-01,       5.76972152426369414e-02
-        }
+        }}
     };
 #endif
 
@@ -3197,30 +3033,9 @@ static struct bestParms bests[] =
     };
 
 #if FLOATINGPOINTPARMS
-#if 0
-static double best[NPARMS]    = 
-  {// Before a chain of sibling rules is created, there are N candidate rules.
-   // For each sibling created, the number n of remaining candidates is
-   // decremented.
-  0,  0,  0,  0, // n >= exp(N,0.75)
-  0,  0,  0,  0, // n >= exp(N,0.5)
-//0,  0,  0,  0, // n >= exp(N,0.25)
-  0,  0,  0,  0  // n <  exp(N,0.25)
-  };
-#elif ONEROW
-static double best[NPARMS]    =
-   /* R_R  W_R  R_W  W_W */   
-    { 0.0, 3.0, -3.0, 1.0
-    };
-#else
-static double best[NPARMS]    =
-   /* R_R  W_R  R_W  W_W */   
-    { 1.0, 0.0, 0.0, 0.0
-    , 0.0, 1.0, 0.0, 0.0
-    , 0.0, 0.0,-1.0, 0.0
-    , 0.0, 0.0, 0.0, 1.0
-    };
-#endif
+static struct rotation best    =
+    /* R_R   W_R   R_W   W_W  R_NA  W_NA */   
+    {{ 0.0,  3.0, -3.0,  1.0,  0.0,  0.0 }};
 #else
 static int best[NPARMS]    = 
   {// Before a chain of sibling rules is created, there are N candidate rules.
@@ -3287,10 +3102,6 @@ static double  R[] = // 64 elements
     0, 0, 1, 1
     };
 
-#define NUMBER_OF_ROWS_IN_R (sizeof(R)/(ROWPARMS*sizeof(R[0])))
-#if NPARMS % ROWPARMS != 0
-#error NPARMS must be a multiple of ROWPARMS
-#endif
 
 static void plus(double * dest, double * term,int cols)
     {
@@ -3319,7 +3130,7 @@ void betterfound(int Nnodes,double weight,int swath,int iterations,const char * 
         fprintf(f,"//-> IMPROVEMENT #%d\n",improvements);
         fclose(f);
         }
-    copy(best,parms.Matrix,NPARMS);
+    best = parms;
     FILE * f = fopen(besttxt,"a");
     if(f)
         {
@@ -3373,12 +3184,12 @@ void betterfound(int Nnodes,double weight,int swath,int iterations,const char * 
 
 void worsefound()
     {
-    copy(parms.Matrix,best,NPARMS);
+    parms = best;
     }
 
 void copybest()
     {
-    copy(parms.Matrix,best,NPARMS); // go on with best result so far.
+    parms = best; // go on with best result so far.
     }
 //static int minparmsoff = 0;
 
@@ -3488,7 +3299,6 @@ void testAngle()
     getchar();
     }
 
-#if ONEROW
 bool brown()
     {
     static int it = 0;
@@ -3500,7 +3310,7 @@ bool brown()
 //    double tangens = 0.1*pow(0.9981,it);
     double tangens = 0.1*pow(0.995,it);
     printf("tangens %f ",tangens);
-    double vector[ROWPARMS];
+    double vector[6];
     double radius2 = 0.0;
     //printvector("parms",parms.Matrix,ROWPARMS);
     do
@@ -3541,66 +3351,15 @@ bool brown()
     //getchar();
     return false;
     }
-#else
-bool brown(/*const char * parmstxt*/)
-    {
-//    testAngle();
-    static int it = 0;
-    static double delta = 0.95;
-    static double inc = (1.0 - delta) / 1365.0;
-    int index = it;// - improvements; // to ensure that successful transformation is repeated.
-    int r = (index / 2) % 6;
-    double pone;
-    if(index & 1)
-        pone = 1.0;
-    else
-        pone = -1.0;
-    setMinMaxIntegral(4);
-    double ang = angle(delta,4);
-//    printf("%d delta %1.4f angle %3.2f\n",it,delta,(180.0/pi)*ang);
-    struct rotation Rotation;
-    Rotation = makeRotationMatrix(r, pone, sin(ang));
-    if((rand() % 3) == 2)
-        {
-        int G;
-        do {G = rand() % 6;} while(G == r);
-        double bigang = angle(0.5,4);
-        struct rotation Forth = makeRotationMatrix(G, 1.0, sin(bigang));
-        struct rotation Back = makeRotationMatrix(G, -1.0, sin(bigang));
-        Rotation = rotate(Rotation,Forth);
-        Rotation = rotate(Back,Rotation);
-        }
-
-    delta += inc;
-    if(delta > 1.0 - inc)
-        delta = 1.0 - inc;
-    copy(parms.Matrix,best,NPARMS); // go on with best result so far.
-    orthogonalise("brownStart");
-    parms = rotate(parms,Rotation);
-    ++it;
-    return false;
-    }
-#endif
 
 bool init()
     {
 //    if(allZeros())
         {
-        copy(parms.Matrix,best,NPARMS);
+        parms = best;
         }
     return true;
     }
-
-
-/*
-void onlyZeros(const char * parmstxt)
-    {
-    for(unsigned int i = 0;i < sizeof(pcnt)/sizeof(pcnt[0]);++i)
-        {
-        pcnt[i] = 0;
-        }
-    }
-*/
 
 void printparms(int Nnodes,double weight,const char * parmstxt,bool suffixonly,bool doweights)
     {
@@ -3644,6 +3403,8 @@ void printparms(int Nnodes,double weight,const char * parmstxt,bool suffixonly,b
 #define WR 1
 #define RW 2
 #define WW 3
+#define RN 4
+#define WN 5
 
 #if 0
 static int comp_parms(const vertex * a,const vertex * b)
@@ -3691,31 +3452,23 @@ static int comp_parms(const vertex * a,const vertex * b)
 #else
 static int comp_parms(const vertex * a,const vertex * b)
     {
-    //for(int o = 0;o < NPARMS;o += ROWPARMS)
     if(  a->R__R != b->R__R
       || a->W__R != b->W__R
       || a->R__W != b->R__W
       || a->W__W != b->W__W
       )
         {
-        /*
-        int off = minparmsoff;
-        if(off < parmsoff)
-            off = parmsoff;
-        */
-        for(int o = 0/*off*/;o < NPARMS;o += ROWPARMS)
+        double A = parms.Matrix[RR]*a->R__R + parms.Matrix[WR]*a->W__R + parms.Matrix[RW]*a->R__W + parms.Matrix[WW]*a->W__W;
+        double B = parms.Matrix[RR]*b->R__R + parms.Matrix[WR]*b->W__R + parms.Matrix[RW]*b->R__W + parms.Matrix[WW]*b->W__W;
+        if(ROWPARMS == 6)
             {
-            double A = parms.Matrix[o+RR]*a->R__R + parms.Matrix[o+WR]*a->W__R + parms.Matrix[o+RW]*a->R__W + parms.Matrix[o+WW]*a->W__W;
-            double B = parms.Matrix[o+RR]*b->R__R + parms.Matrix[o+WR]*b->W__R + parms.Matrix[o+RW]*b->R__W + parms.Matrix[o+WW]*b->W__W;
-            if(A != B)
-                {
-//                ++pcnt[o >> 2]; // For counting the number of times the first, second, third or fourth condition has been used.
-                // (Hypothesis: with parms as doubles the first condition is used and only in very special cases the second.
-                //  Addendum: This hypothesis holds.)
-                return A > B ? -1 : 1;
-                }
+            A += parms.Matrix[RN]*a->R__NA + parms.Matrix[WN]*a->W__NA;
+            B += parms.Matrix[RN]*b->R__NA + parms.Matrix[WN]*b->W__NA;
             }
-//        ++pcnt[NPARMS >> 2];
+        if(A != B)
+            {
+            return A > B ? -1 : 1;
+            }
         }
     return 0;
     }
@@ -3724,25 +3477,17 @@ static int comp_parms(const vertex * a,const vertex * b)
 static int nparms = 0;
 
 static int comp_parms0_off(const vertex * a,const vertex * b)
-    {
-    /*
-    int off = minparmsoff;
-    if(off < parmsoff)
-        off = parmsoff;
-    if(parmsoff >= nparms)
+    {   
+    double A = parms.Matrix[RR]*a->R__R + parms.Matrix[WR]*a->W__R + parms.Matrix[RW]*a->R__W + parms.Matrix[WW]*a->W__W;
+    double B = parms.Matrix[RR]*b->R__R + parms.Matrix[WR]*b->W__R + parms.Matrix[RW]*b->R__W + parms.Matrix[WW]*b->W__W;
+    if(ROWPARMS == 6)
         {
-        fprintf(stderr,"parmsoff is set to high. There are not enough rows of parameters. Fix in graph.cpp\n");
-        exit(-1);
+        A += parms.Matrix[RN]*a->R__NA + parms.Matrix[WN]*a->W__NA;
+        B += parms.Matrix[RN]*b->R__NA + parms.Matrix[WN]*b->W__NA;
         }
-    */
-    for(int o = 0/*off*/;o < nparms;o += ROWPARMS)
+    if(A != B)
         {
-        double A = parms.Matrix[o+RR]*a->R__R + parms.Matrix[o+WR]*a->W__R + parms.Matrix[o+RW]*a->R__W + parms.Matrix[o+WW]*a->W__W;
-        double B = parms.Matrix[o+RR]*b->R__R + parms.Matrix[o+WR]*b->W__R + parms.Matrix[o+RW]*b->R__W + parms.Matrix[o+WW]*b->W__W;
-        if(A != B)
-            {
-            return A > B ? -1 : 1;
-            }
+        return A > B ? -1 : 1;
         }
     return 0;
     }
@@ -4092,10 +3837,10 @@ bool setCompetitionFunction(const char * functionname,const char * extra,bool su
                             fprintf(stderr,"Too many rows of parameters in bestParms struct for %s (%d, max allowed %d)\n",extra,nparms,NPARMS);
                             exit(-1);
                             }
-                        for(int k = 0;k < nparms;++k)
 #if FLOATINGPOINTPARMS
-                            parms.Matrix[k] = bests[j].val[k];
+                        parms = bests[j].val;
 #else
+                        for(int k = 0;k < nparms;++k)
                             parms[k] = bests[j].val[k];
 #endif
                         if(parmstxt)

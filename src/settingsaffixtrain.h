@@ -233,20 +233,13 @@ Read word class from file.
 #define START '^'
 #define END '$'
 
-#define FLOATINGPOINTPARMS 0
+#define FLOATINGPOINTPARMS 1
 #define MAXSWATH 20
 #define MAXITERATIONS 100
 #define MINITERATIONS 10
-#define ROWPARMS 4
 #if FLOATINGPOINTPARMS
-#define ONEROW 1
-#define PARMS3 0
-#if ONEROW
-#define NPARMS ROWPARMS
 #else
-#define NPARMS 16
-#endif
-#else
+#define ROWPARMS 4
 #define NPARMS 12
 #endif
 

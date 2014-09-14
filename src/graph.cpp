@@ -35,7 +35,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //int (*comp)(const vertex * a,const vertex * b) = 0; 
 // returns b > a ? 1 : b < a ? -1 : 0
 // (Chosen like this to let qsort sort in descending order.)
+#if FLOATINGPOINTPARMS
+#else
 int parmsoff;
+#endif
 int visitno;
 
 int ambivalentWords;
@@ -1967,6 +1970,8 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
         int maxN = N;
         if(maxN < 16)
             maxN = 16;
+#if FLOATINGPOINTPARMS
+#else
 #if NPARMS > ROWPARMS
         double max12 = sqrt((double)maxN);
         double max14 = sqrt(max12);
@@ -1976,6 +1981,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
         int thres12 = (int)max12;
 #if NPARMS > 3*ROWPARMS
         int thres14 = (int)max14;
+#endif
 #endif
 #endif
 #endif
@@ -2099,7 +2105,8 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
             //qqsort(pv+first,lastN-first,sizeof(pv[0]),comp);
             vertex ** pvf = pv+first;
             vertex ** pvN = pv+lastN;
-
+#if FLOATINGPOINTPARMS
+#else
 #if NPARMS > ROWPARMS
 #if NPARMS > 2*ROWPARMS
             if(lastN >= thres12)
@@ -2119,7 +2126,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
 #else
                                      parmsoff = 0;
 #endif
-
+#endif
             for(vertex ** pvi = pvf+1;pvi < pvN;++pvi)
                 {
                 if(comp(*pvf,*pvi) > 0)

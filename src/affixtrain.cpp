@@ -3263,7 +3263,11 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                     //onlyZeros(parmstxt);
                     }
                 }
-            for(int iterations = 0;iterations < (int)(maxiterations*pow(iterationsfactor,-swath));++iterations)
+#if FLOATINGPOINTPARMS
+           for(int iterations = 0;iterations < (int)(maxiterations*pow(iterationsfactor,-swath));++iterations)
+#else
+           for(int iterations = 0;iterations < 64;++iterations)
+#endif
                 {
                     CHECK("D2aglobTempDir");
                 bool skip = false;

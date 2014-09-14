@@ -594,6 +594,7 @@ struct rotation
     double Matrix[ROWPARMS*ROWPARMS];
     } rotation;
 
+#if FLOATINGPOINTPARMS
 #if ONEROW
 static struct rotation parms    =
    /* R_R  W_R  R_W  W_W */   
@@ -608,7 +609,11 @@ static struct rotation parms    =
     , 0.0, 0.0,-1.2, 0.0
     }};
 #endif
+#else
+static int parms[NPARMS]    = {0};
+#endif
 
+#if FLOATINGPOINTPARMS
 static void printvector(const char * msg,double * row,int cols)
     {
     printf("%s\t: ",msg);
@@ -822,6 +827,7 @@ struct rotation rotate(struct rotation parms,struct rotation Rotation)
         }
     return newparms;
     }
+#endif
 
 struct bestParms
     {
@@ -836,6 +842,9 @@ struct bestParms
     // Intuitively difficult to decide!
     };
 
+#if FLOATINGPOINTPARMS
+/**/
+#else
 static bestParms  best_pl = 
     {
     false,
@@ -896,7 +905,11 @@ bests[19].rows == [3]
 //OnlyZeros 12 
 //suffix only no 
     };
+#endif
 
+#if FLOATINGPOINTPARMS
+/**/
+#else
 static bestParms  best_sl = 
     {
     false,
@@ -941,7 +954,11 @@ recall          0.417759
                                  //        0
         }
     };
+#endif
 
+#if FLOATINGPOINTPARMS
+/**/
+#else
 static bestParms best_sl_suffix =
     {
     true,
@@ -959,8 +976,11 @@ static bestParms best_sl_suffix =
                                  //        0
         }
     };
+#endif
 
-
+#if FLOATINGPOINTPARMS
+/**/
+#else
 static bestParms  best_fr = 
     {
 /*
@@ -1005,7 +1025,11 @@ recall          0.208138
                                  //        0
         }
     };
+#endif
 
+#if FLOATINGPOINTPARMS
+/**/
+#else
 static bestParms best_fr_suffix =
     {
 /*
@@ -1050,8 +1074,11 @@ recall          0.172926
                                  //        0
         }
     };
+#endif
 
-
+#if FLOATINGPOINTPARMS
+/**/
+#else
 static bestParms  best_sv = 
     {
 /*
@@ -1095,7 +1122,10 @@ recall          nan
                              //0
         }
     };
+#endif
 
+#if FLOATINGPOINTPARMS
+#else
 static bestParms best_sv_suffix =
     {
 /*
@@ -1139,7 +1169,9 @@ recall          nan
                             //0
         }
     };
+#endif
 
+#if FLOATINGPOINTPARMS
 #if 1
 static bestParms best_is_suffix =
     {
@@ -1213,7 +1245,8 @@ bests[11].rows == [1]
 //iteration:13.11
 /* number of nodes: 74744, nodes/line: 1.42586526923832640e-01 weight: 7.11594670680982090e+04 blobs 1 lines 5881633 * fraction 8.91250938133746201e-02 = 524201 lines*/
     };
-#elif 1
+#endif
+#else
 static bestParms best_is_suffix =
     {
     true,
@@ -1273,6 +1306,7 @@ recall          nan
     };
 #endif
 
+#if FLOATINGPOINTPARMS
 #if 1
 static bestParms best_is =
     {
@@ -1435,9 +1469,9 @@ static bestParms best_is =
     */
 
     };
-
-
-#elif 1
+#endif
+#else
+#if 1
 static bestParms best_is =
     {
     false,
@@ -1843,8 +1877,12 @@ bests[9].rows == [3]
 #else
 #error best_is not declared
 #endif
+#endif
 
 #if 0
+#if FLOATINGPOINTPARMS
+/**/
+#else
 // Based on list with 398930 full forms from CTS, University of Leeds (not publicly available) 
 static bestParms best_ru =
     {
@@ -1874,7 +1912,11 @@ static bestParms best_ru =
 //263,1285,-1021,1537//0
         }
     };
+#endif
 
+#if FLOATINGPOINTPARMS
+/**/
+#else
 static bestParms best_ru_suffix =
     {
     true,
@@ -1967,6 +2009,10 @@ bests[16].rows == [3]
      5   721 -1028   230
 */
     };
+#endif
+#else
+#if FLOATINGPOINTPARMS
+/**/
 #else
 // Based on much bigger data set (www.aot.ru) (https://github.com/bachan/libturglem/tree/master/share/turglem)
 // Over 3 million full forms
@@ -2090,8 +2136,11 @@ bests[15].rows == [3]
 */
 #endif
     };
+#endif
 
-
+#if FLOATINGPOINTPARMS
+/**/
+#else
 static bestParms best_ru_suffix =
     {
     true,
@@ -2154,8 +2203,11 @@ bests[16].rows == [3]
 //suffix only yes 
     };
 #endif
+#endif
 
-
+#if FLOATINGPOINTPARMS
+/**/
+#else
 static bestParms best_nl =
     {
     false,
@@ -2175,8 +2227,11 @@ static bestParms best_nl =
      8,     544,    -1144,   80     //     726
         }
     };
+#endif
 
-
+#if FLOATINGPOINTPARMS
+/**/
+#else
 static bestParms best_nl_suffix =
     {
     true,
@@ -2191,7 +2246,11 @@ static bestParms best_nl_suffix =
     0,      24,     -47,    1,   // 10435
         }
     };
+#endif
 
+#if FLOATINGPOINTPARMS
+/**/
+#else
 static bestParms best_da_suffix =
     {
     true,
@@ -2238,7 +2297,11 @@ recall          0.031943
         }
 
     };
+#endif
 
+#if FLOATINGPOINTPARMS
+/**/
+#else
 static bestParms best_da =
     {
     false,
@@ -2284,7 +2347,11 @@ recall          0.063885
         }
 
     };
+#endif
 
+#if FLOATINGPOINTPARMS
+/**/
+#else
 /* transform singular to plural (only nouns) */
 static bestParms best_daSP =
     {
@@ -2337,9 +2404,11 @@ recall          0.630137
                                  //        0
         }
     };
+#endif
 
-
-
+#if FLOATINGPOINTPARMS
+/**/
+#else
 static bestParms best_daSP_suffix =
     {
     true,
@@ -2395,7 +2464,7 @@ recall          0.648817
                                  //        0
         }
     };
-
+#endif
 
 /* Based on 10000 words
 int best_en[]       =
@@ -2406,6 +2475,7 @@ int best_en[]       =
     };
 */
 
+#if FLOATINGPOINTPARMS
 static bestParms best_da3 =
     {
     false,
@@ -2418,7 +2488,11 @@ static bestParms best_da3 =
         0.00000000000000000e+00,        7.35136672243838163e-01,        -6.17008258102692664e-01,       2.80846724309429585e-01
         }
     };
+#endif
 
+#if FLOATINGPOINTPARMS
+/**/
+#else
 static bestParms best_en =
     {
     false,
@@ -2471,7 +2545,9 @@ static bestParms best_en =
     7, 77, -63,47   //38334
         }
     };
+#endif
 
+#if FLOATINGPOINTPARMS
 static bestParms best_en3 = // English, ambiguous training pairs in training set derived from CELEX, PARMS3 == 1
     {
     false,
@@ -2538,7 +2614,9 @@ bests[6].rows == [1]
         0.00000000000000000e+00,	7.80504869708012139e-01,	-5.43959942196694413e-01,	3.08090456923689693e-01
         }
     };
+#endif
 
+#if FLOATINGPOINTPARMS
 #if 0
 static bestParms best_en3_suffix = // English, ambiguous training pairs in training set derived from CELEX, PARMS3 == 1, lowest fraction 0.001
     {
@@ -2634,7 +2712,9 @@ static bestParms best_en3_suffix = // English, ambiguous training pairs in train
 
     };
 #endif
+#endif
 
+#if FLOATINGPOINTPARMS
 static bestParms best_en4 = // English, ambiguous training pairs in training set derived from CELEX, PARMS3 == 0
     {
     false,
@@ -2647,7 +2727,9 @@ static bestParms best_en4 = // English, ambiguous training pairs in training set
         1.06322242479528462e-03,        7.78077313282915517e-01,        -5.98834680747542203e-01,       1.89714494033809300e-01
         }
     };
+#endif
 
+#if FLOATINGPOINTPARMS
 static bestParms best_en4_suffix = // English, ambiguous training pairs in training set derived from CELEX, PARMS3 == 0
     {
     true,
@@ -2660,7 +2742,11 @@ static bestParms best_en4_suffix = // English, ambiguous training pairs in train
         7.47138752010872206e-03,        7.20070629992721201e-01,        -6.91457516803205441e-01,       5.76972152426369414e-02
         }
     };
+#endif
 
+#if FLOATINGPOINTPARMS
+/**/
+#else
 static bestParms best_ena = // English, ambiguous training pairs in training set derived from CELEX
     {
     false,
@@ -2677,7 +2763,11 @@ static bestParms best_ena = // English, ambiguous training pairs in training set
                                  //        0
         }
     };
+#endif
 
+#if FLOATINGPOINTPARMS
+/**/
+#else
 static bestParms best_en_suffix =
     {
     true,
@@ -2709,7 +2799,11 @@ static bestParms best_en_suffix =
     -7,-8,-12, 4  //   9828
         }
     };
+#endif
 
+#if FLOATINGPOINTPARMS
+/**/
+#else
 static bestParms best_ge =
     {
     false,
@@ -2779,8 +2873,11 @@ bests[7].rows == [3]
      7   165  -213   121
 */
     };
+#endif
 
-
+#if FLOATINGPOINTPARMS
+/**/
+#else
 //based on 77566 pairs (deutsch_affix_2464_3.UTF8.txt)
 //iteration:83
 /* 11434 */
@@ -2853,7 +2950,11 @@ bests[8].rows == [4]
      0     0     04273647
 */
     };
+#endif
 
+#if FLOATINGPOINTPARMS
+/**/
+#else
 static bestParms best_la =
     {
     false,
@@ -2898,7 +2999,11 @@ precision       0.054545
 recall          0.044444
 */
     };
+#endif
 
+#if FLOATINGPOINTPARMS
+/**/
+#else
 static bestParms best_la_suffix =
     {
     true,
@@ -2943,7 +3048,11 @@ precision       0.062171
 recall          0.109259
 */
     };
+#endif
 
+#if FLOATINGPOINTPARMS
+/**/
+#else
 static bestParms best_el =
     {
     false,
@@ -2988,7 +3097,11 @@ precision       0.536315
 recall          0.561909
 */
     };
+#endif
 
+#if FLOATINGPOINTPARMS
+/**/
+#else
 static bestParms best_el_suffix =
     {
     true,
@@ -3044,28 +3157,27 @@ precision       0.714824
 recall          0.511001
 */
     };
-
+#endif
 
 static struct bestParms bests[] =    
-    {best_da
-    ,best_da_suffix
-    ,best_daSP
-    ,best_da3
-
-    ,best_en
-    ,best_en_suffix
-    ,best_ena
-
+    {
+#if FLOATINGPOINTPARMS
+     best_da3
     ,best_en3
     ,best_en3_suffix
     ,best_en4
     ,best_en4_suffix
+#else
+     best_da
+    ,best_da_suffix
+    ,best_daSP
+    ,best_en
+    ,best_en_suffix
+    ,best_ena
     ,best_fr
     ,best_fr_suffix
     ,best_ge
     ,best_ge_suffix
-    ,best_is
-    ,best_is_suffix
     ,best_la
     ,best_la_suffix
     ,best_el
@@ -3079,8 +3191,12 @@ static struct bestParms bests[] =
     ,best_sl_suffix
     ,best_sv
     ,best_sv_suffix
+#endif
+    ,best_is
+    ,best_is_suffix
     };
 
+#if FLOATINGPOINTPARMS
 #if 0
 static double best[NPARMS]    = 
   {// Before a chain of sibling rules is created, there are N candidate rules.
@@ -3105,6 +3221,18 @@ static double best[NPARMS]    =
     , 0.0, 0.0, 0.0, 1.0
     };
 #endif
+#else
+static int best[NPARMS]    = 
+  {// Before a chain of sibling rules is created, there are N candidate rules.
+   // For each sibling created, the number n of remaining candidates is
+   // decremented.
+  0,  0,  0,  0, // n >= exp(N,0.75)
+  0,  0,  0,  0, // n >= exp(N,0.5)
+//0,  0,  0,  0, // n >= exp(N,0.25)
+  0,  0,  0,  0  // n <  exp(N,0.25)
+  };
+#endif
+
 //iteration:19.63
 /* 387 381.726058 */
 /*
@@ -3170,6 +3298,9 @@ static void plus(double * dest, double * term,int cols)
         dest[col] += term[col];
     }
 
+
+static int improvements = 0;
+#if FLOATINGPOINTPARMS
 static void copy(double * dest,double * source,int cols)
     {
     for(int col = 0;col < cols;++col)
@@ -3177,7 +3308,6 @@ static void copy(double * dest,double * source,int cols)
     }
 
 //static int pcnt[(NPARMS >> 2)+1] = {0};//,0,0,0,0};
-static int improvements = 0;
 
 void betterfound(int Nnodes,double weight,int swath,int iterations,const char * besttxt,const char * parmstxt,int blobs,int lines,double fraction,int fraclines,bool suffixonly,bool doweights,bool improvement)
     {
@@ -3245,12 +3375,13 @@ void worsefound()
     {
     copy(parms.Matrix,best,NPARMS);
     }
-//static int minparmsoff = 0;
 
 void copybest()
     {
     copy(parms.Matrix,best,NPARMS); // go on with best result so far.
     }
+//static int minparmsoff = 0;
+
 
 //static const char * besttxt;
 //static const char * parmstxt = NULL;
@@ -3615,6 +3746,275 @@ static int comp_parms0_off(const vertex * a,const vertex * b)
         }
     return 0;
     }
+#else
+static void copy(int * dest,int * source,int cols)
+    {
+    for(int col = 0;col < cols;++col)
+        dest[col] = source[col];
+    }
+
+void betterfound(int Nnodes,double weight,int swath,int iterations,const char * besttxt,const char * parmstxt,int blobs,int lines,double fraction,int fraclines,bool suffixonly,bool doweights,bool improvement)
+    {
+    if(improvement)
+        {
+        ++improvements;
+        FILE * f = fopen(parmstxt,"a");
+        assert(f);
+        fprintf(f,"//-> IMPROVEMENT #%d\n",improvements);
+        fclose(f);
+        }
+#if FLOATINGPOINTPARMS
+    copy(best,parms.Matrix,NPARMS);
+#else
+    copy(best,parms,NPARMS);
+#endif
+    FILE * f = fopen(besttxt,"a");
+    if(f)
+        {
+        fprintf(f,"//iteration:%d.%d\n",swath,iterations);
+        fprintf(f
+               ,"/*weight (%s used): %.*e suffix only: %s */\n"
+               ,doweights ? "" : "not "
+               ,DBL_DIG+2
+               ,weight
+               ,suffixonly ? "yes" : "no"
+               );
+
+        fprintf(f
+               ,"/* number of nodes: %d, nodes/line: %.*e weight (%s used): %.*e blobs %d lines %d * fraction %.*e = %d lines*/\n"
+               ,Nnodes
+               ,DBL_DIG+2,(double)Nnodes/(double)fraclines
+               ,doweights ? "" : "not "
+               ,DBL_DIG+2,weight
+               ,blobs
+               ,lines
+               ,DBL_DIG+2,fraction
+               ,fraclines
+               );
+//        fprintf(f,"        {         \t         \t         \t          // # decisions\n        ");
+        fprintf(f,"        {\n        ");
+        int i = 0;
+        for(;i < NPARMS;++i)
+            {
+#if FLOATINGPOINTPARMS
+            fprintf(f,"%.*e", DBL_DIG+2,parms.Matrix[i]);
+#else
+            fprintf(f,"%d",parms[i]);
+#endif
+            if(((i+1) % ROWPARMS) == 0)
+                {
+                /*
+                if(i == NPARMS - 1)
+                    fprintf(f,"  //%d\n        ",pcnt[i >> 2]);
+                else
+                    fprintf(f,", //%d\n        ",pcnt[i >> 2]);
+                */
+                if(i == NPARMS - 1)
+                    fprintf(f,"\n        ");
+                else
+                    fprintf(f,",\n        ");
+                }
+            else
+                fprintf(f,",\t");
+            }
+//        fprintf(f,"}         \t         \t         \t          //(%d unresolved comparisons)\n\n",pcnt[NPARMS >> 2]);
+        fprintf(f,"}\n\n");
+        fclose(f);
+        }
+    }
+
+void worsefound()
+    {
+    copy(parms,best,NPARMS);
+    }
+
+static int minparmsoff = 0;
+
+void copybest()
+    {
+    copy(parms,best,NPARMS); // go on with best result so far.
+    }
+
+//static const char * besttxt;
+//static const char * parmstxt = NULL;
+static int OnlyZeros = NPARMS;
+
+static bool allZeros()
+    {
+    int x2 = 0;
+    int i;
+    for(i = 0;i < NPARMS;++i)
+        {
+        x2 += parms[i]*parms[i];
+        }
+    return x2 == 0;
+    }
+
+bool brown(/*const char * parmstxt*/)
+    {
+    static int it = 0;
+//    assert(parmstxt);
+//    FILE * f = fopen(parmstxt,"a");
+//    assert(f);
+//    D[rand() % NPARMS] += (rand() & 1) ? 1 : -1;
+
+    int i;
+    int T = it;
+    int R0 = (T % NUMBER_OF_ROWS_IN_R) * ROWPARMS;   // row selector in R[]: 0 4 8 12 ... 60 0 4 8 12 ... 60 0 4 ...
+    T /= NUMBER_OF_ROWS_IN_R;                 // strip lowest 4 bits (it / 16)
+    int P0 = (NPARMS - ROWPARMS) - (T % ROWPARMS) * ROWPARMS;   // row selector in parms. After NUMBER_OF_ROWS_IN_R iterations, the previous row is modified:  [...] 8 8 ... (NPARMSx) 4 ... (NPARMSx) 0 ... (NPARMSx) 12 ..
+	T /= ROWPARMS;
+    int fac = (T & 1) ? -1 : 1;  // 1 1 1 ... ((NUMBER_OF_ROWS_IN_R x ROWPARMS)x) -1 -1 -1 ... ((NUMBER_OF_ROWS_IN_R x ROWPARMS)x) 1 ...
+	T /= 2;
+    if(T * (int)(NUMBER_OF_ROWS_IN_R * ROWPARMS * 2) == it)            // it = 0 (16 x 8) (16 x 8) x 2 ...
+        {                        // double all parms of the best parameter setting and start a new round
+        for(i = 0;i < NPARMS;++i)
+            best[i] *= 2;        
+        }
+    /* NOT a good idea.
+    if((it % 16) == 0) // After handling one row,
+        copy(parms,best,NPARMS); // go on with best result so far.
+        */
+    copybest();
+    //copy(parms,best,NPARMS); // go on with best result so far.
+    for(i = 0;i < ROWPARMS;++i)
+        parms[P0+i] += fac*R[R0+i]; // 4N <= R0+i <= 4N+3
+    ++it;
+
+//    fclose(f);
+
+    for(i = 0;i < NPARMS; ++i)
+        {
+        if(parms[i])
+            {
+            minparmsoff = i / ROWPARMS;
+            minparmsoff *= ROWPARMS;
+            break;
+            }
+        }
+    return allZeros();//OnlyZeros <= P0;
+    }
+
+bool init()
+    {
+    if(allZeros())
+        {
+        copy(parms,best,NPARMS);
+        }
+    return true;
+    }
+
+static int pcnt[(NPARMS >> 2)+1] = {0,0,0,0};//,0};
+
+
+void onlyZeros(const char * parmstxt,bool suffixonly)
+    {
+    OnlyZeros = 0;
+    for(unsigned int i = 0;i < sizeof(pcnt)/sizeof(pcnt[0]);++i)
+        {
+        if(pcnt[i] != 0)
+            {
+            OnlyZeros = (i+1) << 2;
+            pcnt[i] = 0;
+            }
+        }
+    if(parmstxt)
+        {
+        FILE * f = fopen(parmstxt,"a");
+        assert(f);
+        fprintf(f,"//OnlyZeros %d \n",OnlyZeros);
+        fprintf(f,"//suffix only %s \n",suffixonly ? "yes" : "no");
+        fclose(f);
+        }
+    }
+
+
+void printparms(int Nnodes,double weight,const char * parmstxt,bool suffixonly,bool doweights)
+    {
+    int i;
+    FILE * f = fopen(parmstxt,"a");
+    assert(f);
+    fprintf(f
+           ,"/*#nodes in tree: %d weight (%s used): %.*e suffix only: %s */\n"
+           ,Nnodes
+           ,doweights ? "" : "not "
+           ,DBL_DIG+2
+           ,weight
+           ,suffixonly ? "yes" : "no"
+           );
+    fprintf(f,"        {\n        ");
+    for(i = 0;i < NPARMS;++i)
+        {
+        fprintf(f,"%5d",parms[i]);
+        if(((i+1) % ROWPARMS) == 0)
+            {
+            if(i == NPARMS - 1)
+                fprintf(f,"  //%d\n        ",pcnt[i >> 2]);
+            else
+                fprintf(f,", //%d\n        ",pcnt[i >> 2]);
+            }
+        else
+            fprintf(f,",");
+        }
+    fprintf(f,"                         //%9d\n",pcnt[i >> 2]);
+    fprintf(f,"        }\n");
+    fclose(f);
+    }
+
+static int comp_parms(const vertex * a,const vertex * b)
+    {
+    //for(int o = 0;o < NPARMS;o += ROWPARMS)
+    if(  a->R__R != b->R__R
+      || a->W__R != b->W__R
+      || a->R__W != b->R__W
+      || a->W__W != b->W__W
+      )
+        {
+        int off = minparmsoff;
+        if(off < parmsoff)
+            off = parmsoff;
+        for(int o = off;o < NPARMS;o += ROWPARMS)
+            {
+            int A = parms[o]*a->R__R + parms[o+1]*a->W__R + parms[o+2]*a->R__W + parms[o+3]*a->W__W;
+            int B = parms[o]*b->R__R + parms[o+1]*b->W__R + parms[o+2]*b->R__W + parms[o+3]*b->W__W;
+            if(A != B)
+                {
+                ++pcnt[o >> 2]; // For counting the number of times the first, second, third or fourth condition has been used.
+                // (Hypothesis: with parms as doubles the first condition is used and only in very special cases the second.
+                //  Addendum: This hypothesis holds.)
+                return A > B ? -1 : 1;
+                }
+            }
+        ++pcnt[NPARMS >> 2];
+        }
+    return 0;
+    }
+
+static int nparms = 0;
+
+static int comp_parms0_off(const vertex * a,const vertex * b)
+    {
+    int off = minparmsoff;
+    if(off < parmsoff)
+        off = parmsoff;
+    if(parmsoff >= nparms)
+        {
+        fprintf(stderr,"parmsoff is set to high. There are not enough rows of parameters. Fix in graph.cpp\n");
+        exit(-1);
+        }
+    for(int o = off;o < nparms;o += ROWPARMS)
+        {
+        int A = parms[o]*a->R__R + parms[o+1]*a->W__R + parms[o+2]*a->R__W + parms[o+3]*a->W__W;
+        int B = parms[o]*b->R__R + parms[o+1]*b->W__R + parms[o+2]*b->R__W + parms[o+3]*b->W__W;
+        if(A != B)
+            {
+            return A > B ? -1 : 1;
+            }
+        }
+    return 0;
+    }
+#endif
+
 
 struct funcstruct
     {
@@ -3693,7 +4093,11 @@ bool setCompetitionFunction(const char * functionname,const char * extra,bool su
                             exit(-1);
                             }
                         for(int k = 0;k < nparms;++k)
+#if FLOATINGPOINTPARMS
                             parms.Matrix[k] = bests[j].val[k];
+#else
+                            parms[k] = bests[j].val[k];
+#endif
                         if(parmstxt)
                             {
                             FILE * f = fopen(parmstxt,"w");
@@ -3707,7 +4111,11 @@ bool setCompetitionFunction(const char * functionname,const char * extra,bool su
                                     {
                                     if(k % ROWPARMS == 0)
                                         fprintf(f,"\n");
+#if FLOATINGPOINTPARMS
                                     fprintf(f,"%6f ",parms.Matrix[k]);
+#else
+                                    fprintf(f,"%6d",parms[k]);
+#endif
                                     }
                                 fprintf(f,"\n");
                                 fclose(f);

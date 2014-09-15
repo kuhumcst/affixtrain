@@ -153,7 +153,7 @@ OptReturnTp optionStruct::doSwitch(int optchar,char * locoptarg,char * progname)
             printf("-j: directory to store the bulk of intermediate results, also textual presentations of rules. Must not include final (back)slash.\n");
             printf("-L: minimum fraction (with option -f0 or -p)\n");
             printf("-H: maximum fraction (with option -f0 or -p)\n");
-            printf("-W: minimise weight (sum of inverse number of supporters over rules), not count (sum of rules) (with -p or -f0)\n");
+            printf("-W: minimise weight, not count (sum of rules) (with -p or -f0)\n");
             printf("-P: write parameters to file (default parms.txt if -p or -f0, otherwise no parameter file)\n");
             printf("-n: columns (default 120):\n");
             printf("  1:Word\n");

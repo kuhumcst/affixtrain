@@ -563,12 +563,24 @@ class vertexPointer
                 node * n = this;
                 while(n)
                     {
-                    double rcount;
                     if(this->Right)
-                        rcount = (double)this->Right->count();
-                    else
-                        rcount = 0.0;
-                    ret = ret + 5000.0/(5000.0 + rcount*rcount);
+                        {
+                        double rcount = (double)this->Right->count();
+                        assert(rcount >= 0.9);
+                        ret += 5.0*(rcount-1.0)*exp(-0.9*rcount)+1; 
+                        /* penalizes as follows:
+                        rcount >> 1 :  1
+                        rcount ~ 2 : 1.75
+                        rcount == 1 : 1
+
+                        So it penalizes the rules with the lowest number of 
+                        supporting word/lemma examples that we aren't going to
+                        cut away. The rules that are going to be cut away are
+                        less extremely penalized, but enough to make it 
+                        disadvantageous to split the heaviest penalized rules
+                        in even lower grade rules.
+                        */
+                        }
                     if(n->IfPatternSucceeds)
                         ret += n->IfPatternSucceeds->weightedcount();
                     n = n->IfPatternFails;

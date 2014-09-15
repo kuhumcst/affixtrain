@@ -2581,6 +2581,22 @@ static bestParms best_en4_suffix = // English, ambiguous training pairs in train
 #endif
 
 #if FLOATINGPOINTPARMS
+static bestParms best_en4W = // English, ambiguous training pairs in training set derived from CELEX
+    {
+    false,
+    "en4W",
+    1,
+//iteration:20.9
+/*weight ( used): 1.13023631391451454e+04 suffix only: no */
+/* number of nodes: 9850, nodes/line: 1.25803032044650487e-01 weight ( used): 1.13023631391451454e+04 blobs 1 lines 78297 * fraction 1.00000000000000000e+00 = 78297 lines*/
+        {
+        4.02884374087577289e-03,        6.80122085729639836e-01,        -7.24874245486841984e-01,       1.09430549440079072e-01
+        }
+    };
+#endif
+
+
+#if FLOATINGPOINTPARMS
 static bestParms best_en6W = // English, ambiguous training pairs in training set derived from CELEX
     {
     false,
@@ -3073,6 +3089,7 @@ static struct bestParms bests[] =
     ,best_en3_suffix
     ,best_en4
     ,best_en4_suffix
+    ,best_en4W
     ,best_en6W
 #else
      best_da

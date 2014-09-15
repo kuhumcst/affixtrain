@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define PARMS3 0
 //#define ROWPARMS 4
 //#define NPARMS ROWPARMS
-static int ROWPARMS = 4;
+static int ROWPARMS = 6;
 #define NPARMS ROWPARMS
 #else
 #define NUMBER_OF_ROWS_IN_R (sizeof(R)/(ROWPARMS*sizeof(R[0])))

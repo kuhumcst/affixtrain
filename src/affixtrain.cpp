@@ -3045,7 +3045,7 @@ static bool doTraining
     return moreToDo;
     }
 
-void computeParms(const char * fname,const char * extra,const char * nflexrules, const char * columns,double minfraction,double maxfraction,bool doweights,const char * parmstxt,const char * besttxt,int cutoff)
+void computeParms(const char * fname,const char * extra,const char * nflexrules, const char * columns,double minfraction,double maxfraction,bool doweights,const char * parmstxt,const char * besttxt,int expectedCutoff)
     {
     CHECK("iglobTempDir");
     int maxswath = MAXSWATH;
@@ -3059,7 +3059,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
     double miniterations = MINITERATIONS;
     double maxiterations = MAXITERATIONS;
     const char * tag = "";
-    node::cutoff = cutoff; // parameter to weight function
+    node::mostPenalized = expectedCutoff + 1; // parameter to weight function
     if(minfraction > 0.0)
         {
         factor = pow(maxfraction/minfraction,1.0/(double)maxswath);
@@ -3138,7 +3138,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                     if(parmstxt && !flog)
                         {
                         flog = fopen(parmstxt,"a");
-                        fprintf(flog,"%s: blobs=%d lines=%d fraction=%f cutoff=%d\n",fname,blobs,lines,fraction,cutoff);
+                        fprintf(flog,"%s: blobs=%d lines=%d fraction=%f most penalized=%d\n",fname,blobs,lines,fraction,node::mostPenalized);
                         fclose(flog);
                         flog = 0;
                         }
@@ -3284,7 +3284,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                     if(parmstxt && !flog)
                         {
                         flog = fopen(parmstxt,"a");
-                        fprintf(flog,"//fraction: %f  blobs:%d  lines: %d fraclines: %d cutoff=%d\n",fraction,blobs,lines,fraclines,cutoff);
+                        fprintf(flog,"//fraction: %f  blobs:%d  lines: %d fraclines: %d most penalized=%d\n",fraction,blobs,lines,fraclines,node::mostPenalized);
                         fprintf(flog,"//iteration:%d.%d SKIPPED\n",swath,iterations);
                         fclose(flog);
                         flog = 0;
@@ -3853,6 +3853,16 @@ int main(int argc,char **argv)
     else
         cutoff = -1;
 
+    int expectedCutoff;
+    if(options.C)
+        {
+        expectedCutoff = *options.C - '0';
+        if(expectedCutoff > 9 || expectedCutoff < 0)
+            expectedCutoff = -1;
+        }
+    else
+        expectedCutoff = -1;
+
 
     const char * extra = options.e;//NULL;
     if(extra && strstr(extra,"_suffix"))
@@ -3928,6 +3938,7 @@ int main(int argc,char **argv)
         if(fname)
             printf("Wordlist:%s\n",fname);
         printf("cutoff:%d\n",cutoff);
+        printf("expected cutoff:%d\n",expectedCutoff);
         printf("flex rules:%s\n",(nflexrules == NULL) ? "automatically generated names" : nflexrules);
         if(extra)
             printf("extra name suffix:%s\n",extra);
@@ -3942,7 +3953,7 @@ int main(int argc,char **argv)
 
     if(compute_parms)
         {
-        computeParms(fname,extra,nflexrules,columns,options.minfraction,options.maxfraction,options.doweights,parmstxt,besttxt,cutoff);
+        computeParms(fname,extra,nflexrules,columns,options.minfraction,options.maxfraction,options.doweights,parmstxt,besttxt,expectedCutoff);
         }
     else
         {

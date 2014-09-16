@@ -33,6 +33,7 @@ struct optionStruct
 -o <flexrules> 
 */
     const char * c; // cutoff
+    const char * C; // expected cutoff
     const char * e; // extra
     const char * f; // compfunc
     const char * i; // word list

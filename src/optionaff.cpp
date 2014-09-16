@@ -31,10 +31,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <assert.h>
 
 
-//        printf("usage: makeaffixrules -w <word list> -c <cutoff> -o <flexrules> -e <extra> -n <columns> -f <compfunc> [<word list> [<cutoff> [<flexrules> [<extra> [<columns> [<compfunc>]]]]]]\n");
+//        printf("usage: makeaffixrules -w <word list> -c <cutoff> -C <expected cutoff> -o <flexrules> -e <extra> -n <columns> -f <compfunc> [<word list> [<cutoff> [<flexrules> [<extra> [<columns> [<compfunc>]]]]]]\n");
 
 bool VERBOSE = false;
-static char opts[] = "?@:B:b:c:e:f:hH:i:j:L:n:o:O:p:P:s:v:W:t:" /* GNU: */ "wr";
+static char opts[] = "?@:B:b:c:C:e:f:hH:i:j:L:n:o:O:p:P:s:v:W:t:" /* GNU: */ "wr";
 static char *** Ppoptions = NULL;
 static char ** Poptions = NULL;
 static int optionSets = 0;
@@ -48,7 +48,11 @@ char * dupl(const char * s)
 
 optionStruct::optionStruct()
     {
-    c = NULL; // cutoff
+    c = NULL; // cutoff 
+    C = NULL; // expected cutoff when determining the parameters using weightedcount()
+              // Rules with C+1 supporting word/lemma pairs have the highest penalty.
+              // Rules with C or fewer supporting word/lemma pairs are probably best cut off.
+              // To decide whether that is the case, the rules must be tested with OOV word/lemma pairs.
     e = NULL; // extra
     f = NULL; // compfunc
     i = NULL; // word list
@@ -77,6 +81,7 @@ optionStruct::~optionStruct()
     delete [] Poptions;
     delete [] Ppoptions;
     delete [] c;
+    delete [] C;
     delete [] e;
     delete [] f;
     delete [] i;
@@ -104,6 +109,9 @@ OptReturnTp optionStruct::doSwitch(int optchar,char * locoptarg,char * progname)
             break;
         case 'c': // cutoff
             c = dupl(locoptarg);
+            break;
+        case 'C': // cutoff for weightedcount
+            C = dupl(locoptarg);
             break;
         case 'e': // extra
             e = dupl(locoptarg);
@@ -134,7 +142,7 @@ OptReturnTp optionStruct::doSwitch(int optchar,char * locoptarg,char * progname)
         case 'h':
         case '?':
             printf("usage:\n"
-                "affixtrain [-@ <option file>] -i <word list> [-c <cutoff>] [-o <flexrules>] [-e <extra>] [-n <columns>] [-f <compfunc>] [-p[-]] [-s[-]] [-v[-]] [-j <tempdir>] [-L<n>] [-H<n>]"
+                "affixtrain [-@ <option file>] -i <word list> [-c <cutoff>] [-C <expected cutoff>] [-o <flexrules>] [-e <extra>] [-n <columns>] [-f <compfunc>] [-p[-]] [-s[-]] [-v[-]] [-j <tempdir>] [-L<n>] [-H<n>]"
                 "\nor\n"
                 "affixtrain [<word list> [<cutoff> [<flexrules> [<extra> [<columns> [<compfunc>]]]]]]"
                 "\nor\n"
@@ -145,6 +153,7 @@ OptReturnTp optionStruct::doSwitch(int optchar,char * locoptarg,char * progname)
                 );
             printf("-i: (input) full form / lemma list\n");
             printf("-c: discard rules with little support. 0 <= cutoff <= 9\n");
+            printf("-C: (together with -p) expected cutoff (parameter for rule weight function). 0 <= cutoff <= 9\n");
             printf("-o: (output) default is to automatically generate file name\n");
             printf("-e: language code (da,en,is,nl,ru, etc)\n");
             printf("-p: compute parameters (overrules -f)\n");

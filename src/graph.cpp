@@ -59,7 +59,7 @@ int FullRulePairCount = 0;
 
 int VCount = 0;
 
-int node::cutoff = 0;
+int node::mostPenalized = 1;
 
 bool building = true;
 

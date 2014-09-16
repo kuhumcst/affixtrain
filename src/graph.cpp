@@ -59,6 +59,8 @@ int FullRulePairCount = 0;
 
 int VCount = 0;
 
+int node::cutoff = 0;
+
 bool building = true;
 
 

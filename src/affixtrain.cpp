@@ -3045,7 +3045,7 @@ static bool doTraining
     return moreToDo;
     }
 
-void computeParms(const char * fname,const char * extra,const char * nflexrules, const char * columns,double minfraction,double maxfraction,bool doweights,const char * parmstxt,const char * besttxt)
+void computeParms(const char * fname,const char * extra,const char * nflexrules, const char * columns,double minfraction,double maxfraction,bool doweights,const char * parmstxt,const char * besttxt,int cutoff)
     {
     CHECK("iglobTempDir");
     int maxswath = MAXSWATH;
@@ -3059,6 +3059,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
     double miniterations = MINITERATIONS;
     double maxiterations = MAXITERATIONS;
     const char * tag = "";
+    node::cutoff = cutoff; // parameter to weight function
     if(minfraction > 0.0)
         {
         factor = pow(maxfraction/minfraction,1.0/(double)maxswath);
@@ -3137,7 +3138,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                     if(parmstxt && !flog)
                         {
                         flog = fopen(parmstxt,"a");
-                        fprintf(flog,"%s: blobs=%d lines=%d fraction=%f\n",fname,blobs,lines,fraction);
+                        fprintf(flog,"%s: blobs=%d lines=%d fraction=%f cutoff=%d\n",fname,blobs,lines,fraction,cutoff);
                         fclose(flog);
                         flog = 0;
                         }
@@ -3283,7 +3284,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                     if(parmstxt && !flog)
                         {
                         flog = fopen(parmstxt,"a");
-                        fprintf(flog,"//fraction: %f  blobs:%d  lines: %d fraclines: %d\n",fraction,blobs,lines,fraclines);
+                        fprintf(flog,"//fraction: %f  blobs:%d  lines: %d fraclines: %d cutoff=%d\n",fraction,blobs,lines,fraclines,cutoff);
                         fprintf(flog,"//iteration:%d.%d SKIPPED\n",swath,iterations);
                         fclose(flog);
                         flog = 0;
@@ -3941,7 +3942,7 @@ int main(int argc,char **argv)
 
     if(compute_parms)
         {
-        computeParms(fname,extra,nflexrules,columns,options.minfraction,options.maxfraction,options.doweights,parmstxt,besttxt);
+        computeParms(fname,extra,nflexrules,columns,options.minfraction,options.maxfraction,options.doweights,parmstxt,besttxt,cutoff);
         }
     else
         {

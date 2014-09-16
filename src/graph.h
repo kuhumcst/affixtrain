@@ -506,6 +506,7 @@ class vertexPointer
         private:
             bool compatibleSibling(node * sib);
         public:
+            static int cutoff;
             void Counting(int & nodes,int & pairs,FILE * f)
                 {
                 int Nodes = 0;
@@ -581,7 +582,7 @@ class vertexPointer
                         disadvantageous to split the heaviest penalized rules
                         in even lower grade rules.
                         */
-                        ret += rcount*exp(-rcount/3.0); 
+                        //ret += rcount*exp(-rcount/3.0); 
                         /*
                         Purpose: for rule sets that have rules with support
                         from fewer than 3 word/lemma examples removed.
@@ -594,6 +595,8 @@ class vertexPointer
                         Weight goes to zero for large rcount.
                         rcount == 30 (0.00136)
                         */
+                        ret += rcount*exp(-rcount/(cutoff+1.0));
+                        // So cutoff == 0 --> max penalty at 
                         }
                     if(n->IfPatternSucceeds)
                         ret += n->IfPatternSucceeds->weightedcount();

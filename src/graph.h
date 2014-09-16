@@ -567,8 +567,9 @@ class vertexPointer
                         {
                         double rcount = (double)this->Right->count();
                         assert(rcount >= 0.9);
+                        /* 
                         ret += 5.0*(rcount-1.0)*exp(-0.9*rcount)+1; 
-                        /* penalizes as follows:
+                        penalizes as follows:
                         rcount >> 1 :  1
                         rcount ~ 2 : 1.75
                         rcount == 1 : 1
@@ -579,6 +580,19 @@ class vertexPointer
                         less extremely penalized, but enough to make it 
                         disadvantageous to split the heaviest penalized rules
                         in even lower grade rules.
+                        */
+                        ret += rcount*exp(-rcount/3.0); 
+                        /*
+                        Purpose: for rule sets that have rules with support
+                        from fewer than 3 word/lemma examples removed.
+                        Less pronounced difference between values for max 
+                        penalty at 
+                        rcount == 3 (1.1036) and for 
+                        rcount == 2 (1.0268) and
+                        rcount == 1 (0.7165).
+
+                        Weight goes to zero for large rcount.
+                        rcount == 30 (0.00136)
                         */
                         }
                     if(n->IfPatternSucceeds)

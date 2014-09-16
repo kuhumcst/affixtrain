@@ -233,7 +233,7 @@ Read word class from file.
 #define START '^'
 #define END '$'
 
-#define FLOATINGPOINTPARMS 0
+#define FLOATINGPOINTPARMS 1
 #define MAXSWATH 20
 #define MAXITERATIONS 100
 #define MINITERATIONS 10

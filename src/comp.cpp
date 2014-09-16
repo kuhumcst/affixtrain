@@ -2698,9 +2698,9 @@ bests[5].rows == [1]
 //iteration:20.9
 /*weight ( used): 1.13023631391451454e+04 suffix only: no */
 /* number of nodes: 9850, nodes/line: 1.25803032044650487e-01 weight ( used): 1.13023631391451454e+04 blobs 1 lines 78297 * fraction 1.00000000000000000e+00 = 78297 lines*/
-        {
+        {{
         4.02884374087577289e-03,        6.80122085729639836e-01,        -7.24874245486841984e-01,       1.09430549440079072e-01
-        }
+        }}
     };
 #endif
 
@@ -2818,9 +2818,9 @@ bests[5].rows == [1]
 //iteration:20.3
 /*weight ( used): 1.12271613326426923e+04 suffix only: no */
 /* number of nodes: 9840, nodes/line: 1.25675313230391966e-01 weight ( used): 1.12271613326426923e+04 blobs 1 lines 78297 * fraction 1.00000000000000000e+00 = 78297 lines*/
-        {
+        {{
         1.03898721887023399e-02,        6.93128471853588057e-01,        -6.91156252727169851e-01,       2.04300945832150471e-01,        5.38207657061103278e-03,        -4.03932947156769432e-04
-        }
+        }}
     };
 #endif
 
@@ -2836,9 +2836,9 @@ static bestParms best_en6WS = // English, ambiguous training pairs in training s
 //iteration:20.3
 /*weight ( used): 5.80760738773845060e+03 suffix only: no */
 /* number of nodes: 10161, nodes/line: 1.29775087168090719e-01 weight ( used): 5.80760738773845060e+03 blobs 1 lines 78297 * fraction 1.00000000000000000e+00 = 78297 lines*/
-        {
+        {{
         4.08527421595744900e-02,        6.73406780072449362e-01,        -7.08980349688113631e-01,       2.04692793670780471e-01,        1.71516852929795953e-02,        -2.81170366166549109e-03
-        }
+        }}
     };
 #endif
 

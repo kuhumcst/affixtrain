@@ -2831,7 +2831,7 @@ static bestParms best_en6WS = // English, ambiguous training pairs in training s
 // Aiming at cutoff == 3, because maximum penalty is for 3 word/lemma pairs for a rule.
     {
     false,
-    "en6WS", /* Better than comp_sugar 20140915 */
+    "en6WS", 
     1,
 /*
 0	0.985600	14	77169.000000	14451.285714	11399.714286	18.726802	14.772401	935.285714	5.428571	15.500000	0.000000	171.785714	944.285714	11.000000	5.214286	0.000000	167.500000	1.122684	0.142160	0.476458	0.000000	1.182352	0.773971	0.243407	0.200292	0.000000	0.705588	82.915400	0.481256	1.374113	0.000000	15.229230	1.994681	83.713273	0.975177	0.462259	0.000000	14.849291	1.621074	1.956687	4.951874	0.037994	93.053445	0.009615	0.007614	1.583080	4.951874	0.037994	93.427052	0.011858	0.007614
@@ -2895,6 +2895,27 @@ bests[7].rows == [1]
         }}
     };
 #endif
+
+#if FLOATINGPOINTPARMS
+static bestParms best_en6WS1 = // English, ambiguous training pairs in training set derived from CELEX
+// weight function (graph.h) rcount*exp(-rcount/2.0)
+// Aiming at cutoff == 2, because maximum penalty is for 2 word/lemma pairs for a rule.
+    {
+    false,
+    "en6WS1", 
+    1,
+/*
+...
+*/
+//iteration:20.7
+/*weight ( used): 4.15520713829023862e+03 suffix only: no */
+/* number of nodes: 11740, nodes/line: 1.49941887939512380e-01 weight ( used): 4.15520713829023862e+03 blobs 1 lines 78297 * fraction 1.00000000000000000e+00 = 78297 lines*/
+        {{
+        9.99843486891121014e-02,        6.98757557409581676e-01,        -6.58036595438773131e-01,       2.46512251235911778e-01,        2.84952417970883061e-02,        8.45492532733789354e-02
+        }}
+    };
+#endif
+
 
 
 #if FLOATINGPOINTPARMS
@@ -3379,6 +3400,7 @@ static struct bestParms bests[] =
     ,best_en4W
     ,best_en6W
     ,best_en6WS
+    ,best_en6WS1
 #else
      best_da
     ,best_da_suffix

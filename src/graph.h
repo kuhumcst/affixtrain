@@ -595,8 +595,17 @@ class vertexPointer
                         Weight goes to zero for large rcount.
                         rcount == 30 (0.00136)
                         */
-                        ret += rcount*exp(-rcount/mostPenalized);
+                        //ret += rcount*exp(-rcount/mostPenalized);
                         // So cutoff == 0 --> max penalty at 
+                        ret += rcount*rcount*exp(-2.0*rcount/mostPenalized);
+                        /* Squared version of previous function. Gives more 
+                           pronounced penalty at cutoff+1, while penalties
+                           for rules with fewer examples are just barely
+                           enough penalized to not let cutoff+1 rules split
+                           in rules that are later cut away. In other words:
+                           tends to create rules with more, not less examples
+                           than cutoff+1.
+                        */
                         }
                     if(n->IfPatternSucceeds)
                         ret += n->IfPatternSucceeds->weightedcount();

@@ -2108,6 +2108,20 @@ bests[11].rows == [1]
         2.80881366831663093e-01,	7.07996695016342659e-01,	-6.46540271422676893e-01,	2.05573578451381843e-03,	4.27231086744624400e-02,	1.58901761416129893e-03
         }}
     };
+
+static bestParms best_nlC1 = // Dutch, ambiguous training pairs in training set derived from CELEX
+// weight function (graph.h) rcount*rcount*exp(-2.0*rcount/2.0)
+// Aiming at cutoff == 1, because maximum penalty is for 2 word/lemma pairs for a rule.
+    {
+    false,
+    "nlC1", 
+    1,
+//iteration:20.9 weights
+/*#nodes in tree: 40163 weight ( used): 7.74929366790676886e+03 suffix only: no */
+        {{
+        7.06913959106479639e-02,6.56579466630503705e-01,-7.26673318441136140e-01,1.86628826750421417e-01,-5.61798581053487688e-03,3.14664594504671935e-02
+        }}
+    };
 #else
 static bestParms best_nl =
     {
@@ -3666,6 +3680,7 @@ static struct bestParms bests[] =
     ,best_en6WS3
     ,best_enS2
     ,best_nlC0
+    ,best_nlC1
 #else
      best_da
     ,best_da_suffix

@@ -2040,7 +2040,20 @@ bests[16].rows == [3]
 #endif
 
 #if FLOATINGPOINTPARMS
-/**/
+static bestParms best_nlC0 = // Dutch, ambiguous training pairs in training set derived from CELEX
+// weight function (graph.h) rcount*rcount*exp(-2.0*rcount/1.0)
+// Aiming at cutoff == 0, because maximum penalty is for 1 word/lemma pairs for a rule.
+    {
+    false,
+    "nlC0", 
+    1,
+//iteration:20.2
+/*weight ( used): 1.44449673909528588e+03 suffix only: no */
+/* number of nodes: 45281, nodes/line: 1.34238713139272547e-01 weight ( used): 1.44449673909528588e+03 blobs 1 lines 337317 * fraction 1.00000000000000000e+00 = 337317 lines*/
+        {{
+        2.80881366831663093e-01,	7.07996695016342659e-01,	-6.46540271422676893e-01,	2.05573578451381843e-03,	4.27231086744624400e-02,	1.58901761416129893e-03
+        }}
+    };
 #else
 static bestParms best_nl =
     {
@@ -3598,6 +3611,7 @@ static struct bestParms bests[] =
     ,best_en6WS2
     ,best_en6WS3
     ,best_enS2
+    ,best_nlC0
 #else
      best_da
     ,best_da_suffix

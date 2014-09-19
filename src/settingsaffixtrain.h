@@ -51,7 +51,7 @@ extern bool VERBOSE;
 // Set this number as high as possible. A high value entails very heavy use 
 // of memory!
 
-#define AMBIGUOUS 1
+#define AMBIGUOUS 0
 // AMBIGUOUS 1
 // Handle ambiguous data by redoing training a second time without the
 // homographs that were handled in the first round.

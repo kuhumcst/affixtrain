@@ -3771,7 +3771,7 @@ int main(int argc,char **argv)
     if(argc < 2)
         {
         printf("affixtrain - supervised learning of affix rules for AFFIXTRAIN, version " VERSION "\n");
-        printf("%ssing floating point parameters %s\n",FLOATINGPOINTPARMS ? "U" : "Not u");
+        printf("%ssing floating point parameters.\n",FLOATINGPOINTPARMS ? "U" : "Not u");
         printf("%s -h for usage\n",argv[0]);
         exit(0);
         }

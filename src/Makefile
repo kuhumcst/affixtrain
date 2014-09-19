@@ -5,6 +5,7 @@ BIN=~/bin/
 #BIN=
 
 AFFIXTRAIN=$(BIN)affixtrain
+AFFIXTRAINI=$(BIN)affixtraini
 
 CC=g++ -O3 -Wall -DNDEBUG -pedantic
 
@@ -22,6 +23,7 @@ RM=rm -f
 
 				
 MAKEAFFIXRULESSRC=\
+	affixtrain.cpp\
 	applyaffrules.cpp\
 	argopt.cpp\
 	comp.cpp\
@@ -31,8 +33,21 @@ MAKEAFFIXRULESSRC=\
 	$(LETTERFUNCDIR)/letter.cpp\
 	$(LETTERFUNCDIR)/letterfunc.cpp\
 	optionaff.cpp\
-	affixtrain.cpp\
 	$(LETTERFUNCDIR)/utf8func.cpp
+
+MAKEAFFIXRULESHEADERS
+	applyaffrules.h\
+	argopt.h\
+	comp.h\
+	flexcombi.h\
+	graph.h\
+	$(LETTERFUNCDIR)/isofunc.h\
+	$(LETTERFUNCDIR)/letter.h\
+	$(LETTERFUNCDIR)/letterfunc.h\
+	optionaff.h\
+	settingsaffixtrain.h\
+	strng.h\
+	$(LETTERFUNCDIR)/utf8func.h
 
 MAKEAFFIXRULESOBJ=\
 	applyaffrules.o\
@@ -53,12 +68,16 @@ MAKEAFFIXRULESOBJ=\
 #                               #
 
 
-$(AFFIXTRAIN): $(MAKEAFFIXRULESSRC)
+$(AFFIXTRAIN): $(MAKEAFFIXRULESSRC) $MAKEAFFIXRULESHEADERS
 	$(CC) $(PIC) $(DEBUG) $(GCCINC) -c $(MAKEAFFIXRULESSRC)
 	$(CCLINKDYNAMIC) $(MAKEAFFIXRULESOBJ) -o $@ $(GCCLINK)
 
-all: $(AFFIXTRAIN)
+$(AFFIXTRAINI): $(MAKEAFFIXRULESSRC) $MAKEAFFIXRULESHEADERS
+	$(CC) $(PIC) $(DEBUG) $(GCCINC) -c $(MAKEAFFIXRULESSRC) -D INTPARMS
+	$(CCLINKDYNAMIC) $(MAKEAFFIXRULESOBJ) -o $@ $(GCCLINK)
+
+all: $(AFFIXTRAIN) $(AFFIXTRAINI)
 
 clean:
 	$(RM) *.o
-	$(RM) $(AFFIXTRAIN)
+	$(RM) $(AFFIXTRAIN) $(AFFIXTRAINI)

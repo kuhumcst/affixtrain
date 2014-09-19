@@ -232,8 +232,11 @@ Read word class from file.
 #define ANY ':' // '*'
 #define START '^'
 #define END '$'
-
+#if defined INTPARMS // command line -D INTPARMS
+#define FLOATINGPOINTPARMS 0
+#else
 #define FLOATINGPOINTPARMS 1
+#endif
 #define MAXSWATH 20
 #define MAXITERATIONS 100
 #define MINITERATIONS 10

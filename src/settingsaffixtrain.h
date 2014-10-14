@@ -39,7 +39,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 extern bool VERBOSE;
 
-#define SLOW 0 
+#define SLOW 1 
 // SLOW 1 
 // if training has to be done once more after the removal of the homographs that will be handled in the next iteration.
 
@@ -51,7 +51,7 @@ extern bool VERBOSE;
 // Set this number as high as possible. A high value entails very heavy use 
 // of memory!
 
-#define AMBIGUOUS 0
+#define AMBIGUOUS 1
 // AMBIGUOUS 1
 // Handle ambiguous data by redoing training a second time without the
 // homographs that were handled in the first round.

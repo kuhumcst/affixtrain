@@ -3487,7 +3487,7 @@ static void trainRules(const char * fname, const char * extra,int cutoff,const c
                 afile = readFile(allIngestedPairsName);
                 sprintf(wordsGroupedByRuleName,"words_%s%s.txt",ext,tag);
                 sprintf(numbersName,"numbers_%s%s.tab",ext,tag);
-                if(doTraining(afile,ext,cutoff,flexrulesPass,columns,NULL,NULL,NULL,NULL,wordsGroupedByRuleName,numbersName,Nnodes,weight,tag); // sets Nnodes
+                if(doTraining(afile,ext,cutoff,flexrulesPass,columns,NULL,NULL,NULL,NULL,wordsGroupedByRuleName,numbersName,Nnodes,weight,tag)) // sets Nnodes
                     {
                     if(VERBOSE)
                         {

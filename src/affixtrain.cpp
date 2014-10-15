@@ -393,7 +393,6 @@ struct aFile
     aFile(const char * fname):Lines(NULL),filesize(0),lines(0),eob(NULL)
         {
         assert(fname);
-        assert(fp);
 
         FILE * fp = fopenOrExit(fname,"rb","Input file");
         if(VERBOSE)
@@ -2222,12 +2221,8 @@ static double maxCorrectness = 0.0;
 static trainingPair * globTrainingPair;
 //static int globlines;
 
-static trainingPair * readTrainingPairs(const char * fname,int & pairs,const char * columns,const char * tag,int * filelines)
+static trainingPair * readTrainingPairs(aFile & afile,int & pairs,const char * columns,const char * tag)
     {
-    aFile afile(fname);
-    if(filelines)
-        *filelines = afile.lines;
-
     if(VERBOSE)
         printf("readTrainingPairs\n");
 
@@ -2868,8 +2863,10 @@ static bool doTraining
 
     VertexPointerCount = 0;
 
+    aFile afile(fname);
+
     int pairs;
-    trainingPair * TrainingPair = readTrainingPairs(fname,pairs,columns,tag,filelines);
+    trainingPair * TrainingPair = readTrainingPairs(afile,pairs,columns,tag);
     markTheAmbiguousPairs(TrainingPair,ext,pairs);
     writeAllAvailablePairs(TrainingPair,ext,pairs);
     if(PERC > 0)

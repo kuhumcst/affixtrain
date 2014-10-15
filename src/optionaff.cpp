@@ -61,8 +61,8 @@ optionStruct::optionStruct()
     B = NULL;
     P = NULL;
     j = NULL; // temp dir
-	b = NULL;
-	t = NULL;
+	b = NULL; // raw file (see t)
+	t = NULL; // pretty printed file (see b)
     computeParms = false;// compute parms
     suffixOnly = false;// suffix rules only
     verbose = false;// verbose
@@ -212,8 +212,8 @@ OptReturnTp optionStruct::doSwitch(int optchar,char * locoptarg,char * progname)
             printf("  17:koud ()\n");
             printf("  18:parms0 (Use computed parameter settings.)\n");
             printf("  19:parmsoff (obsolete, same as -f18)\n");
-            printf("-b: compiled, raw rule file\n");
-            printf("-t: pretty printed output\n");
+            printf("-b: compiled, raw rule file. Requires -t option. Exits after pretty printing.\n");
+            printf("-t: pretty printed output. Requires -b option. Exits after pretty printing.\n");
             return Leave;
         case 'i': // word list
             i = dupl(locoptarg);

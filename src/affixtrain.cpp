@@ -139,11 +139,24 @@ class fullRulePair : public rulePair
             }
     };
 
-FILE * fopenwb(const char * name)
+FILE * fopenOrExit(const char * name, const char * mode, const char * descriptionOfFile) // must not contain format specifiers
     {
-    FILE * fp = fopen(name,"wb");
+    assert(name);
+    assert(mode);
+    assert(descriptionOfFile);
+    FILE * fp = fopen(name,mode);
     if(!fp)
-        fprintf(stderr,"Error: Cannot open \"%s\" for writing\n",name);
+        {
+        fprintf
+            (stderr
+            ,"%s: Cannot open file %s for %s (%s). Exiting.\n"
+            ,descriptionOfFile
+            ,name
+            ,strchr(mode,'r') ? "reading" : strchr(mode,'a') ? "appending" : "writing"
+            ,mode
+            );
+        exit(-1);
+        }
     return fp;
     }
 
@@ -377,8 +390,14 @@ struct aFile
             printf("max1 %c %d %ld\n",k1,max1,(max1*100)/size);
         }
 #endif
-    aFile(FILE * fp,const char * fname):Lines(NULL),filesize(0),lines(0),eob(NULL)
+    aFile(const char * fname):Lines(NULL),filesize(0),lines(0),eob(NULL)
         {
+        assert(fname);
+        assert(fp);
+
+        FILE * fp = fopenOrExit(fname,"rb","Input file");
+        if(VERBOSE)
+            printf("reading file %s ...",fname);
         CHECK("CglobTempDir");
         this->fname = new char[strlen(fname)+1];
         strcpy(this->fname,fname);
@@ -397,6 +416,7 @@ struct aFile
             file.chars[size++] = (char)kar;
             }
         file.chars[size] = '\0';
+        fclose(fp);
 
         eob = file.chars + size;
 
@@ -455,6 +475,10 @@ struct aFile
         if(VERBOSE)
             {
             printf("line %d read\n",line);
+            }
+        if(VERBOSE)
+            {
+            printf("%s:",fname);
             }
         }
     ~aFile()
@@ -883,26 +907,6 @@ else
 return max;
 }
 
-static struct aFile * readFile(const char * fname)
-    {
-    if(VERBOSE)
-        printf("reading file %s ...",fname);
-    FILE * fp = fopen(fname,"rb");
-    if(fp)
-        {
-        aFile * a_file = new aFile(fp,fname);
-        fclose(fp);
-        if(VERBOSE)
-            {
-            printf("%s:",fname);
-            }
-        return a_file;
-        }
-    fprintf(stderr,"Error (readFile): reading input file %s FAILED\n",fname);
-    exit(-1);
-//    return NULL;
-    }
-
 fullRulePair::fullRulePair(shortRulePair * Rule)
     {
     CHECK("EglobTempDir");
@@ -1178,13 +1182,7 @@ shortRulePair::shortRulePair(trainingPair * trainingpair,ruleTemplate * Template
         }
     patternArray[j] = '\0';
     replacementArray[j2] = '\0';
-    /*fclose(flog);
-    flog = fopen("flog.txt","a");
-    fprintf(flog,"Voor trim patternArray %s replacementArray %s\n",patternArray,replacementArray);*/
     trim();
-/*    fprintf(flog,"Na trim   patternArray %s replacementArray %s\n",patternArray,replacementArray);
-    fclose(flog);
-    flog = fopen("flog.txt","a");*/
     ++ShortRulePairCount;
     }
 
@@ -1712,22 +1710,24 @@ static bool isSpace(int a)
         }
     }
 
-static tagClass * collectTags(struct aFile * afile,const char * columns) 
+static tagClass * collectTags(const char * fname,const char * columns) 
 // "123456" means Word, Lemma, Wordfreq, Lemmafreq, Wordclass, Lemmaclass
     {
+    struct aFile afile(fname);
+
     CHECK("SglobTempDir");
     tagClass * Tags = NULL;
     int line;
-    pointers * Lines = afile->Lines;
+    pointers * Lines = afile.Lines;
     if(VERBOSE)
         {
-        printf("Checking %d lines in %s for tags %s\n",afile->lines,afile->fname,columns);
+        printf("Checking %d lines in %s for tags %s\n",afile.lines,afile.fname,columns);
         }
-    for(line = 0;line < afile->lines;++line)
+    for(line = 0;line < afile.lines;++line)
         {
         const char * cols[18];
         ptrdiff_t lengths[18];
-        const char * limit = (line < afile->lines - 1) ? Lines[line+1].cchars : afile->eob;
+        const char * limit = (line < afile.lines - 1) ? Lines[line+1].cchars : afile.eob;
 
         const char * q = Lines[line].cchars;
         cols[0] = q;
@@ -1764,152 +1764,6 @@ static tagClass * collectTags(struct aFile * afile,const char * columns)
             }
         }
     return Tags;
-    }
-
-static int readLines(struct aFile * afile,trainingPair * TrainingPair,const char * columns, const char * tag) 
-// "123456" means Word, Lemma, Wordfreq, Lemmafreq, Wordclass, Lemmaclass
-    {
-    CHECK("TglobTempDir");
-    int pairs = 0;
-    int line;
-    int taglength = tag ? strlen(tag) : 0;
-    pointers * Lines = afile->Lines;
-    if(VERBOSE)
-        {
-        printf("readLines with tag %s\n",(tag && *tag) ? tag : "_ (UNDEFINED)");
-        }
-    for(line = 0;line < afile->lines;++line)
-        {
-        const char * cols[18];
-        const char * Word = NULL;
-        ptrdiff_t lengths[18];
-        size_t wordlength = 0;
-#if WORDCLASS
-        const char * WordClass = NULL; // unused
-        size_t wordclasslength = 0; // unused
-#endif
-        const char * LemmaHead = NULL;
-        size_t lemmalength = 0;
-#if LEMMACLASS
-        const char * LemmaClass = NULL;
-        size_t lemmaclasslength = 0;
-#endif
-#if LEMMAINL
-        long Inl = 0;
-        long Lemma_Inl = 0;
-#endif
-        const char * limit = (line < afile->lines - 1) ? Lines[line+1].cchars : afile->eob;
-
-        const char * q = Lines[line].cchars;
-        cols[0] = q;
-        unsigned int ii = 0;
-        while(  (q = find(q,'\t',limit)) != NULL
-            && (ii < sizeof(cols)/sizeof(cols[0]) - 1)
-            )
-            {
-            lengths[ii] = q - cols[ii];
-            cols[++ii] = ++q;
-            }
-        lengths[ii] = limit - cols[ii] - 1;
-        unsigned int maxii = ++ii;
-        cols[maxii] = q ? q : limit;
-        const char * column;
-        bool doUse = ((tag == NULL) || !*tag);
-        for(column = columns,ii = 0
-            ;    *column 
-            && (ii < maxii)
-            ;++column,++ii
-            )
-            {
-            switch(*column)
-                {
-                case '1':
-                case 'F':
-                case 'f':
-                case 'W':
-                case 'w':
-                    Word = cols[ii];
-                    wordlength = lengths[ii];
-                    break;
-                case '2':
-                case 'B':
-                case 'b':
-                case 'L':
-                case 'l':
-                    LemmaHead = cols[ii];
-                    lemmalength = lengths[ii];
-                    break;
-                case '3':
-                case 'T':
-                case 't':
-                    if(tag && (taglength == lengths[ii]) && !strncmp(cols[ii],tag,taglength))
-                        {
-                        doUse = true;
-                        }
-                    break;
-#if LEMMAINL
-                case '3':
-                    Inl = strtol(cols[ii],NULL,10);
-                    break;
-                case '4':
-                    Lemma_Inl = strtol(cols[ii],NULL,10);
-                    break;
-#endif
-#if WORDCLASS
-                case '5':
-                    WordClass = cols[ii];
-                    wordclasslength = lengths[ii];
-                    break;
-#endif
-#if LEMMACLASS
-                case '6':
-                    LemmaClass = cols[ii];
-                    lemmaclasslength = lengths[ii];
-                    break;
-#endif
-                default:
-                    ;
-                }
-            }
-        if(Word && doUse)
-            {
-            doUse = ((tag == NULL) || !*tag);
-            while(wordlength > 0 && isSpace(Word[wordlength - 1]))
-                --wordlength;
-            while(lemmalength > 0 && isSpace(LemmaHead[lemmalength - 1]))
-                --lemmalength;
-#if WORDCLASS
-            while(wordclasslength > 0 && isSpace(WordClass[wordclasslength- 1]))
-                --wordclasslength;
-#endif
-#if LEMMACLASS
-            while(lemmaclasslength > 0 && isSpace(LemmaClass[lemmaclasslength - 1]))
-                --lemmaclasslength;
-#endif
-            if(wordlength > 0 && lemmalength > 0)
-                {
-                TrainingPair[pairs].init
-                    (Word
-                    ,wordlength
-                    ,LemmaHead
-                    ,lemmalength
-#if WORDCLASS
-                    ,WordClass
-                    ,wordclasslength
-#endif
-#if LEMMACLASS
-                    ,LemmaClass
-                    ,lemmaclasslength
-#endif
-#if LEMMAINL
-                    ,Inl,Lemma_Inl
-#endif
-                    );
-                ++pairs;
-                }
-            }
-        }
-    return pairs;
     }
 
 static int compare(const void * arg1, const void * arg2)
@@ -2074,16 +1928,14 @@ static int markAmbiguous(int allPairs,trainingPair * TrainingPair,FILE * famb)
 #endif
             }
         }
-    FILE * allFile = fopenwb(tempDir("allFile.txt"));
-    if(allFile)
+    FILE * allFile = fopenOrExit(tempDir("allFile.txt"),"wb","allFile");
+    for(j = 0;j < allPairs;++j)
         {
-        for(j = 0;j < allPairs;++j)
-            {
-            if(!pTrainingPair[j]->isset(b_skip))
-                pTrainingPair[j]->fprintAll(allFile);
-            }
-        fclose(allFile);
+        if(!pTrainingPair[j]->isset(b_skip))
+            pTrainingPair[j]->fprintAll(allFile);
         }
+    fclose(allFile);
+
     delete [] pTrainingPair; // Bart 20081008
     if(VERBOSE)
         printf("markAmbiguous DONE\n");
@@ -2368,23 +2220,167 @@ static double maxCorrectness = 0.0;
 #endif
 
 static trainingPair * globTrainingPair;
-static int globlines;
+//static int globlines;
 
-static trainingPair * readTrainingPairs(struct aFile * afile,int & pairs,const char * columns,const char * tag)
+static trainingPair * readTrainingPairs(const char * fname,int & pairs,const char * columns,const char * tag,int * filelines)
     {
+    aFile afile(fname);
+    if(filelines)
+        *filelines = afile.lines;
+
     if(VERBOSE)
         printf("readTrainingPairs\n");
 
-    globlines = afile->lines;
-    trainingPair * TrainingPair = new trainingPair[afile->lines];
+//    globlines = afile.lines;
+    trainingPair * TrainingPair = new trainingPair[afile.lines];
     globTrainingPair = TrainingPair;
-    pairs = readLines(afile,TrainingPair,columns,tag);
+// "123456" means Word, Lemma, Wordfreq, Lemmafreq, Wordclass, Lemmaclass
+    CHECK("TglobTempDir");
+    pairs = 0;
+    int line;
+    int taglength = tag ? strlen(tag) : 0;
+    pointers * Lines = afile.Lines;
+    if(VERBOSE)
+        {
+        printf("readLines with tag %s\n",(tag && *tag) ? tag : "_ (UNDEFINED)");
+        }
+    for(line = 0;line < afile.lines;++line)
+        {
+        const char * cols[18];
+        const char * Word = NULL;
+        ptrdiff_t lengths[18];
+        size_t wordlength = 0;
+#if WORDCLASS
+        const char * WordClass = NULL; // unused
+        size_t wordclasslength = 0; // unused
+#endif
+        const char * LemmaHead = NULL;
+        size_t lemmalength = 0;
+#if LEMMACLASS
+        const char * LemmaClass = NULL;
+        size_t lemmaclasslength = 0;
+#endif
+#if LEMMAINL
+        long Inl = 0;
+        long Lemma_Inl = 0;
+#endif
+        const char * limit = (line < afile.lines - 1) ? Lines[line+1].cchars : afile.eob;
+
+        const char * q = Lines[line].cchars;
+        cols[0] = q;
+        unsigned int ii = 0;
+        while(  (q = find(q,'\t',limit)) != NULL
+            && (ii < sizeof(cols)/sizeof(cols[0]) - 1)
+            )
+            {
+            lengths[ii] = q - cols[ii];
+            cols[++ii] = ++q;
+            }
+        lengths[ii] = limit - cols[ii] - 1;
+        unsigned int maxii = ++ii;
+        cols[maxii] = q ? q : limit;
+        const char * column;
+        bool doUse = ((tag == NULL) || !*tag);
+        for(column = columns,ii = 0
+            ;    *column 
+            && (ii < maxii)
+            ;++column,++ii
+            )
+            {
+            switch(*column)
+                {
+                case '1':
+                case 'F':
+                case 'f':
+                case 'W':
+                case 'w':
+                    Word = cols[ii];
+                    wordlength = lengths[ii];
+                    break;
+                case '2':
+                case 'B':
+                case 'b':
+                case 'L':
+                case 'l':
+                    LemmaHead = cols[ii];
+                    lemmalength = lengths[ii];
+                    break;
+                case '3':
+                case 'T':
+                case 't':
+                    if(tag && (taglength == lengths[ii]) && !strncmp(cols[ii],tag,taglength))
+                        {
+                        doUse = true;
+                        }
+                    break;
+#if LEMMAINL
+                case '3':
+                    Inl = strtol(cols[ii],NULL,10);
+                    break;
+                case '4':
+                    Lemma_Inl = strtol(cols[ii],NULL,10);
+                    break;
+#endif
+#if WORDCLASS
+                case '5':
+                    WordClass = cols[ii];
+                    wordclasslength = lengths[ii];
+                    break;
+#endif
+#if LEMMACLASS
+                case '6':
+                    LemmaClass = cols[ii];
+                    lemmaclasslength = lengths[ii];
+                    break;
+#endif
+                default:
+                    ;
+                }
+            }
+        if(Word && doUse)
+            {
+            doUse = ((tag == NULL) || !*tag);
+            while(wordlength > 0 && isSpace(Word[wordlength - 1]))
+                --wordlength;
+            while(lemmalength > 0 && isSpace(LemmaHead[lemmalength - 1]))
+                --lemmalength;
+#if WORDCLASS
+            while(wordclasslength > 0 && isSpace(WordClass[wordclasslength- 1]))
+                --wordclasslength;
+#endif
+#if LEMMACLASS
+            while(lemmaclasslength > 0 && isSpace(LemmaClass[lemmaclasslength - 1]))
+                --lemmaclasslength;
+#endif
+            if(wordlength > 0 && lemmalength > 0)
+                {
+                TrainingPair[pairs].init
+                    (Word
+                    ,wordlength
+                    ,LemmaHead
+                    ,lemmalength
+#if WORDCLASS
+                    ,WordClass
+                    ,wordclasslength
+#endif
+#if LEMMACLASS
+                    ,LemmaClass
+                    ,lemmaclasslength
+#endif
+#if LEMMAINL
+                    ,Inl,Lemma_Inl
+#endif
+                    );
+                ++pairs;
+                }
+            }
+        }
     if(VERBOSE)
         {
         if(tag && *tag)
-            printf("%ld characters and %d lines, %d selected with tag %s       \n",afile->size,afile->lines,pairs,tag);
+            printf("%ld characters and %d lines, %d selected with tag %s       \n",afile.size,afile.lines,pairs,tag);
         else
-            printf("%ld characters and %d lines\r",afile->size,afile->lines);
+            printf("%ld characters and %d lines\r",afile.size,afile.lines);
         }
     if(VERBOSE)
         printf("readTrainingPairs DONE\n");
@@ -2399,13 +2395,14 @@ static void markTheAmbiguousPairs(trainingPair * TrainingPair,const char * ext,i
         printf("markTheAmbiguousPairs: buffer too small");
         exit(-1);
         }
-    FILE * famb = fopenwb(tempDir(filename));
+
+    FILE * famb = fopenOrExit(tempDir(filename),"wb","famb");
     /*int ambi =*/ markAmbiguous(pairs,TrainingPair,famb);
-    if(famb)
-        fclose(famb);
+    fclose(famb);
+
 #if PESSIMISTIC
     sprintf(filename,"paradigms_%s.txt",ext);
-    FILE * fparadigms = fopenwb(filename);
+    FILE * fparadigms = fopenOrExit(filename,"wb","fparadigms");
     markParadigms(pairs,TrainingPair,fparadigms);
     if(fparadigms)
         fclose(fparadigms);
@@ -2421,24 +2418,17 @@ static void writeAllAvailablePairs(trainingPair * TrainingPair,const char * ext,
         printf("writeAllAvailablePairs: buffer 2 small");
         exit(0);
         }
-    FILE * ftrain = fopenwb(tempDir(train));
+    FILE * ftrain = fopenOrExit(tempDir(train),"wb","ftrain");
 
 #if WRITEINVERTED
     sprintf(train,"availabletrainingpairs_inverted_%s.txt",ext);
-    FILE * fpinverted = fopenwb(train);
+    FILE * fpinverted = fopenOrExit(train,"wb","inverted");
 #endif
-    if(ftrain 
-#if WRITEINVERTED
-        && fpinverted
-#endif
-        )
-        {
-        writeAvailableTrainingData(pairs,TrainingPair,ftrain
+    writeAvailableTrainingData(pairs,TrainingPair,ftrain
 #if WRITEINVERTED
             ,fpinverted
 #endif
             );
-        }
     if(ftrain)
         {
         fclose(ftrain);
@@ -2456,42 +2446,26 @@ static void writeAllAvailablePairs(trainingPair * TrainingPair,const char * ext,
 static void writeAllTestPairs(trainingPair * TrainingPair,const char * ext,int pairs)
     {
     CHECK("dglobTempDir");
-    char train[256];
-    char testp[256];
-    char tests[256];
-    if(256 <= sprintf(train,"trainingpairs_%s.txt",ext))
-        {
-        printf("writeAllTestPairsA: train 2 small");
-        exit(-1);
-        }
-    FILE * ftrain = fopenwb(tempDir(train));
+    char bigbuf[10000];
 
-    if(256 <= sprintf(testp,"testpairs_%s.txt",ext))
+    sprintf(bigbuf,"trainingpairs_%s.txt",ext);
+    FILE * ftrain = fopenOrExit(tempDir(bigbuf),"wb","ftrain");
+
+    sprintf(bigbuf,"testpairs_%s.txt",ext);
+    FILE * ftestp = fopenOrExit(tempDir(bigbuf),"wb","ftestp");
+
+    sprintf(bigbuf,"tests_%s.txt",ext);
+    FILE * ftests = fopenOrExit(tempDir(bigbuf),"wb","ftests");
+
+    markTest(pairs,TrainingPair,PERC,ftrain,ftestp,ftests);
+
+    if(VERBOSE)
         {
-        printf("writeAllTestPairsB: testp 2 small");
-        exit(-1);
+        printf("trainingpairs_%s.txt testpairs_%s.txt tests_%s.txt written\n",ext,ext,ext);
         }
-    FILE * ftestp = fopenwb(tempDir(testp));
-    if(256 <= sprintf(tests,"tests_%s.txt",ext))
-        {
-        printf("writeAllTestPairsC: tests 2 small");
-        exit(-1);
-        }
-    FILE * ftests = fopenwb(tempDir(tests));
-    if(ftrain && ftestp && ftests)
-        {
-        markTest(pairs,TrainingPair,PERC,ftrain,ftestp,ftests);
-        if(VERBOSE)
-            {
-            printf("%s %s %s written\n",train,testp,tests);
-            }
-        }
-    if(ftrain)
-        fclose(ftrain);
-    if(ftestp)
-        fclose(ftestp);
-    if(ftests)
-        fclose(ftests);
+    fclose(ftrain);
+    fclose(ftestp);
+    fclose(ftests);
     }
 /*
 static void checkTrainingPairIntegrity()
@@ -2527,11 +2501,7 @@ static void rearrange
         )
     {
     CHECK("fglobTempDir");
-    FILE * fo = fopenwb(filename); // output
-    if(!fo)
-        {
-        return;
-        }
+    FILE * fo = fopenOrExit(filename,"wb","rearrange output");
     long end;
     end = ftell(folel);
     char * buf = new char[end+1]; // contents of folel, a textual file.
@@ -2661,10 +2631,10 @@ static void rearrange
 static bool writeAndTest(node * tree,const char * ext,int threshold,const char * nflexrules,int & Nnodes,double & weight)
     {
     CHECK("gglobTempDir");
-    char filename[256];
+    char filename[1000];
 #if RULESASTEXTINDENTED
     sprintf(filename,"tree_%d%s.txt",threshold,ext);
-    FILE * foo = fopenwb(filename);
+    FILE * foo = fopenOrExit(filename,"wb","indented rules");
 
     if(foo)
 #endif
@@ -2676,34 +2646,28 @@ static bool writeAndTest(node * tree,const char * ext,int threshold,const char *
         fprintf(foo,"threshold %d:%d words %d nodes %d weight %f nodes with words\n\n",threshold,N,Nnodes,NnodesR,weight);
         fclose(foo);
         sprintf(filename,"rules_%d%s.txt",threshold,ext);
-        foo = fopenwb(filename);
+        foo = fopenOrExit(filename,"wb","rules");
 #else
         Nnodes = 0;
         Nnodes = tree->count();
         weight = 0.0;
         weight = tree->weightedcount();
 #endif
-        if(256 <= sprintf(filename,"numberOfRules_%d.txt",threshold))
-            {
-            printf("writeAndTest: filename 2 small");
-            exit(-1);
-            }
-        FILE * fono = fopenwb(tempDir(filename));
+        sprintf(filename,"numberOfRules_%d.txt",threshold);
+        FILE * fono = fopenOrExit(tempDir(filename),"wb","writeAndTest");
 #if BRACMATOUTPUT
         sprintf(filename,"rules_%d%s.bra",threshold,ext);
-        FILE * fobra = fopenwb(tempDir(filename));
+        FILE * fobra = fopenOrExit(tempDir(filename),"wb","Bracmat output");
 #endif
         if(256 <= sprintf(filename,"rules_%d%s.lel",threshold,ext))
             {
             printf("writeAndTest: filename 2 small");
             exit(-1);
             }
-        FILE * folel = fopen(tempDir(filename),"wb+");
-        if(!folel)
-            fprintf(stderr,"Error (writeAndTest): Cannot open \"%s\" for writing\n",filename);
+        FILE * folel = fopenOrExit(tempDir(filename),"wb+","writeAndTest");
 #if RULESASTEXT
         filename[strlen(filename)-1] += 2; // change ".lel" to ".len"
-        FILE * foleltxt = fopenwb(filename);
+        FILE * foleltxt = fopenOrExit(filename,"wb","Text version");
         filename[strlen(filename)-1] -= 2; // change ".len" back to ".lel"
 #endif
         if(    fono  
@@ -2882,7 +2846,7 @@ static void testf(node * tree,trainingPair * TestPair,const char * ext,int thres
 #endif
 
 static bool doTraining
-        ( struct aFile * afile
+        ( const char * fname
         , const char * ext
         , int cutoff
         , const char * nflexrulesFormat
@@ -2896,6 +2860,7 @@ static bool doTraining
         , int & Nnodes
         , double & weight
         , const char * tag
+        , int * filelines
         )
     {
     bool moreToDo = false;
@@ -2904,7 +2869,7 @@ static bool doTraining
     VertexPointerCount = 0;
 
     int pairs;
-    trainingPair * TrainingPair = readTrainingPairs(afile,pairs,columns,tag);
+    trainingPair * TrainingPair = readTrainingPairs(fname,pairs,columns,tag,filelines);
     markTheAmbiguousPairs(TrainingPair,ext,pairs);
     writeAllAvailablePairs(TrainingPair,ext,pairs);
     if(PERC > 0)
@@ -2920,15 +2885,15 @@ static bool doTraining
 #if DOTEST
     FILE * ftest;
     sprintf(filename,"test_%s.txt",ext);
-    ftest = fopenwb(filename);
+    ftest = fopenOrExit(filename,"wb","test");
 #endif
     node * top;
     doTheRules(&Hash,train,&top);
 
-    FILE * nexttrain = pairsToTrainInNextPassName ? fopenwb(tempDir(pairsToTrainInNextPassName)) : NULL;
-    FILE * done = ingestedFractionOfAmbiguousPairsName ? fopenwb(tempDir(ingestedFractionOfAmbiguousPairsName)) : NULL;
-    FILE * combined = allPairsName ? fopenwb(tempDir(allPairsName)) : NULL;
-    FILE * disamb = allIngestedPairsName ? fopenwb(tempDir(allIngestedPairsName)) : NULL;
+    FILE * nexttrain = pairsToTrainInNextPassName ? fopenOrExit(tempDir(pairsToTrainInNextPassName),"wb","nexttrain") : NULL;
+    FILE * done = ingestedFractionOfAmbiguousPairsName ? fopenOrExit(tempDir(ingestedFractionOfAmbiguousPairsName),"wb","done") : NULL;
+    FILE * combined = allPairsName ? fopenOrExit(tempDir(allPairsName),"wb","combined") : NULL;
+    FILE * disamb = allIngestedPairsName ? fopenOrExit(tempDir(allIngestedPairsName),"wb","disamb") : NULL;
     if(nexttrain && done && combined && disamb)
         {
         int donepairs = trainingPair::makeNextTrainingSet(pairs,TrainingPair,nexttrain,done,combined,disamb);
@@ -2937,6 +2902,7 @@ static bool doTraining
             moreToDo = true;
             }
         }
+
     if(nexttrain)
         fclose(nexttrain); /* The training that still has to be done, containing all unambiguous pairs and all that remains of the ambiguous pairs. */
     if(done)
@@ -2945,79 +2911,78 @@ static bool doTraining
         fclose(combined); /* The sum of the above two. */
     if(disamb)
         fclose(disamb);  /* The training that has been done, containing all unambiguous pairs and all parts of ambiguous pairs that were done in this pass. */
-    FILE * wordsFile = fopenwb(tempDir(wordsGroupedByRuleName));
-    if(wordsFile)
-        {
-        ambivalentWords = 0;
-        alternatives = 0;
-        allwords = 0;
-        top->printSep(wordsFile,0);
-        fprintf(wordsFile
-            ,"\nAll words: %d    Words with alternative lemmas: %d    Words that are not lemmatized correctly: %d\n"
-            ,allwords
-            ,ambivalentWords
-            ,alternatives);
-        fclose(wordsFile); /* Lists all words, grouped by the rule that creates each word's lemma. */
-        }
-    FILE * fcounting = fopenwb(tempDir(numbersName));
-    if(fcounting)
-        {
-        fprintf(fcounting,"Bottom up left to right traversal of tree.\n");
-        fprintf(fcounting,"Nodes\tPairs\tlog(Nodes)\tlog(Pairs)\n");
 
-        int nodes = 0,pairs = 0;
-        top->Counting(nodes,pairs,fcounting);
-        fclose(fcounting);
-        }
-    if(cutoff >= 0 && nflexrulesFormat)
+    FILE * wordsFile = fopenOrExit(tempDir(wordsGroupedByRuleName),"wb","words file");
+    ambivalentWords = 0;
+    alternatives = 0;
+    allwords = 0;
+    top->printSep(wordsFile,0);
+    fprintf(wordsFile
+        ,"\nAll words: %d    Words with alternative lemmas: %d    Words that are not lemmatized correctly: %d\n"
+        ,allwords
+        ,ambivalentWords
+        ,alternatives);
+    fclose(wordsFile); /* Lists all words, grouped by the rule that creates each word's lemma. */
+
+    FILE * fcounting = fopenOrExit(tempDir(numbersName),"wb","counting");
+    fprintf(fcounting,"Bottom up left to right traversal of tree.\n");
+    fprintf(fcounting,"Nodes\tPairs\tlog(Nodes)\tlog(Pairs)\n");
+    int locnodes = 0,locpairs = 0;
+    top->Counting(locnodes,locpairs,fcounting);
+    fclose(fcounting);
+
+    if(nflexrulesFormat)
         {
-        char naam[500];
-        if(sizeof(naam) <= (size_t)sprintf(naam,nflexrulesFormat,0))
+        if(cutoff >= 0)
             {
-            printf("doTraining: naam 2 small");
-            exit(-1);
-            }
-        writeAndTest(top,ext,0,naam,Nnodes,weight);
-#if DOTEST
-        testf(top,test,ext,0,naam);
-#endif
-        for(int thresh = 1;thresh <= cutoff;thresh++)
-            {
-            top->pruneAll(thresh);
-            top = top->cleanup(NULL);
-            if(sizeof(naam) <= (size_t)sprintf(naam,nflexrulesFormat,thresh))
+            char naam[500];
+            if(sizeof(naam) <= (size_t)sprintf(naam,nflexrulesFormat,0))
                 {
                 printf("doTraining: naam 2 small");
                 exit(-1);
                 }
-            writeAndTest(top,ext,thresh,naam,Nnodes,weight);
+            writeAndTest(top,ext,0,naam,Nnodes,weight);
 #if DOTEST
             testf(top,test,ext,0,naam);
 #endif
-            }
-        }
-    else if(nflexrulesFormat)
-        {
-        char naam[500];
-        if(sizeof(naam) <= (size_t)sprintf(naam,nflexrulesFormat,cutoff))
-            {
-            printf("doTraining: naam 2 small");
-            exit(-1);
-            }
-        writeAndTest(top,ext,0,naam,Nnodes,weight);
+            for(int thresh = 1;thresh <= cutoff;thresh++)
+                {
+                top->pruneAll(thresh);
+                top = top->cleanup(NULL);
+                if(sizeof(naam) <= (size_t)sprintf(naam,nflexrulesFormat,thresh))
+                    {
+                    printf("doTraining: naam 2 small");
+                    exit(-1);
+                    }
+                writeAndTest(top,ext,thresh,naam,Nnodes,weight);
 #if DOTEST
-        testf(top,test,ext,0,naam);
+                testf(top,test,ext,0,naam);
 #endif
-        int max = 3;
-        if(cutoff >= 0)
-            max = cutoff;
-        for(int thresh = 1;thresh <= max;thresh++)
+                }
+            }
+        else 
             {
-            top->pruneAll(thresh);
-            writeAndTest(top,ext,thresh,naam,Nnodes,weight);
+            char naam[500];
+            if(sizeof(naam) <= (size_t)sprintf(naam,nflexrulesFormat,cutoff))
+                {
+                printf("doTraining: naam 2 small");
+                exit(-1);
+                }
+            writeAndTest(top,ext,0,naam,Nnodes,weight);
 #if DOTEST
-            testf(top,test,ext,thresh,naam);
+            testf(top,test,ext,0,naam);
 #endif
+            int max = 3;
+            if(cutoff >= 0)
+                max = cutoff;
+            for(int thresh = 1;thresh <= max;thresh++)
+                {
+                top->pruneAll(thresh);
+                writeAndTest(top,ext,thresh,naam,Nnodes,weight);
+#if DOTEST
+                testf(top,test,ext,thresh,naam);
+#endif
+                }
             }
         }
     else
@@ -3045,7 +3010,7 @@ static bool doTraining
     return moreToDo;
     }
 
-void computeParms(const char * fname,const char * extra,const char * nflexrules, const char * columns,double minfraction,double maxfraction,bool doweights,const char * parmstxt,const char * besttxt,int expectedCutoff)
+void computeParms(const char * fname/* input */,const char * extra,const char * nflexrules, const char * columns,double minfraction,double maxfraction,bool doweights,const char * parmstxt,const char * besttxt,int expectedCutoff)
     {
     CHECK("iglobTempDir");
     int maxswath = MAXSWATH;
@@ -3109,12 +3074,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                 else
                     {
                     filename = fbuf;
-                    FILE * f = fopen(fname,"r");
-                    if(f == NULL)
-                        {
-                        fprintf(stderr,"Error (computeParms): Can not open %s for reading\n",tempDir(fname));
-                        exit(-1);
-                        }
+                    FILE * f = fopenOrExit(fname,"r","computeParms");
                     int kar = 0;
                     int prevkar = 0;
                     while((kar = fgetc(f)) != EOF)
@@ -3137,14 +3097,12 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                         printf("blobs:%d lines %d\n",blobs,lines);
                     if(parmstxt && !flog)
                         {
-                        flog = fopen(parmstxt,"a");
+                        flog = fopenOrExit(parmstxt,"a","log file");
                         fprintf(flog,"%s: blobs=%d lines=%d fraction=%f most penalized=%d\n",fname,blobs,lines,fraction,node::mostPenalized);
                         fclose(flog);
                         flog = 0;
                         }
-                    FILE * f2 = fopen(fbuf,"w");
-                    if(!f2)
-                        fprintf(stderr,"Error (computeParms): Cannot open \"%s\" for writing\n",fbuf);
+                    FILE * f2 = fopenOrExit(fbuf,"w","computeParms");
                     double bucket = fraction;
                     if((double)blobs * fraction > 1.0)
                         {
@@ -3178,7 +3136,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                             }
                         if(parmstxt && !flog)
                             {
-                            flog = fopen(parmstxt,"a");
+                            flog = fopenOrExit(parmstxt,"a","log file");
                             fprintf(flog,"Read %d blobs\n",bl);
                             fclose(flog);
                             flog = 0;
@@ -3206,9 +3164,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                             }
                         }
                     fclose(f2);
-                    f2 = fopen(fbuf,"r");
-                    if(!f2)
-                        fprintf(stderr,"Error (computeParms): Cannot open \"%s\" for writing\n",fbuf);
+                    f2 = fopenOrExit(fbuf,"r","computeParms");
                     while((kar = fgetc(f2)) != EOF)
                         {
                         if(kar == '\n')
@@ -3217,7 +3173,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                     fclose(f2);
                     if(parmstxt && !flog)
                         {
-                        flog = fopen(parmstxt,"a");
+                        flog = fopenOrExit(parmstxt,"a","log file");
                         fprintf(flog,"Use %d lines of %d\n",fraclines,lines);
                         fclose(flog);
                         flog = 0;
@@ -3229,40 +3185,55 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                         }
                     }
                 CHECK("D1globTempDir");
-                struct aFile * afile = readFile(filename);
-                if(afile)
+                while(brown()); // until not all parms are zero
+                ++br1;
+                if(swath == 0)
+                    init();
+                else
+                    copybest(); // go on with best result so far.
+                char wordsGroupedByRuleName[1024];
+                if(sizeof(wordsGroupedByRuleName) <= (size_t)sprintf(wordsGroupedByRuleName,"words_%s%s.txt",ext,tag))
                     {
-                    if(lines == 0)
-                        fraclines = lines = afile->lines;
-                    while(brown()); // until not all parms are zero
-                    ++br1;
-                    if(swath == 0)
-                        init();
-                    else
-                        copybest(); // go on with best result so far.
-                    char wordsGroupedByRuleName[1024];
-                    if(sizeof(wordsGroupedByRuleName) <= (size_t)sprintf(wordsGroupedByRuleName,"words_%s%s.txt",ext,tag))
-                        {
-                        printf("computeParms: wordsGroupedByRuleName 2 small");
-                        exit(-1);
-                        }
-                    char numbersName[1024];
-                    if(sizeof(numbersName) <= (size_t)sprintf(numbersName,"numbers_%s%s.tab",ext,tag))
-                        {
-                        printf("computeParms: numbersName 2 small");
-                        exit(-1);
-                        }
-                    doTraining(afile,ext,0,nflexrules,columns,NULL,NULL,NULL,NULL,wordsGroupedByRuleName,numbersName,Nnodes,weight,tag); // sets Nnodes
-                    delete afile;
-                    afile = NULL;
-                    brownNo = Nnodes;
-                    currentNo = brownNo;
-                    brownweight = weight;
-                    currentweight = brownweight;
-                    betterfound(currentNo,currentweight,swath,-1,besttxt,parmstxt,blobs,lines,fraction,fraclines,suffixonly,doweights,false);
-                    printparms(Nnodes,weight,parmstxt,suffixonly,doweights);
-                    //onlyZeros(parmstxt);
+                    printf("computeParms: wordsGroupedByRuleName 2 small");
+                    exit(-1);
                     }
+                char numbersName[1024];
+                if(sizeof(numbersName) <= (size_t)sprintf(numbersName,"numbers_%s%s.tab",ext,tag))
+                    {
+                    printf("computeParms: numbersName 2 small");
+                    exit(-1);
+                    }
+                int filelines;
+                doTraining
+                    (/* const char *                                */  filename
+                    ,/* const char *                                */  ext
+                    ,/* int cutoff                                  */  0
+                    ,/* const char * nflexrulesFormat               */  nflexrules
+                    ,/* const char *                                */  columns
+                    ,/* char * pairsToTrainInNextPassName           */  NULL
+                    ,/* char * ingestedFractionOfAmbiguousPairsName */  NULL
+                    ,/* char * allPairsName                         */  NULL
+                    ,/* char * allIngestedPairsName                 */  NULL
+                    ,/* char *                                      */  wordsGroupedByRuleName
+                    ,/* char *                                      */  numbersName
+                    ,/* int &                                       */  Nnodes
+                    ,/* double &                                    */  weight
+                    ,/* const char *                                */  tag
+                    ,/* int * filelines                             */  &filelines
+                    ); // sets Nnodes
+                if(lines == 0)
+                    fraclines = lines = filelines;
+
+
+
+
+                brownNo = Nnodes;
+                currentNo = brownNo;
+                brownweight = weight;
+                currentweight = brownweight;
+                betterfound(currentNo,currentweight,swath,-1,besttxt,parmstxt,blobs,lines,fraction,fraclines,suffixonly,doweights,false);
+                printparms(Nnodes,weight,parmstxt,suffixonly,doweights);
+                //onlyZeros(parmstxt);
                 }
 #if FLOATINGPOINTPARMS
            for(int iterations = 0;iterations < (int)(maxiterations*pow(iterationsfactor,-swath));++iterations)
@@ -3283,7 +3254,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                     {
                     if(parmstxt && !flog)
                         {
-                        flog = fopen(parmstxt,"a");
+                        flog = fopenOrExit(parmstxt,"a","log file");
                         fprintf(flog,"//fraction: %f  blobs:%d  lines: %d fraclines: %d most penalized=%d\n",fraction,blobs,lines,fraclines,node::mostPenalized);
                         fprintf(flog,"//iteration:%d.%d SKIPPED\n",swath,iterations);
                         fclose(flog);
@@ -3296,7 +3267,7 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                     CHECK("D2cglobTempDir");
                     if(parmstxt && !flog)
                         {
-                        flog = fopen(parmstxt,"a");
+                        flog = fopenOrExit(parmstxt,"a","log file");
                         CHECK("D2dglobTempDir");
                         fprintf(flog,"//iteration:%d.%d %s\n",swath,iterations,doweights ? "weights" : "count");
                         CHECK("D2eglobTempDir");
@@ -3309,28 +3280,42 @@ void computeParms(const char * fname,const char * extra,const char * nflexrules,
                         printf("%d.%d ",swath,iterations);
                         }
                     CHECK("D2globTempDir");
-                    struct aFile * afile = readFile(filename);
-                    if(afile)
+    
+                    char wordsGroupedByRuleName[1024];
+                    if(sizeof(wordsGroupedByRuleName) <= (size_t)sprintf(wordsGroupedByRuleName,"words_%s%s.txt",ext,tag))
                         {
-                        if(lines == 0)
-                            fraclines = lines = afile->lines;
-
-                        char wordsGroupedByRuleName[1024];
-                        if(sizeof(wordsGroupedByRuleName) <= (size_t)sprintf(wordsGroupedByRuleName,"words_%s%s.txt",ext,tag))
-                            {
-                            printf("computeParms: wordsGroupedByRuleName 2 small");
-                            exit(-1);
-                            }
-                        char numbersName[1024];
-                        if(sizeof(numbersName) <= (size_t)sprintf(numbersName,"numbers_%s%s.tab",ext,tag))
-                            {
-                            printf("computeParms: numbersName 2 small");
-                            exit(-1);
-                            }
-                        doTraining(afile,ext,0,nflexrules,columns,NULL,NULL,NULL,NULL,wordsGroupedByRuleName,numbersName,Nnodes,weight,tag); // sets Nnodes
-                        delete afile;
-                        afile = NULL;
+                        printf("computeParms: wordsGroupedByRuleName 2 small");
+                        exit(-1);
                         }
+                    char numbersName[1024];
+                    if(sizeof(numbersName) <= (size_t)sprintf(numbersName,"numbers_%s%s.tab",ext,tag))
+                        {
+                        printf("computeParms: numbersName 2 small");
+                        exit(-1);
+                        }
+
+                    int filelines;
+                    doTraining
+                        (/* const char *                                */  filename
+                        ,/* const char *                                */  ext
+                        ,/* int cutoff                                  */  0
+                        ,/* const char * nflexrulesFormat               */  nflexrules
+                        ,/* const char *                                */  columns
+                        ,/* char * pairsToTrainInNextPassName           */  NULL
+                        ,/* char * ingestedFractionOfAmbiguousPairsName */  NULL
+                        ,/* char * allPairsName                         */  NULL
+                        ,/* char * allIngestedPairsName                 */  NULL
+                        ,/* char *                                      */  wordsGroupedByRuleName
+                        ,/* char *                                      */  numbersName
+                        ,/* int &                                       */  Nnodes
+                        ,/* double &                                    */  weight
+                        ,/* const char *                                */  tag
+                        ,/* int * filelines                             */  &filelines
+                        ); // sets Nnodes
+                    if(lines == 0)
+                        fraclines = lines = filelines;
+
+
 
                     printparms(Nnodes,weight,parmstxt,suffixonly,doweights);
                     if(VERBOSE)
@@ -3429,17 +3414,17 @@ static void trainRules(const char * fname, const char * extra,int cutoff,const c
         ++passes;
         char flexrulesPass[1256];
         sprintf(flexrulesPass,FlexrulePassFormat,nflexrules,passes);
-        struct aFile * afile = readFile(fname);
+        char ext[100];
+        ext[0] = '\0';
+        if(extra)
+            strcpy(ext,extra);
+
         sprintf(pairsToTrainInNextPassName,pairsToTrainInNextPassFormat,passes);
         sprintf(ingestedFractionOfAmbiguousPairsName,ingestedFractionOfAmbiguousPairsFormat,passes);
         sprintf(allPairsName,allPairsFormat,passes);
         sprintf(allIngestedPairsName,allIngestedPairsFormat,passes);
         sprintf(wordsGroupedByRuleName,wordsGroupedByRuleFormat,passes);
         sprintf(numbersName,numbersFormat,passes);
-        char ext[100];
-        ext[0] = '\0';
-        if(extra)
-            strcpy(ext,extra);
         char spass[10];
         if(sizeof(spass) <= (size_t)sprintf(spass,".pass%d",passes))
             {
@@ -3452,91 +3437,98 @@ static void trainRules(const char * fname, const char * extra,int cutoff,const c
             exit(-1);
             }
 
-        if(afile)
-            {
-            moreToDo = doTraining   (afile
-                                    ,ext
-                                    ,cutoff
-                                    ,flexrulesPass
-                                    ,passes > 1 ? "12" : columns
-                                    ,pairsToTrainInNextPassName
-                                    ,ingestedFractionOfAmbiguousPairsName
-                                    ,allPairsName
-                                    ,allIngestedPairsName
-                                    ,wordsGroupedByRuleName
-                                    ,numbersName
-                                    ,Nnodes
-                                    ,weight
-                                    ,passes > 1 ? NULL : tag
-                                    );
-            delete afile;
-            afile = NULL;
+
+        moreToDo = doTraining
+                        (/* const char *                                */  fname
+                        ,/* const char *                                */  ext
+                        ,/* int cutoff                                  */  cutoff
+                        ,/* const char * nflexrulesFormat               */  flexrulesPass
+                        ,/* const char *                                */  passes > 1 ? "12" : columns
+                        ,/* char * pairsToTrainInNextPassName           */  pairsToTrainInNextPassName
+                        ,/* char * ingestedFractionOfAmbiguousPairsName */  ingestedFractionOfAmbiguousPairsName
+                        ,/* char * allPairsName                         */  allPairsName
+                        ,/* char * allIngestedPairsName                 */  allIngestedPairsName
+                        ,/* char *                                      */  wordsGroupedByRuleName
+                        ,/* char *                                      */  numbersName
+                        ,/* int &                                       */  Nnodes
+                        ,/* double &                                    */  weight
+                        ,/* const char *                                */  passes > 1 ? NULL : tag
+                        ,/* int * filelines                             */  NULL
+                        );
 #if SLOW
-            /*
-            Re-do the training, but only with those paisr that made it into
-            the set of ingested pairs. The idea is to avoid the "noise" caused
-            by the siblings of ambiguous pairs that didn't make it.
-            The result of this excercise can be a better rule tree.
-            */
-            if(moreToDo)
+        /*
+        Re-do the training, but only with those pairs that made it into
+        the set of ingested pairs. The idea is to avoid the "noise" caused
+        by the siblings of ambiguous pairs that didn't make it.
+        The result of this excercise can be a better rule tree.
+        */
+        if(moreToDo)
+            {
+            if(VERBOSE)
+                {
+                printf("More training to do with file \"%s\"\n",pairsToTrainInNextPassName);
+                }
+            sprintf(wordsGroupedByRuleName,"words_%s%s.txt",ext,tag);
+            sprintf(numbersName,"numbers_%s%s.tab",ext,tag);
+            if(doTraining
+                (/* const char *                                 */  allIngestedPairsName
+                ,/* const char *                                */  ext
+                ,/* int                                         */  cutoff
+                ,/* const char * nflexrulesFormat               */  flexrulesPass
+                ,/* const char *                                */  columns
+                ,/* char * pairsToTrainInNextPassName           */  NULL
+                ,/* char * ingestedFractionOfAmbiguousPairsName */  NULL
+                ,/* char * allPairsName                         */  NULL
+                ,/* char * allIngestedPairsName                 */  NULL
+                ,/* char *                                      */  wordsGroupedByRuleName
+                ,/* char *                                      */  numbersName
+                ,/* int &                                       */  Nnodes
+                ,/* double &                                    */  weight
+                ,/* const char *                                */  tag
+                ,/* int * filelines                             */  NULL
+                )
+              ) // sets Nnodes
                 {
                 if(VERBOSE)
                     {
-                    printf("More training to do with file \"%s\"\n",pairsToTrainInNextPassName);
+                    printf("This should return 0\n");
+                    getchar();
                     }
-                afile = readFile(allIngestedPairsName);
-                sprintf(wordsGroupedByRuleName,"words_%s%s.txt",ext,tag);
-                sprintf(numbersName,"numbers_%s%s.tab",ext,tag);
-                if(doTraining(afile,ext,cutoff,flexrulesPass,columns,NULL,NULL,NULL,NULL,wordsGroupedByRuleName,numbersName,Nnodes,weight,tag)) // sets Nnodes
-                    {
-                    if(VERBOSE)
-                        {
-                        printf("This should return 0\n");
-                        getchar();
-                        }
-                    }
-                delete afile;
-                afile = NULL;
                 }
-            else
-#endif
-                if(VERBOSE)
-                    {
-                    if(moreToDo)
-                        printf("No retraining done on ingested pairs, although ambiguous pairs were found and may have caused noise. (Faster) \n");
-                    }
             }
+        else
+#endif
+            if(VERBOSE)
+                {
+                if(moreToDo)
+                    printf("No retraining done on ingested pairs, although ambiguous pairs were found and may have caused noise. (Faster) \n");
+                }
         char filename[256];
         if(sizeof(filename) <= (size_t)sprintf(filename,"statistics_%s.txt",ext))
             {
             printf("trainRules: filename 2 small");
             exit(-1);
             }
-        FILE * fo = fopen(tempDir(filename),"ab");
-        if(!fo)
-            fprintf(stderr,"Error (trainRules): Cannot open \"%s\" for writing\n",tempDir(filename));
-        if(fo)
+        FILE * fo = fopenOrExit(tempDir(filename),"ab","trainRules");
+        fprintf(fo,"VertexPointerCount          %d\n",VertexPointerCount          );
+        fprintf(fo,"VertexCount                 %d\n",VertexCount                 );
+        fprintf(fo,"TrainingPairCount           %d\n",TrainingPairCount           );
+        fprintf(fo,"HashCount                   %d\n",HashCount                   );
+        fprintf(fo,"RulePairCount               %d\n",RulePairCount               );
+        fprintf(fo,"StrngCount                  %d\n",StrngCount                  );
+        fprintf(fo,"RuleTemplateCount           %d\n",RuleTemplateCount           );
+        fprintf(fo,"ShortRulePairCount          %d\n",ShortRulePairCount          );
+        fprintf(fo,"FullRulePairCount           %d\n",FullRulePairCount           );
+
+        clock_t finish = clock();
+        double  duration = 0;
+        duration = (double)(finish - start) / CLOCKS_PER_SEC;
+
+        fprintf(fo,"%2.1f seconds\n", duration );
+        fclose(fo);
+        if(VERBOSE)
             {
-            fprintf(fo,"VertexPointerCount          %d\n",VertexPointerCount          );
-            fprintf(fo,"VertexCount                 %d\n",VertexCount                 );
-            fprintf(fo,"TrainingPairCount           %d\n",TrainingPairCount           );
-            fprintf(fo,"HashCount                   %d\n",HashCount                   );
-            fprintf(fo,"RulePairCount               %d\n",RulePairCount               );
-            fprintf(fo,"StrngCount                  %d\n",StrngCount                  );
-            fprintf(fo,"RuleTemplateCount           %d\n",RuleTemplateCount           );
-            fprintf(fo,"ShortRulePairCount          %d\n",ShortRulePairCount          );
-            fprintf(fo,"FullRulePairCount           %d\n",FullRulePairCount           );
-
-            clock_t finish = clock();
-            double  duration = 0;
-            duration = (double)(finish - start) / CLOCKS_PER_SEC;
-
-            fprintf(fo,"%2.1f seconds\n", duration );
-            fclose(fo);
-            if(VERBOSE)
-                {
-                printf( "%2.1f seconds\n", duration );
-                }
+            printf( "%2.1f seconds\n", duration );
             }
 
         char AccumulatedFlexrulesPass[256];
@@ -3754,12 +3746,7 @@ static void initOutput(const char * path)
     {
     if(!path)
         return;
-    FILE * fp = fopen(path,"w");
-    if(!fp)
-        {
-        printf("Cannot open %s for writing\n",path);
-        exit(1);
-        }
+    FILE * fp = fopenOrExit(path,"w","initOutput");
     fclose(fp);
     }
 
@@ -3883,13 +3870,6 @@ int main(int argc,char **argv)
             }
         }
 
-    if(!options.B)
-        {
-        char * tmp = new char[strlen(extra)+10]; 
-        options.B = tmp;
-        sprintf(tmp,"best_%s.txt",extra);
-        }
-    besttxt = options.B;
     if(options.P)
         parmstxt = options.P;
     else if(options.computeParms)
@@ -3906,8 +3886,20 @@ int main(int argc,char **argv)
             exit(1);
             }
         }
-    initOutput(parmstxt);
-    initOutput(besttxt);
+
+    if(parmstxt)
+        {
+        if(!options.B)
+            {
+            char * tmp = new char[strlen(extra)+10]; 
+            options.B = tmp;
+            sprintf(tmp,"best_%s.txt",extra);
+            }
+        besttxt = options.B;
+
+        initOutput(parmstxt);
+        initOutput(besttxt);
+        }
 
     //const char * columns = "12634"; // Word, Lemma, LemmaClass, WordFreq, LemmaFreq
     const char * columns = options.n; 
@@ -3936,8 +3928,8 @@ int main(int argc,char **argv)
 
     if(VERBOSE)
         {
-        if(fname)
-            printf("Wordlist:%s\n",fname);
+        assert(fname);
+        printf("Wordlist:%s\n",fname);
         printf("cutoff:%d\n",cutoff);
         printf("expected cutoff:%d\n",expectedCutoff);
         printf("flex rules:%s\n",(nflexrules == NULL) ? "automatically generated names" : nflexrules);
@@ -3960,13 +3952,7 @@ int main(int argc,char **argv)
         {
         tagClass * Tags = NULL;
 
-        struct aFile * afile = readFile(fname);
-        if(afile)
-            {
-            Tags = collectTags(afile,columns);
-            delete afile;
-            afile = NULL;
-            }
+        Tags = collectTags(fname,columns);
 
         tagClass * theTag = Tags;
         if(theTag)

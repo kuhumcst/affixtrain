@@ -39,7 +39,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 extern bool VERBOSE;
 
-#define SLOW 0
+#define SLOW 1
 // SLOW 1 
 // if training has to be done once more after the removal of the homographs that will be handled in the next iteration.
 
@@ -83,7 +83,7 @@ threshold 0
 threshold 0:3309 words 1553 nodes 1322 nodes with words
 */
 
-#define BRACMATOUTPUT 0
+#define BRACMATOUTPUT 1
 /* BRACMATOUTPUT 1
 
 affixtrain -b binaryFlexRules -t myprettyrules

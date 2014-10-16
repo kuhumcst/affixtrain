@@ -39,9 +39,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 extern bool VERBOSE;
 
-#define SLOW 1
-// SLOW 1 
-// if training has to be done once more after the removal of the homographs that will be handled in the next iteration.
 
 #define DOTEST 0 
 // DOTEST 1

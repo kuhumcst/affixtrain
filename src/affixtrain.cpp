@@ -3354,7 +3354,7 @@ void computeParms(const char * fname/* input */,const char * extra,const char * 
     remove(fbuf);
     }
 
-static void trainRules(const char * fname, const char * extra,int cutoff,const char * nflexrules,const char * columns,const char * tag)
+static void trainRules(const char * fname, const char * extra,int cutoff,const char * nflexrules,const char * columns,const char * tag, bool redo)
     {
     CHECK("jglobTempDir");
     assert(nflexrules != NULL); // 20130125
@@ -3452,14 +3452,13 @@ static void trainRules(const char * fname, const char * extra,int cutoff,const c
                         ,/* const char *                                */  passes > 1 ? NULL : tag
                         ,/* int * filelines                             */  NULL
                         );
-#if SLOW
         /*
         Re-do the training, but only with those pairs that made it into
         the set of ingested pairs. The idea is to avoid the "noise" caused
         by the siblings of ambiguous pairs that didn't make it.
         The result of this excercise can be a better rule tree.
         */
-        if(moreToDo)
+        if(redo && moreToDo)
             {
             if(VERBOSE)
                 {
@@ -3493,13 +3492,11 @@ static void trainRules(const char * fname, const char * extra,int cutoff,const c
                     }
                 }
             }
-        else
-#endif
-            if(VERBOSE)
-                {
-                if(moreToDo)
-                    printf("No retraining done on ingested pairs, although ambiguous pairs were found and may have caused noise. (Faster) \n");
-                }
+        else if(VERBOSE)
+            {
+            if(moreToDo)
+                printf("No retraining done on ingested pairs, although ambiguous pairs were found and may have caused noise. (Faster) \n");
+            }
         char filename[256];
         if(sizeof(filename) <= (size_t)sprintf(filename,"statistics_%s.txt",ext))
             {
@@ -3962,7 +3959,7 @@ int main(int argc,char **argv)
                     {
                     printf("Doing tag %s\n",theTag->name);
                     }
-                trainRules(fname,extra,cutoff,nflexrules,columns,theTag->name);
+                trainRules(fname,extra,cutoff,nflexrules,columns,theTag->name,options.redo);
                 theTag = theTag->next;
                 }
             }
@@ -3970,7 +3967,7 @@ int main(int argc,char **argv)
             {
             if(VERBOSE)
                 printf("NOT doing Tags\n");
-            trainRules(fname,extra,cutoff,nflexrules,columns,"");
+            trainRules(fname,extra,cutoff,nflexrules,columns,"",options.redo);
             }
         }
     if(VERBOSE)

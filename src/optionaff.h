@@ -50,6 +50,9 @@ struct optionStruct
     double minfraction;
     double maxfraction;
     bool doweights;
+    bool redo; // option R. Set to true if training has to be done once more 
+               // after the removal of the homographs that will be handled in
+               // the next iteration.
     optionStruct();
     ~optionStruct();
     OptReturnTp doSwitch(int c,char * locoptarg,char * progname);

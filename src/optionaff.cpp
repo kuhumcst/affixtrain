@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //        printf("usage: makeaffixrules -w <word list> -c <cutoff> -C <expected cutoff> -o <flexrules> -e <extra> -n <columns> -f <compfunc> [<word list> [<cutoff> [<flexrules> [<extra> [<columns> [<compfunc>]]]]]]\n");
 
 bool VERBOSE = false;
-static char opts[] = "?@:B:b:c:C:e:f:hH:i:j:L:n:o:O:p:P:s:v:W:t:" /* GNU: */ "wr";
+static char opts[] = "?@:B:b:c:C:e:f:hH:i:j:L:n:o:O:p:P:s:v:W:t:R:" /* GNU: */ "wr";
 static char *** Ppoptions = NULL;
 static char ** Poptions = NULL;
 static int optionSets = 0;
@@ -69,6 +69,7 @@ optionStruct::optionStruct()
     minfraction = -1; // L
     maxfraction = -1; // H
     doweights = false;
+    redo = false;
     }
 
 optionStruct::~optionStruct()
@@ -264,6 +265,9 @@ OptReturnTp optionStruct::doSwitch(int optchar,char * locoptarg,char * progname)
 // << GNU
         case 'W':
             doweights = locoptarg && *locoptarg == '-' ? false : true;
+            break;
+        case 'R':
+            redo = locoptarg && *locoptarg == '-' ? false : true;
             break;
         case 'b': // raw rules
             b = dupl(locoptarg);

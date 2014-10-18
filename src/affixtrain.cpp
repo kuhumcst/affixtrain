@@ -2865,6 +2865,9 @@ static bool doTraining
 
     aFile afile(fname);
 
+    if(filelines)
+        *filelines = afile.lines;
+
     int pairs;
     trainingPair * TrainingPair = readTrainingPairs(afile,pairs,columns,tag);
     markTheAmbiguousPairs(TrainingPair,ext,pairs);
@@ -3065,7 +3068,7 @@ void computeParms(const char * fname/* input */,const char * extra,const char * 
                 if(swath == maxswath)
                     fraction = /*0.01 * */maxfraction;
                 else
-                    fraction =  /*0.01 * */minfraction * pow(factor,(double)swath);
+                    fraction = /*0.01 * */minfraction * pow(factor,(double)swath);
                 if(fraction == 1.0)
                     filename = fname;
                 else

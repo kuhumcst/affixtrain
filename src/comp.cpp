@@ -2677,6 +2677,18 @@ recall          0.031943
 
 #if FLOATINGPOINTPARMS
 /**/
+static bestParms best_daC0 =
+    {
+    false,
+    "daC0", 
+    1,
+//iteration:20.3
+/*weight ( used): 1.75942185857700269e+03 suffix only: no */
+/* number of nodes: 59989, nodes/line: inf weight ( used): 1.75942185857700269e+03 blobs 1 lines 0 * fraction 1.00000000000000000e+00 = 0 lines*/
+        {{
+        3.37800842415481084e-01,	7.29766766436709680e-01,	-5.92110476598071700e-01,	2.83227179535092063e-02,	4.31287955142629492e-02,	8.60067531762726684e-03
+        }}
+    };
 #else
 static bestParms best_da =
     {
@@ -3843,7 +3855,20 @@ bests[4].rows == [3]
 #endif
 
 #if FLOATINGPOINTPARMS
+static bestParms best_deC0 =
+    {
+    false,
+    "deC0",
+    1,
 /**/
+//iteration:20.9
+/*weight ( used): 1.57191628625387852e+03 suffix only: no */
+/* number of nodes: 33777, nodes/line: inf weight ( used): 1.57191628625387852e+03 blobs 1 lines 0 * fraction 1.00000000000000000e+00 = 0 lines*/
+        {{
+            7.02703009236997217e-02,	7.38908457216426395e-01,	-6.55310616504478860e-01,	1.34437786206644400e-01,	3.95781745400746385e-02,	2.10292619579706538e-03
+        }}
+    };
+
 #else
 static bestParms best_ge =
     {
@@ -4204,6 +4229,8 @@ static struct bestParms bests[] =
     {
 #if FLOATINGPOINTPARMS
      best_da3
+    ,best_daC0
+    ,best_deC0
     ,best_en3
     ,best_en3_suffix
     ,best_en4
@@ -4364,7 +4391,7 @@ void betterfound(int Nnodes,double weight,int swath,int iterations,const char * 
                ,fraclines
                );
 //        fprintf(f,"        {         \t         \t         \t          // # decisions\n        ");
-        fprintf(f,"        {\n        ");
+        fprintf(f,"        {{\n        ");
         int i = 0;
         for(;i < NPARMS;++i)
             {
@@ -4386,7 +4413,7 @@ void betterfound(int Nnodes,double weight,int swath,int iterations,const char * 
                 fprintf(f,",\t");
             }
 //        fprintf(f,"}         \t         \t         \t          //(%d unresolved comparisons)\n\n",pcnt[NPARMS >> 2]);
-        fprintf(f,"}\n\n");
+        fprintf(f,"}}\n\n");
         fclose(f);
         }
     }

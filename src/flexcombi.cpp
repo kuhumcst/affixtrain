@@ -20,6 +20,60 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+/*
+Ambiguous pattern
+-----------------
+
+buf      number of bytes to next node to try, if this one fails       
+            .
+            .
+            .
+buf+4    0, 1, 2 or 3: ambiguous node. TODO Check tha value 0 cannot occur.
+                        TODO change role of 0 to indicate new format.
+                        first byte 0, second byte: number of alternatives
+
+buf+8    if 3: number of bytes to second node, if 1 or 2: start of first resp. second pattern (second resp. first pattern is parent)
+            .           TODO new style: if number of bytes is 4, no node follows -> use parent node
+            .
+            .
+buf+12   if 3: start of first pattern (buf)
+
+
+
+Unambiguous pattern
+-------------------
+
+buf      number of bytes to next pattern to try, if this one fails       
+            .
+            .
+            .
+buf+4    prefix pattern starts here
+            .
+            .
+\t       
+         prefix replacement starts here
+            .
+            .
+            .
+\t
+         suffix pattern starts here
+            .
+\t
+         suffix replacement starts here
+            .
+            .
+\t
+         first infix pattern starts here
+\t
+         first infix replacement starts here
+...
+\n       list of patterns and replacements ends here
+0        padding (opt)
+0        padding (opt)
+0        padding (opt)
+buf+*(int*)buf    start of subtree
+*/
+
 #include "strng.h"
 #include "settingsaffixtrain.h"
 #include "flexcombi.h"
@@ -56,9 +110,8 @@ static void printpat(char ** fields,int findex,char * start,char * end,FILE * fm
 #endif
     sprintf(start+strlen(start),"%.*s",(int)(fields[1] - fields[0] - 1),fields[0]);
     fprintf(fm,"%s",start);
-    for(int m = 1;2*m+3 < findex;++m)
+    for(int M = 5;M < findex;M += 2)
         {
-        int M = 2*m+3;
         fprintf(fm,"*%.*s",(int)(fields[M] - fields[M-1] - 1),fields[M-1]);
 #if BRACMATOUTPUT
 		*ppat++ = ANY;
@@ -94,10 +147,8 @@ static void printpat(char ** fields,int findex,char * start,char * end,FILE * fm
 	prep += inc;
 #endif
     fprintf(fm,"%.*s",(int)(fields[2] - fields[1] - 1),fields[1]);
-	int m;
-    for(m = 1;2*m+3 < findex;++m)
+    for(int M = 5;M < findex;M += 2)
         {
-        int M = 2*m+3;
         fprintf(fm,"*%.*s",(int)(fields[M+1] - fields[M] - 1),fields[M]);
 #if BRACMATOUTPUT
 		*prep++ = ANY;

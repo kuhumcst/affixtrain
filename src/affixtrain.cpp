@@ -1790,7 +1790,7 @@ static int compare(const void * arg1, const void * arg2)
     return ret;
     }
 
-static int markAmbiguous(int allPairs,trainingPair * TrainingPair,FILE * famb)
+static int markAmbiguous(int allPairs,trainingPair * TrainingPair,FILE * famb,FILE * fallFile)
     {
     if(VERBOSE)
         printf("markAmbiguous\n");
@@ -1927,13 +1927,12 @@ static int markAmbiguous(int allPairs,trainingPair * TrainingPair,FILE * famb)
 #endif
             }
         }
-    FILE * allFile = fopenOrExit(tempDir("allFile.txt"),"wb","allFile");
+
     for(j = 0;j < allPairs;++j)
         {
         if(!pTrainingPair[j]->isset(b_skip))
-            pTrainingPair[j]->fprintAll(allFile);
+            pTrainingPair[j]->fprintAll(fallFile);
         }
-    fclose(allFile);
 
     delete [] pTrainingPair; // Bart 20081008
     if(VERBOSE)
@@ -2390,10 +2389,18 @@ static void markTheAmbiguousPairs(trainingPair * TrainingPair,const char * ext,i
         printf("markTheAmbiguousPairs: buffer too small");
         exit(-1);
         }
-
     FILE * famb = fopenOrExit(tempDir(filename),"wb","famb");
-    /*int ambi =*/ markAmbiguous(pairs,TrainingPair,famb);
+
+    if(256 <= sprintf(filename,"allFile_%s.txt",ext))
+        {
+        printf("markTheAmbiguousPairs: buffer too small");
+        exit(-1);
+        }
+    FILE * fallFile = fopenOrExit(tempDir(filename),"wb","fallFile");
+
+    /*int ambi =*/ markAmbiguous(pairs,TrainingPair,famb,fallFile);
     fclose(famb);
+    fclose(fallFile);
 
 #if PESSIMISTIC
     sprintf(filename,"paradigms_%s.txt",ext);
@@ -2648,7 +2655,7 @@ static bool writeAndTest(node * tree,const char * ext,int threshold,const char *
         weight = 0.0;
         weight = tree->weightedcount();
 #endif
-        sprintf(filename,"numberOfRules_%d.txt",threshold);
+        sprintf(filename,"numberOfRules_%s_%d.txt",ext,threshold);
         FILE * fono = fopenOrExit(tempDir(filename),"wb","writeAndTest");
 #if BRACMATOUTPUT
         sprintf(filename,"rules_%d%s.bra",threshold,ext);

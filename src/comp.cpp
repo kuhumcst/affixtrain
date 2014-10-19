@@ -2745,6 +2745,19 @@ bests[1].rows == [1]
         3.37800842415481084e-01,	7.29766766436709680e-01,	-5.92110476598071700e-01,	2.83227179535092063e-02,	4.31287955142629492e-02,	8.60067531762726684e-03
         }}
     };
+
+static bestParms best_daC1 =
+    {
+    false,
+    "daC1",
+    1,
+//iteration:20.1
+/*weight ( used): 1.10455190216752599e+04 suffix only: no */
+/* number of nodes: 59917, nodes/line: 1.00941233155262197e-01 weight ( used): 1.10455190216752599e+04 blobs 1 lines 593583 * fraction 1.00000000000000000e+00 = 593583 lines*/
+        {{
+        1.38401137522408346e-01,	7.70176363116090945e-01,	-5.94523323442289975e-01,	1.83744971823973091e-01,	-1.89503087444323529e-03,	2.12062938841620120e-02
+        }}
+    };
 #else
 static bestParms best_da =
     {
@@ -3980,6 +3993,19 @@ bests[2].rows == [1]
         }}
     };
 
+static bestParms best_deC1 =
+    {
+    false,
+    "deC1",
+    1,
+//iteration:20.8
+/*weight ( used): 6.78787945680193934e+03 suffix only: no */
+/* number of nodes: 36815, nodes/line: 1.15722768293564607e-01 weight ( used): 6.78787945680193934e+03 blobs 1 lines 318131 * fraction 1.00000000000000000e+00 = 318131 lines*/
+        {{
+        1.55770018417734107e-01,	6.29146340759315748e-01,	-7.37028188136959139e-01,	1.65459089224974654e-01,	7.90444951020151526e-02,	5.54553040724012833e-02
+        }}
+    };
+
 #else
 static bestParms best_ge =
     {
@@ -4341,7 +4367,9 @@ static struct bestParms bests[] =
 #if FLOATINGPOINTPARMS
      best_da3
     ,best_daC0
+    ,best_daC1
     ,best_deC0
+    ,best_deC1
     ,best_en3
     ,best_en3_suffix
     ,best_en4

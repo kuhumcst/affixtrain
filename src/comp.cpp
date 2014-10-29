@@ -1241,6 +1241,21 @@ recall          nan
 #endif
 
 #if FLOATINGPOINTPARMS
+static bestParms best_isC0 =
+    {
+    false,
+    "isC0",
+    1,
+//iteration:20.6
+/*weight ( used): 1.05436295090904787e+04 suffix only: no */
+/* number of nodes: 336797, nodes/line: inf weight ( used): 1.05436295090904787e+04 blobs 1 lines 0 * fraction 1.00000000000000000e+00 = 0 lines*/
+        {{
+        2.47669087481595079e-01,	6.36764047976876468e-01,	-7.29557569755324042e-01,	2.22303428808458027e-02,	-4.21447897318842114e-03,	2.06245665463890698e-02
+        }}
+    };
+
+
+
 #if 1
 static bestParms best_is =
     {
@@ -4493,6 +4508,7 @@ static struct bestParms bests[] =
     ,best_en6WS3
     ,best_enS2
     ,best_enC0
+    ,best_isC0
     ,best_nlC0
     ,best_nlC1
     ,best_nlC2

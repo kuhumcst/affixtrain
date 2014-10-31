@@ -3487,7 +3487,7 @@ static void trainRules(const char * fname, const char * extra,int cutoff,const c
             sprintf(wordsGroupedByRuleName,"words_%s%s.txt",ext,tag);
             sprintf(numbersName,"numbers_%s%s.tab",ext,tag);
             if(doTraining
-                (/* const char *                                */  allIngestedPairsName
+                (/* const char *                                */  tempDir(allIngestedPairsName)
                 ,/* const char *                                */  ext
                 ,/* int                                         */  cutoff
                 ,/* const char * nflexrulesFormat               */  flexrulesPass

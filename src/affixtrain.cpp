@@ -394,8 +394,6 @@ struct aFile
         {
         assert(fname);
 
-        fprintf(stderr,"aFile(%s)\n",fname);
-
         FILE * fp = fopenOrExit(fname,"rb","Input file");
         if(VERBOSE)
             printf("reading file %s ...",fname);
@@ -2872,8 +2870,6 @@ static bool doTraining
 
     VertexPointerCount = 0;
 
-    fprintf(stderr,"doTraining fname=%s\n",fname);
-
     aFile afile(fname);
 
     if(filelines)
@@ -2905,12 +2901,6 @@ static bool doTraining
     FILE * done = ingestedFractionOfAmbiguousPairsName ? fopenOrExit(tempDir(ingestedFractionOfAmbiguousPairsName),"wb","done") : NULL;
     FILE * combined = allPairsName ? fopenOrExit(tempDir(allPairsName),"wb","combined") : NULL;
     FILE * disamb = allIngestedPairsName ? fopenOrExit(tempDir(allIngestedPairsName),"wb","disamb") : NULL;
-    if(allIngestedPairsName)
-        fprintf (stderr,"allIngestedPairsName %s disamb %p tempDir(allIngestedPairsName) %s\n"
-                ,allIngestedPairsName
-                ,disamb
-                ,tempDir(allIngestedPairsName)
-                );
     if(nexttrain && done && combined && disamb)
         {
         int donepairs = trainingPair::makeNextTrainingSet(pairs,TrainingPair,nexttrain,done,combined,disamb);
@@ -3788,24 +3778,24 @@ int main(int argc,char **argv)
             exit(1);
         }
 
-	if(options.b)
-		{
-		if(options.t)
-			{
-			prettyPrint(options.b,options.t);
-			}
-		else
-			{
-			fprintf(stderr,"affixtrain: option -b only goes in combination with option -t\n");
+    if(options.b)
+        {
+        if(options.t)
+            {
+            prettyPrint(options.b,options.t);
+            }
+        else
+            {
+            fprintf(stderr,"affixtrain: option -b only goes in combination with option -t\n");
             exit(1);
-			}
-		exit(0);
-		}
-	else if(options.t)
-		{
-		fprintf(stderr,"affixtrain: option -t only goes in combination with option -b\n");
+            }
+        exit(0);
+        }
+    else if(options.t)
+        {
+        fprintf(stderr,"affixtrain: option -t only goes in combination with option -b\n");
         exit(1);
-		}
+        }
 
     GlobTempDirSave1 = options.j;
     

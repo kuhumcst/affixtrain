@@ -4493,7 +4493,20 @@ recall          0.109259
 #endif
 
 #if FLOATINGPOINTPARMS
+static bestParms best_elC1 =
+    {
+    false,
+    "elC1",
+    1,
 /**/
+//iteration:20.1
+/*weight ( used): 1.40401105178530815e+04 suffix only: no */
+/* number of nodes: 72056, nodes/line: 1.27600495838498307e-01 weight ( used): 1.40401105178530815e+04 blobs 1 lines 564700 * fraction 1.00000000000000000e+00 = 564700 lines*/
+        {{
+        2.08418641675330557e-01,	7.19204329987296109e-01,	-6.02475173735412373e-01,	2.20196492945528233e-01,	5.47799882952482026e-02,	1.57617016654553105e-01
+        }}
+  };
+
 #else
 static bestParms best_el =
     {
@@ -4609,6 +4622,7 @@ static struct bestParms bests[] =
     ,best_daC1
     ,best_deC0
     ,best_deC1
+    ,best_elC1
     ,best_en3
     ,best_en3_suffix
     ,best_en4

@@ -4568,6 +4568,20 @@ bests[5].rows == [1]
         }}
   };
 
+static bestParms best_elC2 =
+    {
+    false,
+    "elC2",
+    1,
+/*
+*/
+//iteration:20.4
+/*weight ( used): 3.47608497189166446e+04 suffix only: no */
+/* number of nodes: 77922, nodes/line: 1.37988312378253930e-01 weight ( used): 3.47608497189166446e+04 blobs 1 lines 564700 * fraction 1.00000000000000000e+00 = 564700 lines*/
+        {{
+        8.10850759088081185e-02,        7.37792532174295523e-01,        -6.22803219705343025e-01,       2.25381946520170823e-01,        1.92821878529992295e-02,        1.00173423979330933e-01
+        }}
+  };
 #else
 static bestParms best_el =
     {
@@ -4684,6 +4698,7 @@ static struct bestParms bests[] =
     ,best_deC0
     ,best_deC1
     ,best_elC1
+    ,best_elC2
     ,best_en3
     ,best_en3_suffix
     ,best_en4

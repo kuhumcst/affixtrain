@@ -106,47 +106,201 @@ Bracmat function to lemmatise a word, given the structure stored in 'brafile'
 (see declaration after this comment)
 
 
-    ( lemmatise
-    =     tree woord pat rep subtree lemma nr rule
-        , A B C D E F W
-        , first second one none two ntwo sub
-      .   !arg:(?tree.?woord)
-        & ( !tree:&(.)
-          |   !tree:((?rule.#?nr),?subtree) ?tree
-            & (   apply$(!woord.!rule):(=?lemma)
-                & (   lemmatise$(!subtree.!W):?sub
-                    & (   !sub:? (.) ?
-                        &   (   !sub:(.) ?sub
-                              & (!lemma.!nr) !sub
-                            |   !sub:?sub (.)
-                              & !sub (!lemma.!nr)
-                            )
-                          : (?one.?none) (?two.?ntwo)
-                        & (   str$!one:str$!two
-                            & (str$!one.!none)
-                          | (str$!one.!none) (str$!two.!ntwo)
-                          )
-                      | !sub
-                      )
-                  | (!lemma.!nr)
-                  )
-              | !tree:~&lemmatise$(!tree.!woord)
-              | ~`
+  ( lemmatise
+  =     apply tree woord pat rep subtree lemma nr rule
+      , A B C D E F W prune
+      , first second one none two ntwo sub
+    .   !arg:(?tree.?woord)
+      & ( apply
+        =   pat,rep,woord
+          .   !arg:(?woord.(=?pat).?rep)
+            & @(!woord:!pat)
+            & !rep
+        )
+      & ( prune
+        =   AA AAA BBB CCC MM ZZ
+          .     whl
+              ' (   !arg
+                  : ?AA (?AAA.?BBB) ?MM (!AAA.?CCC) ?ZZ
+                & !AA (!AAA.!BBB !CCC) !MM !ZZ:?arg
+                )
+            & !arg
+        )
+      & ( !tree:&(.)
+        |   !tree:((?rule.#?nr),?subtree) ?tree
+          & (   apply$(!woord.!rule):(=?lemma)
+              & (   lemmatise$(!subtree.!W):?sub
+                  & prune$!sub
+                | (str$!lemma.!nr)
+                )
+            | !tree:~&lemmatise$(!tree.!woord)
+            | ~`
+            )
+        |   !tree:(?.?):(?first.~#?second)
+          & lemmatise$(!first.!woord):?first
+          & lemmatise$(!second.!woord):?second
+          & prune$(!first !second)
+        |   !tree:((?.#):(?rule.#?nr)) ?tree
+          & (   apply$(!woord.!rule):(=?lemma)
+              & (str$!lemma.!nr)
+            | !tree:~&lemmatise$(!tree.!woord)
+            )
+        )
+  )
+& get$"dict4ambi.flexrules.pass4.cutoff0.accumulated.txt.bra":?tree
+& ( tree
+  =   (((=?W:?A).(=!A)).1)
+    , ( ( (   ( ( (=?W k&@(!W:?A))
+                . (=!A kken)
+                )
+              . 2
               )
-          |   !tree:(?.?):(?first.~#?second)
-            & lemmatise$(!first.!woord):(?one.?none)
-            & lemmatise$(!second.!woord):(?two.?ntwo)
-            & ( str$!one:str$!two&(!one.!none)
-              | (!one.!none) (!two.!ntwo)
+              ( ( (=?W n&@(!W:?A))
+                . (=!A n)
+                )
+              . 3
               )
-          |   !tree:((?.#):(?rule.#?nr)) ?tree
-            & (   apply$(!woord.!rule):(=?lemma)
-                & (!lemma.!nr)
-              | !tree:~&lemmatise$(!tree.!woord)
+              ( ((=?W:?A o ?B).(=!A !B en))
+              . 4
+              )
+              ( ( (=?W l&@(!W:?A))
+                . (=!A l)
+                )
+              . 5
+              )
+              ( ( (=?W a&@(!W:))
+                . (=a)
+                )
+              . 6
+              )
+              ( ( (=?W b&@(!W:?A))
+                . (=!A b)
+                )
+              . 7
+              )
+              ( ( (=?W c&@(!W:?A))
+                . (=!A c)
+                )
+              . 8
+              )
+              ( ( (=?W d&@(!W:?A))
+                . (=!A)
+                )
+              . 9
+              )
+          .   ( ( (=?W k&@(!W:?A))
+                . (=!A kken)
+                )
+              . 10
+              )
+              ( ( (=?W n&@(!W:?A))
+                . (=!A n)
+                )
+              . 11
+              )
+              ( ((=?W:?A o ?B).(=!A !B en))
+              . 12
+              )
+              ( ( (=a ?W&@(!W:?A))
+                . (=a !A)
+                )
+              . 13
+              )
+              ( ( (=?W l&@(!W:?A))
+                . (=!A l)
+                )
+              . 14
+              )
+              ( ( (=?W d&@(!W:?A))
+                . (=!A)
+                )
+              . 15
               )
           )
+        .   ( ( ( (=?W d&@(!W:?A))
+                . (=!A)
+                )
+              . 16
+              )
+            ,   ( ( (=?W c&@(!W:?A))
+                  . (=!A)
+                  )
+                . 17
+                )
+                ( ( (=?W o&@(!W:?A))
+                  . (=!A den)
+                  )
+                . 18
+                )
+            )
+            ( ( (=?W k&@(!W:?A))
+              . (=!A kken)
+              )
+            . 19
+            )
+            ( ( (=?W n&@(!W:?A))
+              . (=!A n)
+              )
+            . 20
+            )
+            ( ((=?W:?A o ?B).(=!A !B en))
+            . 21
+            )
+        )
+      .   ( ( ( (=?W d&@(!W:?A))
+              . (=!A)
+              )
+            . 22
+            )
+          ,   ( ( (=?W o&@(!W:?A))
+                . (=!A den)
+                )
+              . 23
+              )
+              ( ( (=?W bc&@(!W:?A))
+                . (=!A)
+                )
+              . 24
+              )
+          )
+          ( ( (=?W k&@(!W:?A))
+            . (=!A kken)
+            )
+          . 25
+          )
+          ( ( (=?W n&@(!W:?A))
+            . (=!A n)
+            )
+          . 26
+          )
+          ( ( (=a ?W&@(!W:?A))
+            . (=a !A)
+            )
+          . 27
+          )
+          ( ((=?W:?A o ?B).(=!A !B en))
+          . 28
+          )
+      )
+  )
+&     abcd
+      abc
+      ab
+      a
+      kald
+      kal
+      koop
+      kopen
+      bak
+      bakken
+      dood
+      doden
+  : ?testWords
+&   whl
+  ' ( !testWords:%?word ?testWords
+    & out$(!word ":" lemmatise$(!tree.!word))
     )
-
+& ;
 
 	How to lemmatise the word 'acculadestationerne':
 

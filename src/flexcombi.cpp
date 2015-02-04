@@ -101,6 +101,7 @@ static void printpat(char ** fields,int findex,char * start,char * end,FILE * fm
 #endif
 					 )
     {
+    sprintf(start+strlen(start),"%.*s",(int)(fields[1] - fields[0] - 1),fields[0]);
 #if BRACMATOUTPUT
 	char * ppat = pattern;
 	char * prep = replacement;
@@ -108,7 +109,6 @@ static void printpat(char ** fields,int findex,char * start,char * end,FILE * fm
 	strcpy(pattern,start);
 	ppat += strlen(start);
 #endif
-    sprintf(start+strlen(start),"%.*s",(int)(fields[1] - fields[0] - 1),fields[0]);
     fprintf(fm,"%s",start);
     for(int M = 5;M < findex;M += 2)
         {
@@ -488,6 +488,8 @@ static int merge(char * arr,
     int ind = 0;
     if(  e1 - p1 == e2 - p2 
       && !strncmp(p1,p2,e1-p1)
+	  && child1 < mmax1
+	  && child2 < mmax2
       )
         { // equal nodes
         // do children
@@ -495,13 +497,15 @@ static int merge(char * arr,
             arr[ind++] = *k;
         char * arrind = arr+ind;
         *(int *)(arrind) = 0xBABE;// test
-        if(child1 < mmax1)
+        /*if(child1 < mmax1)
             {
             if(child2 < mmax2)
                 { // each of the two nodes has at least one child
+				*/
                 ind += merge(arr+ind,child1,mmax1,child2,mmax2,/*p1,*/indent+1);
+				/*
                 }
-            else
+             else
                 { // the second node has no children
                   // copy the children of the first node
                 ind += sizeof(int);
@@ -530,7 +534,7 @@ static int merge(char * arr,
                 }
             else
                 ;
-            }
+            }*/
         *(int*)(arr) = ind;
         // do siblings
         arrind = arr+ind;

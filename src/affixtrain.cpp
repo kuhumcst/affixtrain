@@ -2531,6 +2531,7 @@ static void rearrange
         {
         if(buf[i] == '\n')
             {
+			printf("\n");
             size[n] += sizeof(int) + sizeof(int); // room for index and '\0' byte
             size[n] >>= 2;
             size[n] <<= 2; // rounded to nearest word boundary
@@ -2551,6 +2552,7 @@ static void rearrange
         else if(doind)
             {// read nesting level
             ind[n] *= 10;
+			printf("%c",buf[i]);
             ind[n] += buf[i] - '0';
             }
         else
@@ -3644,7 +3646,7 @@ static void trainRules(const char * fname, const char * extra,int cutoff,const c
         accumulatedFormatPrev = accumulatedFormat;
         accumulatedFormat = AccumulatedFlexrulePassFormat;
         }
-    while(moreToDo && passes < 2);
+    while(moreToDo && passes < 30);
 
 
 

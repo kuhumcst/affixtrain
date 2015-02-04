@@ -1498,6 +1498,7 @@ int printRules(node * nd
 #if BRACMATOUTPUT
             snode = makeNode(patreps,nr,pat,rep,L,R,&nLL,&nRR);
             fprintf(fobra,"(");
+            printf("(");
 #else
             makeNode(patreps,pat,rep,L,R,&nLL,&nRR);
 #endif
@@ -1548,12 +1549,14 @@ int printRules(node * nd
 #endif
 #if BRACMATOUTPUT
         fprintf(fobra,"%s\n",snode->itsTxt());
+        printf("%s\n",snode->itsTxt());
         delete snode;
 #endif
         if(nd->IfPatternSucceeds)
             {
 #if BRACMATOUTPUT
             fprintf(fobra,",");
+            printf(",");
 #endif
             strng nL(L);
             strng nR(nRR);
@@ -1575,6 +1578,7 @@ int printRules(node * nd
                 );
 #if BRACMATOUTPUT
             fprintf(fobra,")\n");
+            printf(")\n");
 #endif
             }
         delete nLL;

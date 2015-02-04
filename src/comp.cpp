@@ -4493,6 +4493,21 @@ recall          0.109259
 #endif
 
 #if FLOATINGPOINTPARMS
+
+static bestParms best_elC0 =
+    {
+    false,
+    "elC0",
+    1,
+//iteration:20.5
+/*weight ( used): 2.88408936339958746e+03 suffix only: no */
+/* number of nodes: 71647, nodes/line: 1.26876217460598545e-01 weight ( used): 2.88408936339958746e+03 blobs 1 lines 564700 * fraction 1.00000000000000000e+00 = 564700 lines*/
+        {{
+        1.62988138483171396e-01,	7.23313127184479043e-01,	-6.29185831644276772e-01,	1.97113838764327726e-01,	3.08765150599594205e-03,	1.24558327663259708e-01
+        }}
+    };
+
+
 static bestParms best_elC1 =
     {
     false,
@@ -4566,7 +4581,7 @@ bests[5].rows == [1]
         {{
         2.08418641675330557e-01,	7.19204329987296109e-01,	-6.02475173735412373e-01,	2.20196492945528233e-01,	5.47799882952482026e-02,	1.57617016654553105e-01
         }}
-  };
+    };
 
 static bestParms best_elC2 =
     {
@@ -4635,7 +4650,7 @@ bests[6].rows == [1]
         {{
         8.10850759088081185e-02,        7.37792532174295523e-01,        -6.22803219705343025e-01,       2.25381946520170823e-01,        1.92821878529992295e-02,        1.00173423979330933e-01
         }}
-  };
+    };
 #else
 static bestParms best_el =
     {
@@ -4751,6 +4766,7 @@ static struct bestParms bests[] =
     ,best_daC1
     ,best_deC0
     ,best_deC1
+    ,best_elC0
     ,best_elC1
     ,best_elC2
     ,best_en3

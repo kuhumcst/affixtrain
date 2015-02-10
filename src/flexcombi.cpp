@@ -103,31 +103,61 @@ static void Strrev(char * s)
         }
     }
 
-
-static void printpat(char ** fields,int findex,char * start,char * end,FILE * fm
-#if BRACMATOUTPUT
+static void printpatBracmat(char ** fields,int findex,char * start,char * end
                      ,char * pattern,char * replacement
-#endif
                      )
     {
     sprintf(start+strlen(start),"%.*s",(int)(fields[1] - fields[0] - 1),fields[0]);
-#if BRACMATOUTPUT
     char * ppat = pattern;
     char * prep = replacement;
     int inc;
     strcpy(pattern,start);
     ppat += strlen(start);
-#endif
-    fprintf(fm,"%s",start);
     for(int M = 5;M < findex;M += 2)
         {
-        fprintf(fm,"*%.*s",(int)(fields[M] - fields[M-1] - 1),fields[M-1]);
-#if BRACMATOUTPUT
         *ppat++ = ANY;
         inc = (int)(fields[M] - fields[M-1] - 1);
         strncpy(ppat,fields[M-1],inc);
         ppat += inc;
-#endif
+        }
+    if(findex > 2)
+        {
+        Strrev(end);
+        size_t L = strlen(end);
+        sprintf(end+L,"%.*s",(int)(fields[3] - fields[2] - 1),fields[2]);
+        Strrev(end+L);
+        Strrev(end);
+        *ppat++ = ANY;
+        }
+    strcpy(ppat,end);
+ 
+    inc = (int)(fields[2] - fields[1] - 1);
+    strncpy(prep,fields[1],inc);
+    prep += inc;
+    for(int M = 5;M < findex;M += 2)
+        {
+        *prep++ = ANY;
+        inc = (int)(fields[M+1] - fields[M] - 1);
+        strncpy(prep,fields[M],inc);
+        prep += inc;
+        }
+    if(findex > 2)
+        {
+        inc = (int)(fields[4] - fields[3] - 1);
+        *prep++ = ANY;
+        strncpy(prep,fields[3],inc);
+        prep += inc;
+        }
+    *prep = '\0';
+    }
+
+static void printpat(char ** fields,int findex,char * start,char * end,FILE * fm)
+    {
+    sprintf(start+strlen(start),"%.*s",(int)(fields[1] - fields[0] - 1),fields[0]);
+    fprintf(fm,"%s",start);
+    for(int M = 5;M < findex;M += 2)
+        {
+        fprintf(fm,"*%.*s",(int)(fields[M] - fields[M-1] - 1),fields[M-1]);
         }
     if(findex > 2)
         {
@@ -137,68 +167,48 @@ static void printpat(char ** fields,int findex,char * start,char * end,FILE * fm
         Strrev(end+L);
         Strrev(end);
         fprintf(fm,"*%s\t-->\t",end);
-#if BRACMATOUTPUT
-        *ppat++ = ANY;
-        strcpy(ppat,end);
-#endif
         }
     else
         {
         fprintf(fm,"%s\t-->\t",end);
-#if BRACMATOUTPUT
-        strcpy(ppat,end);
-#endif
         }
 
-#if BRACMATOUTPUT
-    inc = (int)(fields[2] - fields[1] - 1);
-    strncpy(prep,fields[1],inc);
-    prep += inc;
-#endif
     fprintf(fm,"%.*s",(int)(fields[2] - fields[1] - 1),fields[1]);
     for(int M = 5;M < findex;M += 2)
         {
         fprintf(fm,"*%.*s",(int)(fields[M+1] - fields[M] - 1),fields[M]);
-#if BRACMATOUTPUT
-        *prep++ = ANY;
-        inc = (int)(fields[M+1] - fields[M] - 1);
-        strncpy(prep,fields[M],inc);
-        prep += inc;
-#endif
         }
     if(findex > 2)
         {
         fprintf(fm,"*%.*s\n",(int)(fields[4] - fields[3] - 1),fields[3]);
-#if BRACMATOUTPUT
-        inc = (int)(fields[4] - fields[3] - 1);
-        *prep++ = ANY;
-        strncpy(prep,fields[3],inc);
-        prep += inc;
-        *prep = '\0';
-#endif
         }
     else
         {
         fprintf(fm,"\n");
-#if BRACMATOUTPUT
-        *prep = '\0';
-#endif
         }
     }
 
-static char * printrules
+static char * printrulesBracmat
                 ( char * rules
-                , int indent
                 , char * max
                 , char * start
                 , char * end
-                , FILE * fm
-#if BRACMATOUTPUT
                 , FILE * fmbra
                 , strng * L
                 , strng * R
                 , int & nr
-#endif
+                , int indent
+                );
+
+
+
+static char * printrules
+                ( char * rules
+                , char * max
+                , char * start
+                , char * end
+                , FILE * fm
+                , int indent
                 );
 
 struct fileBuffer
@@ -234,7 +244,7 @@ struct fileBuffer
     };
 
 
-int prettyPrint(const char * flexrulesIn,const char * filenameOut)
+int prettyPrintBracmat(const char * flexrulesIn)
     {
     fileBuffer FileBuffer;
     if (!FileBuffer.readRules(flexrulesIn))
@@ -242,173 +252,145 @@ int prettyPrint(const char * flexrulesIn,const char * filenameOut)
         printf("Error (prettyPrint): Cannot open %s for reading\n",flexrulesIn);
         return false;
         }
+    char brafile[1000];
+    sprintf(brafile,"%s.pretty.bra",flexrulesIn);
+    FILE * fmbra = fopen(brafile,"wb");
+    if(!fmbra)
+        {
+        printf("Error (prettyPrint): Cannot open %s for writing\n",brafile);
+        return false;
+        }
+    
     char start[1000] = {0};
     char end[1000] = {0};
+    int nr = 0;
+	strng L("");
+    strng R("");
+    
+    printrulesBracmat(FileBuffer.buf, FileBuffer.buf + FileBuffer.Length, start, end,fmbra,&L,&R,nr, 0);
+
+	fclose(fmbra);
+    return true;
+    }
+
+
+
+int prettyPrint(const char * flexrulesIn)
+    {
+    fileBuffer FileBuffer;
+    if (!FileBuffer.readRules(flexrulesIn))
+        {
+        printf("Error (prettyPrint): Cannot open %s for reading\n",flexrulesIn);
+        return false;
+        }
+
+    char filenameOut[1000];
+    sprintf(filenameOut,"%s.pretty.txt",flexrulesIn);
+
     FILE * fm = fopen(filenameOut,"wb");
     if(!fm)
         {
         printf("Error (prettyPrint): Cannot open %s for writing\n",filenameOut);
         return false;
         }
-#if BRACMATOUTPUT
-    char brafile[1000];
-    sprintf(brafile,"%s.bra",filenameOut);
-    FILE * fmbra = fopen(brafile,"wb");
-
-    
-    int nr = 0;
-    strng L("");
-    strng R("");
-    
-    printrules(FileBuffer.buf, 0, FileBuffer.buf + FileBuffer.Length, start, end, fm
-        ,fmbra,&L,&R,nr
-        );
-    if(fmbra)
-        fclose(fmbra);
-#else
-//	printrules(FileBuffer.buf, 0, FileBuffer.buf + FileBuffer.Length, start, end, fm);
-#endif
+    char start[1000] = {0};
+    char end[1000] = {0};
+	printrules(FileBuffer.buf, FileBuffer.buf + FileBuffer.Length, start, end, fm, 0);
     fclose(fm);
     return true;
     }
 
 
-static char * printlist
+static char * printlistBracmat
                 ( char * p
                 , char * e
                 , int indent
                 , char * start
                 , char * end
-                , FILE * fm
-#if BRACMATOUTPUT
                 , FILE * fmbra
                 , strng * L
                 , strng * R
                 , int & nr
                 , bool comma
-#endif
                 )
     {
     if(p < e)
         {
-#if BRACMATOUTPUT
         if(comma)
             fprintf(fmbra,"%*s",2+indent*2,",");
-#endif
         size_t stlen = strlen(start);
         size_t endlen = strlen(end);
         while(p < e)
             {
-            p = printrules(p,indent+1,e,start,end,fm
-#if BRACMATOUTPUT
-                ,fmbra,L,R,nr
-#endif
-                );
+            p = printrulesBracmat(p,e,start,end,fmbra,L,R,nr,indent+1);
             start[stlen] = '\0';
             Strrev(end);
             end[endlen] = 0;
             Strrev(end);
             }
-#if BRACMATOUTPUT
         fprintf(fmbra,"%*s\n",2+indent*2,"");
-#endif
         }
     return e;
     }
 
-static char * printrules
+
+static char * printrulesBracmat
                 ( char * rules
-                , int indent
                 , char * max
                 , char * start
                 , char * end
-                , FILE * fm
-#if BRACMATOUTPUT
                 , FILE * fmbra
                 , strng * L
                 , strng * R
                 , int & nr
-#endif
+                , int indent
                 )
     {
-    char * fields[44];
     ptrdiff_t index = *(int *)rules;
     if(index == 0)
         index = max - rules;
     char * p = rules + sizeof(int);
-    unsigned int byt = *p;
+    unsigned int type = *p;
     size_t slen = strlen(start);
     size_t elen = strlen(end);
-#if BRACMATOUTPUT
     fprintf(fmbra,"\n%*s",indent*2,"(\n");
-#endif
-    if(byt < 4)
+    if(type < 4)
         {
         // fork
-#if BRACMATOUTPUT
         fprintf(fmbra,"%*s",2+indent*2,"(\n");
         fprintf(fmbra,"%*s",2+indent*2,"\n");
-#endif
-        fprintf(fm,"%*s",2+indent*2,"(\n");
         static char nix[1] = "";
         char * ret = nix;
         p += sizeof(int); // skip word containing 1, 2 or 3
         start[slen] = 0;
         end[elen] = 0;
-        switch(byt)
+        switch(type)
             {
             case 1:
-                ret = printlist(p,max,indent,start,end,fm
-#if BRACMATOUTPUT
-                    ,fmbra,L,R,nr,false
-#endif
-                    );
-                fprintf(fm,"%*s|\n%*s(parent)\n",2+indent*2,"",2+indent*2,"");
-#if BRACMATOUTPUT
+                ret = printlistBracmat(p,max,indent,start,end,fmbra,L,R,nr,false);
                 fprintf(fmbra,"%*s\n%*s)\n",2+indent*2,".",2+indent*2,"(");
-#endif
                 break;
             case 2:
-                fprintf(fm,"%*s(parent)\n%*s|\n",2+indent*2,"",2+indent*2,"");
-#if BRACMATOUTPUT
                 fprintf(fmbra,"%*s)\n%*s\n",2+indent*2,"(",2+indent*2,".");
-#endif
-                ret = printlist(p,max,indent,start,end,fm
-#if BRACMATOUTPUT
-                    ,fmbra,L,R,nr,false
-#endif
-                    );
+                ret = printlistBracmat(p,max,indent,start,end,fmbra,L,R,nr,false);
                 break;
             case 3:
                 {
                 char * next = p + *(int *)p;
                 p += sizeof(int);
-                printlist(p,next,indent,start,end,fm
-#if BRACMATOUTPUT
-                    ,fmbra,L,R,nr,false
-#endif
-                    );
+                printlistBracmat(p,next,indent,start,end,fmbra,L,R,nr,false);
                 start[slen] = 0;
                 end[elen] = 0;
-                fprintf(fm,"%*s",2+indent*2,"|\n");
-#if BRACMATOUTPUT
                 fprintf(fmbra,"%*s",2+indent*2,".\n");
-#endif
-                ret = printlist(next,max,indent,start,end,fm
-#if BRACMATOUTPUT
-                    ,fmbra,L,R,nr,false
-#endif
-                    );
+                ret = printlistBracmat(next,max,indent,start,end,fmbra,L,R,nr,false);
                 break;
                 }
             }
-        fprintf(fm,"%*s",2+indent*2,")\n");
-#if BRACMATOUTPUT
         fprintf(fmbra,"%*s",2+indent*2,")\n");
         fprintf(fmbra,"\n%*s",indent*2,")\n");
-#endif
         return ret;
         }
+    char * fields[44];
     fields[0] = p;
     int findex = 1;
     while(*p != '\n')
@@ -419,12 +401,10 @@ static char * printrules
             ++p;
         }
     fields[findex] = ++p; // p is now within 3 bytes from the next record.
-    fprintf(fm,"%*s",indent*2,"");
-#if BRACMATOUTPUT
     fprintf(fmbra,"%*s",indent*2,"");
     char pattern[1000];
     char replacement[1000];
-    printpat(fields,findex,start,end,fm,pattern,replacement);
+    printpatBracmat(fields,findex,start,end,pattern,replacement);
     strng spattern(pattern);
     strng sreplacement(replacement);
     strng * nLL = 0;
@@ -441,44 +421,155 @@ static char * printrules
     nR.cat(R,(const strng *)0);
     delete nLL;
     delete nRR;
-#else
-    printpat(fields,findex,start,end,fm);
-#endif
     ptrdiff_t nxt = p - rules;
     nxt += sizeof(int) - 1;
     nxt /= sizeof(int);
     nxt *= sizeof(int);
     p = rules+nxt;
-#if BRACMATOUTPUT
-    p = printlist(p,rules+index,indent,start,end,fm,fmbra,&nL,&nR,nr,true);
+    p = printlistBracmat(p,rules+index,indent,start,end,fmbra,&nL,&nR,nr,true);
     delete snode;
     fprintf(fmbra,"\n%*s",indent*2,")\n");
-#else
-    p = printlist(p,rules+index,indent,start,end,fm);
-#endif
     return p;
     }
 
-class interval;
-
-class rewritenode
+static char * printChain
+                ( char * p
+                , char * e
+                , int indent
+                , char * start
+                , char * end
+                , FILE * fm
+				, char * msg
+                )
     {
-    public:
-    int sibling;
-    union
-        {
-        int type;
-        struct
-            {
-            unsigned int fail:1;
-            unsigned int success:1;
-            } ambiguous;
-        } u;
-    char * p;
-    char * e;
+	int index = *(int *)p;
+	if(index > 0)
+		{
+		fprintf(fm,"%*s( %s\n",indent,"",msg);
+		for(;;)
+			{
+			fprintf(fm,"%*s%s",indent,"","ALT\n");
+			if(index == 4 || index == -4)
+				fprintf(fm,"%*s",indent,"[parent]\n");
+			else
+				/*printlist*/printrules
+					( p + sizeof(int)
+					, (index == 0) ? e : (p + index)
+					, start
+					, end
+					, fm
+					, indent
+					);
 
-    rewritenode(const interval * Interval);
-    };
+			if(index > 0)
+				{
+				p += index;
+				index = *(int *)p;
+				}
+			else
+				break;
+			}
+		fprintf(fm,"%*s) END %s\n",indent,"",msg);
+		}
+    return e;
+    }
+
+
+
+
+
+
+static char * printrules
+                ( char * rules
+                , char * max
+                , char * start
+                , char * end
+                , FILE * fm
+                , int indent
+                )
+    {
+	if(max <= rules)
+		return rules;
+    ptrdiff_t index = *(int *)rules;
+    if(index == 0)
+        index = max - rules;
+    char * p = rules + sizeof(int);
+    unsigned int type = *(int*)p;
+	if(type > 3)
+		type = 0;
+	else
+		p += sizeof(int);
+    size_t slen = strlen(start);
+    size_t elen = strlen(end);
+    char * fields[44];
+    fields[0] = p;
+    int findex = 1;
+    while(*p != '\n')
+        {
+        if(*p == '\t')
+            fields[findex++] = ++p;
+        else
+            ++p;
+        }
+    fields[findex] = ++p; // p is now within 3 bytes from the next record.
+    fprintf(fm,"%*s",indent,"");
+    printpat(fields,findex,start,end,fm);
+    ptrdiff_t nxt = p - rules;
+    nxt += sizeof(int) - 1;
+    nxt /= sizeof(int);
+    nxt *= sizeof(int);
+    p = rules+nxt;
+	if(type & 2)
+		{ // several chains of children ahead
+		p = printChain
+            ( p
+            , rules + index
+            , indent + 2
+            , start
+            , end
+            , fm
+			, " ambiguous children"
+            );
+		}
+	else
+		{
+		p = /*printlist*/printrules
+			( p
+			, rules + index
+			, start
+			, end
+			, fm
+			, indent + 2
+			);
+		}
+    start[slen] = '\0';
+    Strrev(end);
+    end[elen] = 0;
+    Strrev(end);
+	if(type & 1)
+		{
+		p = printChain
+            ( rules + index
+            , max
+            , indent+1
+            , start
+            , end
+            , fm
+			, " ambiguous tails of children"
+            );
+		}
+	else
+		p = /*printlist*/printrules
+			( rules + index
+			, max
+			, start
+			, end
+			, fm
+			, indent
+			);
+	assert(p == max);
+    return p;
+    }
 
 class rule
     {
@@ -715,8 +806,8 @@ int treenode::copy(char * arr,int ind)
     arr += Rule.copy(arr,ind);
     if (Child.one)
         {
-        *(int *)arr = 0;
-        arr += sizeof(int);
+        //	*(int *)arr = 0;
+        //	arr += sizeof(int);
         arr += Child.one->copy(arr, ind + 2);
         }
     else if (Child.more)
@@ -809,8 +900,10 @@ treenode * treenodeFactory(char * buf,char * end)
             type = 0;
         else
             buf += sizeof(unsigned int);
+		char * ChildEnd = end;
         if (OnFail)
             {
+			ChildEnd = Fail + OnFail;
             if (type & 1)
                 ASibling = new chain(Fail + OnFail, end);
             else
@@ -828,9 +921,9 @@ treenode * treenodeFactory(char * buf,char * end)
         ichild *= sizeof(int);
         buf += ichild;
         if (type & 2)
-            AChild = new chain(buf, end);
+            AChild = new chain(buf, ChildEnd);
         else
-            Child = treenodeFactory(buf, end);
+            Child = treenodeFactory(buf, ChildEnd);
 
         switch (type)
             {
@@ -907,75 +1000,6 @@ void oneOrMore::merge(oneOrMore * Y)
         }
     }
 
-
-class interval
-    {
-    public:
-    char * buf;
-    char * end;
-    int link(){ if (buf + sizeof(int) <= end) return *(int*)buf; else return 0; }
-    interval(const fileBuffer * FileBuffer){ buf = FileBuffer->buf; end = buf + FileBuffer->Length; }
-    interval(const interval * Interval, int TailOffset)
-        {
-        buf = Interval->buf + TailOffset;
-        end = Interval->end;
-        }
-    interval(const interval * Interval, const rewritenode * Node)
-        {
-        assert(Interval->end > Interval->buf);
-        ptrdiff_t ichild = Node->e - Interval->buf;
-        ichild += sizeof(int);
-        ichild /= sizeof(int);
-        ichild *= sizeof(int);
-        buf = Interval->buf + ichild;
-        end = Node->sibling ? Interval->buf + Node->sibling : Interval->end;
-        }
-    };
-
-rewritenode::rewritenode(const interval * Interval)
-    {
-    assert(Interval->end > Interval->buf);
-    sibling = *(int *)Interval->buf;
-    u.type = *(int *)Interval->buf + sizeof(int);
-    if (u.type & ~3)
-        {
-        u.type = 0;
-        p = Interval->buf + sizeof(int);
-        }
-    p = Interval->buf + 2 * sizeof(int);
-    e = p;
-    while (*e != '\n')
-        {
-        ++e;
-        }
-    ptrdiff_t ichild = e - Interval->buf;
-    ichild += sizeof(int);
-    ichild /= sizeof(int);
-    ichild *= sizeof(int);
-    }
-
-static int equalRules(const interval * This, const interval * Othr)
-    {
-    rewritenode ThisNode(This);
-    rewritenode OthrNode(Othr);
-    return  (  ThisNode.e - ThisNode.p == OthrNode.e - OthrNode.p
-            && !strncmp(ThisNode.p, OthrNode.p, ThisNode.e - ThisNode.p)
-            );
-    }
-
-class link
-    {
-    public:
-        char * buf;
-        link * Next;
-        link(char * i,link * L) :Next(L), buf(i){}
-        ~link(){ delete Next; }
-        bool has(char * q)
-            {
-            return (buf == q) || (Next != 0 && Next->has(q));
-            }
-    };
-
 bool flexcombi(const char * bestflexrules, const char * nextbestflexrules, const char * combinedflexrules)
     {
     fileBuffer FileBuffer;
@@ -1011,8 +1035,9 @@ bool flexcombi(const char * bestflexrules, const char * nextbestflexrules, const
         int length = TreeNode->copy(arr, 0);
         *(int*)arr = 0;
         for(int i = 0;i < length;++i)
-        fputc(arr[i],f);
+			fputc(arr[i],f);
         }
     fclose(f);
+	prettyPrint(combinedflexrules);
     return true;
     }

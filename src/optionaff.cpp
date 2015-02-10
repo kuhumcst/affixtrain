@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //        printf("usage: makeaffixrules -w <word list> -c <cutoff> -C <expected cutoff> -o <flexrules> -e <extra> -n <columns> -f <compfunc> [<word list> [<cutoff> [<flexrules> [<extra> [<columns> [<compfunc>]]]]]]\n");
 
 bool VERBOSE = false;
-static char opts[] = "?@:B:b:c:C:e:f:hH:i:j:L:n:o:O:p:P:s:v:W:t:R:" /* GNU: */ "wr";
+static char opts[] = "?@:B:b:c:C:e:f:hH:i:j:L:n:o:O:p:P:s:v:W:R:" /* GNU: */ "wr";
 static char *** Ppoptions = NULL;
 static char ** Poptions = NULL;
 static int optionSets = 0;
@@ -62,7 +62,6 @@ optionStruct::optionStruct()
     P = NULL;
     j = NULL; // temp dir
 	b = NULL; // raw file (see t)
-	t = NULL; // pretty printed file (see b)
     computeParms = false;// compute parms
     suffixOnly = false;// suffix rules only
     verbose = false;// verbose
@@ -92,7 +91,6 @@ optionStruct::~optionStruct()
     delete [] B;
     delete [] P;
 	delete [] b;
-	delete [] t;
     }
 
 OptReturnTp optionStruct::doSwitch(int optchar,char * locoptarg,char * progname)
@@ -147,7 +145,7 @@ OptReturnTp optionStruct::doSwitch(int optchar,char * locoptarg,char * progname)
                 "\nor\n"
                 "affixtrain [<word list> [<cutoff> [<flexrules> [<extra> [<columns> [<compfunc>]]]]]]"
                 "\nor\n"
-				"affixtrain -b <rules> -t <prettyprint>"
+				"affixtrain -b <rules>"
                 "\n");
             printf("-@: Options are read from file with lines formatted as: -<option letter> <value>\n"
                    "    A semicolon comments out the rest of the line.\n"
@@ -213,8 +211,7 @@ OptReturnTp optionStruct::doSwitch(int optchar,char * locoptarg,char * progname)
             printf("  17:koud ()\n");
             printf("  18:parms0 (Use computed parameter settings.)\n");
             printf("  19:parmsoff (obsolete, same as -f18)\n");
-            printf("-b: compiled, raw rule file. Requires -t option. Exits after pretty printing.\n");
-            printf("-t: pretty printed output. Requires -b option. Exits after pretty printing.\n");
+            printf("-b: compiled, raw rule file. Exits after pretty printing.\n");
             return Leave;
         case 'i': // word list
             i = dupl(locoptarg);
@@ -271,9 +268,6 @@ OptReturnTp optionStruct::doSwitch(int optchar,char * locoptarg,char * progname)
             break;
         case 'b': // raw rules
             b = dupl(locoptarg);
-            break;
-        case 't': // pretty printed rules
-            t = dupl(locoptarg);
             break;
         }
     return GoOn;

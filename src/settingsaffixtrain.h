@@ -80,7 +80,7 @@ threshold 0
 threshold 0:3309 words 1553 nodes 1322 nodes with words
 */
 
-#define BRACMATOUTPUT 0
+#define BRACMATOUTPUT 1
 /* BRACMATOUTPUT 1
 
 affixtrain -b binaryFlexRules -t myprettyrules

@@ -3564,18 +3564,12 @@ static void trainRules(const char * fname, const char * extra,int cutoff,const c
 //            if(flexrulesPass)
                 {
                 char nextbestflexrules[1150];
-                char Pretty[1150];
                 if(sizeof(nextbestflexrules) <= (size_t)sprintf(nextbestflexrules,flexrulesPass,cut))
                     {
                     printf("trainRules: nextbestflexrules 2 small");
                     exit(-1);
                     }
-                if(sizeof(Pretty) <= (size_t)sprintf(Pretty,"%s.txt",nextbestflexrules))
-                    {
-                    printf("trainRules: Pretty 2 small");
-                    exit(-1);
-                    }
-                prettyPrint(nextbestflexrules,Pretty);
+                prettyPrint(nextbestflexrules);
                 if(passes > 1)
                     {
                     char bestflexrules[1150], newbestflexrules[1150];
@@ -3595,12 +3589,7 @@ static void trainRules(const char * fname, const char * extra,int cutoff,const c
                         }
                     if(!flexcombi(bestflexrules, nextbestflexrules, newbestflexrules))
                         break;
-                    if(sizeof(Pretty) <= (size_t)sprintf(Pretty,"%s.txt",newbestflexrules))
-                        {
-                        printf("trainRules: Pretty 2 small");
-                        exit(-1);
-                        }
-                    prettyPrint(newbestflexrules,Pretty);
+                    prettyPrint(newbestflexrules);
                     }
                 }
 /*
@@ -3782,21 +3771,8 @@ int main(int argc,char **argv)
 
     if(options.b)
         {
-        if(options.t)
-            {
-            prettyPrint(options.b,options.t);
-            }
-        else
-            {
-            fprintf(stderr,"affixtrain: option -b only goes in combination with option -t\n");
-            exit(1);
-            }
+        prettyPrint(options.b);
         exit(0);
-        }
-    else if(options.t)
-        {
-        fprintf(stderr,"affixtrain: option -t only goes in combination with option -b\n");
-        exit(1);
         }
 
     GlobTempDirSave1 = options.j;

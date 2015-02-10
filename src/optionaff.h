@@ -43,7 +43,6 @@ struct optionStruct
     const char * B; // Best parms
     const char * P; // Current parms
     const char * b; // raw rules
-    const char * t; // pretty printed rules
     bool computeParms;// compute parms
     bool suffixOnly;// suffix only
     bool verbose;         // verbose

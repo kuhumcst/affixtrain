@@ -2891,11 +2891,6 @@ static bool doTraining
     // Pairs that are doublets are not added to either list.
     // Nor are pairs that are not well-formed (e.g. contain a ' ').
     trainingPair::makeChains(pairs,TrainingPair,&train,&test);
-#if DOTEST
-    FILE * ftest;
-    sprintf(filename,"test_%s.txt",ext);
-    ftest = fopenOrExit(filename,"wb","test");
-#endif
     node * top;
     doTheRules(&Hash,train,&top);
 

@@ -92,6 +92,8 @@ buf+8   prefix pattern starts here
 #include <assert.h>
 
 
+typedef unsigned char typetype;
+
 static void Strrev(char * s)
     {
     char * e = s + strlen(s);
@@ -212,10 +214,12 @@ struct fileBuffer
     bool readRules(FILE * flexrulefile)
         {
         fseek(flexrulefile, 0, SEEK_END);
-        Length = ftell(flexrulefile);
+        long length = ftell(flexrulefile);
+        Length = length;
+        while (Length & 3) ++Length;
         buf = new char[Length];
         rewind(flexrulefile);
-        if (Length != (long int)fread(buf, 1, Length, flexrulefile))
+        if (length != (long int)fread(buf, 1, length, flexrulefile))
             {
             fclose(flexrulefile);
             return false;
@@ -294,6 +298,7 @@ static char * printChain
                 )
     {
 	int index = *(int *)p;
+    assert(!(index & 3));
 	if(index > 0)
 		{
 		fprintf(fm,"%*s( %s\n",indent,"",msg);
@@ -316,7 +321,8 @@ static char * printChain
 				{
 				p += index;
 				index = *(int *)p;
-				}
+                assert(!(index & 3));
+                }
 			else
 				break;
 			}
@@ -337,14 +343,16 @@ static char * printrules
 	if(max <= rules)
 		return rules;
     ptrdiff_t index = *(int *)rules;
+    assert(!(index & 3));
     if(index == 0)
         index = max - rules;
+    assert(!(index & 3));
     char * p = rules + sizeof(int);
-    unsigned int type = *(int*)p;
+    typetype type = *(typetype*)p;
 	if(type > 3)
 		type = 0;
 	else
-		p += sizeof(int);
+        p += sizeof(typetype);
     size_t slen = strlen(start);
     size_t elen = strlen(end);
     char * fields[44];
@@ -365,7 +373,7 @@ static char * printrules
     nxt /= sizeof(int);
     nxt *= sizeof(int);
     p = rules+nxt;
-	if(type & 2)
+    if(type & 2)
 		{ // several chains of children ahead
 		p = printChain
             ( p
@@ -457,6 +465,7 @@ static char * printChainBracmat
 )
     {
     int index = *(int *)p;
+    assert(!(index & 3));
     if (index > 0)
         {
         //fprintf(fmbra, "%*s( %s.\n", indent, "", msg);
@@ -485,6 +494,7 @@ static char * printChainBracmat
                 fprintf(fmbra, " . ");
                 p += index;
                 index = *(int *)p;
+                assert(!(index & 3));
                 }
             else
                 break;
@@ -511,14 +521,16 @@ static char * printrulesBracmat
     if (max <= rules)
         return rules;
     ptrdiff_t index = *(int *)rules;
-    if(index == 0)
+    assert(!(index & 3));
+    if (index == 0)
         index = max - rules;
+    assert(!(index & 3));
     char * p = rules + sizeof(int);
-    unsigned int type = *(int*)p;
+    typetype type = *(typetype*)p;
     if (type > 3)
         type = 0;
     else
-        p += sizeof(int);
+        p += sizeof(typetype);
     size_t slen = strlen(start);
     size_t elen = strlen(end);
     fprintf(fmbra,"\n%*s",indent*2,"(\n");
@@ -691,9 +703,11 @@ class rule
         }
     int copy(char * arr, int ind)
         {
-        strncpy(arr, Start, End - Start);
-        printf("arr: %.*s %d\n", End - Start, arr, End - Start);
-        return End - Start;
+        int n = End - Start;
+        int p[1];
+        ptrdiff_t diff = ((char*)p - arr - n) % sizeof(int);
+        strncpy(arr, Start, n);
+        return n + diff;
         }
     bool eq(rule * R)
         {
@@ -729,7 +743,7 @@ class treenode
             {
             return Rule.eq(&Y->Rule);
             }
-        unsigned int type()
+        typetype type()
             {// 0: unambiguous 1: ambiguous child 2: ambiguous sibling 3: ambiguous child and ambiguous sibling
             int tp = 0;
             if (Sibling.more)
@@ -885,7 +899,7 @@ void treenode::print(int ind)
 int treenode::copy(char * arr,int ind)
     {
     int * FailBranch = (int*)arr;
-    int type = 0;
+    typetype type = 0;
     arr += sizeof(int);
     if (Sibling.more)
         type += 1;
@@ -893,14 +907,12 @@ int treenode::copy(char * arr,int ind)
         type += 2;
     if (type > 0)
         {
-        *(int*)arr = type;
-        arr += sizeof(int);
+        *(typetype*)arr = type;
+        arr += sizeof(typetype);
         }
-    arr += Rule.copy(arr,ind);
+    arr += Rule.copy(arr, ind);
     if (Child.one)
         {
-        //	*(int *)arr = 0;
-        //	arr += sizeof(int);
         arr += Child.one->copy(arr, ind + 2);
         }
     else if (Child.more)
@@ -976,6 +988,7 @@ oneOrMore::~oneOrMore()
 
 treenode * treenodeFactory(char * buf,char * end)
     {
+    assert(((end - buf) & 3) == 0);
     if (end < buf+2*sizeof(int))
         return NULL;
     else
@@ -988,11 +1001,11 @@ treenode * treenodeFactory(char * buf,char * end)
         char * Fail = buf;
         unsigned int OnFail = *(unsigned int*)buf;
         buf += sizeof(unsigned int);
-        unsigned int type = *(unsigned int*)buf;
+        typetype type = *(typetype*)buf;
         if (type > 3)
             type = 0;
         else
-            buf += sizeof(unsigned int);
+            buf += sizeof(typetype);
 		char * ChildEnd = end;
         if (OnFail)
             {
@@ -1008,11 +1021,11 @@ treenode * treenodeFactory(char * buf,char * end)
             {
             ++e;
             }
-        ptrdiff_t ichild = e - buf;
+        ptrdiff_t ichild = e - Fail;
         ichild += sizeof(int);
         ichild /= sizeof(int);
         ichild *= sizeof(int);
-        buf += ichild;
+        buf = Fail + ichild;
         if (type & 2)
             AChild = new chain(buf, ChildEnd);
         else
@@ -1021,14 +1034,14 @@ treenode * treenodeFactory(char * buf,char * end)
         switch (type)
             {
                 case 0:
-                    return new treenode(rule, rule + ichild, Sibling, 0, Child, 0);
+                    return new treenode(rule, e+1, Sibling, 0, Child, 0);
                 case 1:
-                    return new treenode(rule, rule + ichild, 0, ASibling, Child, 0);
+                    return new treenode(rule, e+1, 0, ASibling, Child, 0);
                 case 2:
-                    return new treenode(rule, rule + ichild, Sibling, 0, 0, AChild);
+                    return new treenode(rule, e+1, Sibling, 0, 0, AChild);
                 case 3:
                 default:
-                    return new treenode(rule, rule + ichild, 0, ASibling, 0, AChild);
+                    return new treenode(rule, e+1, 0, ASibling, 0, AChild);
             }
         }
     }
@@ -1108,7 +1121,7 @@ bool flexcombi(const char * bestflexrules, const char * nextbestflexrules, const
         return false;
         }
     char * arr = new char[2 * (FileBuffer.Length + NextFileBuffer.Length)];
-    FILE * f = fopen(combinedflexrules,"wb");
+    FILE * f = fopen(combinedflexrules, "wb");
     if(!f)
         {
         printf("Error (flexcombi): Cannot open %s for writing\n",combinedflexrules);

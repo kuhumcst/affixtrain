@@ -40,7 +40,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 extern bool VERBOSE;
 
 
-#define DOTEST 0 
+#define DOTEST 0
 // DOTEST 1
 // do automatic (with some percentage of data set aside for test) or manual (interactive) testing
 

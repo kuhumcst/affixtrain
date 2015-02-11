@@ -202,14 +202,6 @@ static char * printrulesBracmat
 
 
 
-static char * printrules
-                ( char * rules
-                , char * max
-                , char * start
-                , char * end
-                , FILE * fm
-                , int indent
-                );
 
 struct fileBuffer
     {
@@ -244,61 +236,8 @@ struct fileBuffer
     };
 
 
-int prettyPrintBracmat(const char * flexrulesIn)
-    {
-    fileBuffer FileBuffer;
-    if (!FileBuffer.readRules(flexrulesIn))
-        {
-        printf("Error (prettyPrint): Cannot open %s for reading\n",flexrulesIn);
-        return false;
-        }
-    char brafile[1000];
-    sprintf(brafile,"%s.pretty.bra",flexrulesIn);
-    FILE * fmbra = fopen(brafile,"wb");
-    if(!fmbra)
-        {
-        printf("Error (prettyPrint): Cannot open %s for writing\n",brafile);
-        return false;
-        }
-    
-    char start[1000] = {0};
-    char end[1000] = {0};
-    int nr = 0;
-	strng L("");
-    strng R("");
-    
-    printrulesBracmat(FileBuffer.buf, FileBuffer.buf + FileBuffer.Length, start, end,fmbra,&L,&R,nr, 0);
-
-	fclose(fmbra);
-    return true;
-    }
 
 
-
-int prettyPrint(const char * flexrulesIn)
-    {
-    fileBuffer FileBuffer;
-    if (!FileBuffer.readRules(flexrulesIn))
-        {
-        printf("Error (prettyPrint): Cannot open %s for reading\n",flexrulesIn);
-        return false;
-        }
-
-    char filenameOut[1000];
-    sprintf(filenameOut,"%s.pretty.txt",flexrulesIn);
-
-    FILE * fm = fopen(filenameOut,"wb");
-    if(!fm)
-        {
-        printf("Error (prettyPrint): Cannot open %s for writing\n",filenameOut);
-        return false;
-        }
-    char start[1000] = {0};
-    char end[1000] = {0};
-	printrules(FileBuffer.buf, FileBuffer.buf + FileBuffer.Length, start, end, fm, 0);
-    fclose(fm);
-    return true;
-    }
 
 
 static char * printlistBracmat
@@ -334,103 +273,15 @@ static char * printlistBracmat
     }
 
 
-static char * printrulesBracmat
-                ( char * rules
-                , char * max
-                , char * start
-                , char * end
-                , FILE * fmbra
-                , strng * L
-                , strng * R
-                , int & nr
-                , int indent
-                )
-    {
-    ptrdiff_t index = *(int *)rules;
-    if(index == 0)
-        index = max - rules;
-    char * p = rules + sizeof(int);
-    unsigned int type = *p;
-    size_t slen = strlen(start);
-    size_t elen = strlen(end);
-    fprintf(fmbra,"\n%*s",indent*2,"(\n");
-    if(type < 4)
-        {
-        // fork
-        fprintf(fmbra,"%*s",2+indent*2,"(\n");
-        fprintf(fmbra,"%*s",2+indent*2,"\n");
-        static char nix[1] = "";
-        char * ret = nix;
-        p += sizeof(int); // skip word containing 1, 2 or 3
-        start[slen] = 0;
-        end[elen] = 0;
-        switch(type)
-            {
-            case 1:
-                ret = printlistBracmat(p,max,indent,start,end,fmbra,L,R,nr,false);
-                fprintf(fmbra,"%*s\n%*s)\n",2+indent*2,".",2+indent*2,"(");
-                break;
-            case 2:
-                fprintf(fmbra,"%*s)\n%*s\n",2+indent*2,"(",2+indent*2,".");
-                ret = printlistBracmat(p,max,indent,start,end,fmbra,L,R,nr,false);
-                break;
-            case 3:
-                {
-                char * next = p + *(int *)p;
-                p += sizeof(int);
-                printlistBracmat(p,next,indent,start,end,fmbra,L,R,nr,false);
-                start[slen] = 0;
-                end[elen] = 0;
-                fprintf(fmbra,"%*s",2+indent*2,".\n");
-                ret = printlistBracmat(next,max,indent,start,end,fmbra,L,R,nr,false);
-                break;
-                }
-            }
-        fprintf(fmbra,"%*s",2+indent*2,")\n");
-        fprintf(fmbra,"\n%*s",indent*2,")\n");
-        return ret;
-        }
-    char * fields[44];
-    fields[0] = p;
-    int findex = 1;
-    while(*p != '\n')
-        {
-        if(*p == '\t')
-            fields[findex++] = ++p;
-        else
-            ++p;
-        }
-    fields[findex] = ++p; // p is now within 3 bytes from the next record.
-    fprintf(fmbra,"%*s",indent*2,"");
-    char pattern[1000];
-    char replacement[1000];
-    printpatBracmat(fields,findex,start,end,pattern,replacement);
-    strng spattern(pattern);
-    strng sreplacement(replacement);
-    strng * nLL = 0;
-    strng * nRR = 0;
-    strng * patreps[100];
-    unsigned int i;
-    for(i = 0;i < sizeof(patreps)/sizeof(patreps[0]);++i)
-        patreps[i] = 0;
-    strng * snode = makeNode(patreps,nr,&spattern,&sreplacement,L,R,&nLL,&nRR);
-    fprintf(fmbra,"(%s)",snode->itsTxt());
-    strng nL(L);
-    strng nR(nRR);
-    nL.cat(nLL,(const strng *)0);
-    nR.cat(R,(const strng *)0);
-    delete nLL;
-    delete nRR;
-    ptrdiff_t nxt = p - rules;
-    nxt += sizeof(int) - 1;
-    nxt /= sizeof(int);
-    nxt *= sizeof(int);
-    p = rules+nxt;
-    p = printlistBracmat(p,rules+index,indent,start,end,fmbra,&nL,&nR,nr,true);
-    delete snode;
-    fprintf(fmbra,"\n%*s",indent*2,")\n");
-    return p;
-    }
+
+static char * printrules
+(char * rules
+, char * max
+, char * start
+, char * end
+, FILE * fm
+, int indent
+);
 
 static char * printChain
                 ( char * p
@@ -473,11 +324,6 @@ static char * printChain
 		}
     return e;
     }
-
-
-
-
-
 
 static char * printrules
                 ( char * rules
@@ -569,6 +415,276 @@ static char * printrules
 			);
 	assert(p == max);
     return p;
+    }
+
+int prettyPrint(const char * flexrulesIn)
+    {
+    fileBuffer FileBuffer;
+    if (!FileBuffer.readRules(flexrulesIn))
+        {
+        printf("Error (prettyPrint): Cannot open %s for reading\n", flexrulesIn);
+        return false;
+        }
+
+    char filenameOut[1000];
+    sprintf(filenameOut, "%s.pretty.txt", flexrulesIn);
+
+    FILE * fm = fopen(filenameOut, "wb");
+    if (!fm)
+        {
+        printf("Error (prettyPrint): Cannot open %s for writing\n", filenameOut);
+        return false;
+        }
+    char start[1000] = { 0 };
+    char end[1000] = { 0 };
+    printrules(FileBuffer.buf, FileBuffer.buf + FileBuffer.Length, start, end, fm, 0);
+    fclose(fm);
+    return true;
+    }
+
+
+static char * printChainBracmat
+(char * p
+, char * e
+, int indent
+, char * start
+, char * end
+, FILE * fmbra
+, strng * L
+, strng * R
+, int & nr
+, char * msg
+)
+    {
+    int index = *(int *)p;
+    if (index > 0)
+        {
+        fprintf(fmbra, "%*s( %s.\n", indent, "", msg);
+        for (;;)
+            {
+            fprintf(fmbra, "%*s(ALT.\n", indent, "");
+            if (index == 4 || index == -4)
+                fprintf(fmbra, "%*s", indent, " parent\n");
+            else
+                /*printlist*/printrulesBracmat
+                (p + sizeof(int)
+                , (index == 0) ? e : (p + index)
+                , start
+                , end
+                , fmbra
+                , L, R, nr
+                , indent
+                );
+            fprintf(fmbra, "%*s ENDALT)\n", indent, "");
+
+            if (index > 0)
+                {
+                p += index;
+                index = *(int *)p;
+                }
+            else
+                break;
+            }
+        fprintf(fmbra, "%*s END %s)\n", indent, "", msg);
+        }
+    return e;
+    }
+
+
+static char * printrulesBracmat
+                ( char * rules
+                , char * max
+                , char * start
+                , char * end
+                , FILE * fmbra
+                , strng * L
+                , strng * R
+                , int & nr
+                , int indent
+                )
+    {
+    if (max <= rules)
+        return rules;
+    ptrdiff_t index = *(int *)rules;
+    if(index == 0)
+        index = max - rules;
+    char * p = rules + sizeof(int);
+    unsigned int type = *(int*)p;
+    if (type > 3)
+        type = 0;
+    else
+        p += sizeof(int);
+    size_t slen = strlen(start);
+    size_t elen = strlen(end);
+    fprintf(fmbra,"\n%*s",indent*2,"(\n");
+#if 0
+    if(type < 4)
+        {
+        // fork
+        fprintf(fmbra,"%*s",2+indent*2,"(\n");
+        fprintf(fmbra,"%*s",2+indent*2,"\n");
+        static char nix[1] = "";
+        char * ret = nix;
+        p += sizeof(int); // skip word containing 1, 2 or 3
+        start[slen] = 0;
+        end[elen] = 0;
+        switch(type)
+            {
+            case 1:
+                ret = printlistBracmat(p,max,indent,start,end,fmbra,L,R,nr,false);
+                fprintf(fmbra,"%*s\n%*s)\n",2+indent*2,".",2+indent*2,"(");
+                break;
+            case 2:
+                fprintf(fmbra,"%*s)\n%*s\n",2+indent*2,"(",2+indent*2,".");
+                ret = printlistBracmat(p,max,indent,start,end,fmbra,L,R,nr,false);
+                break;
+            case 3:
+                {
+                char * next = p + *(int *)p;
+                p += sizeof(int);
+                printlistBracmat(p,next,indent,start,end,fmbra,L,R,nr,false);
+                start[slen] = 0;
+                end[elen] = 0;
+                fprintf(fmbra,"%*s",2+indent*2,".\n");
+                ret = printlistBracmat(next,max,indent,start,end,fmbra,L,R,nr,false);
+                break;
+                }
+            }
+        fprintf(fmbra,"%*s",2+indent*2,")\n");
+        fprintf(fmbra,"\n%*s",indent*2,")\n");
+        return ret;
+        }
+#endif
+    char * fields[44];
+    fields[0] = p;
+    int findex = 1;
+    while(*p != '\n')
+        {
+        if(*p == '\t')
+            fields[findex++] = ++p;
+        else
+            ++p;
+        }
+    fields[findex] = ++p; // p is now within 3 bytes from the next record.
+    fprintf(fmbra,"%*s",indent*2,"");
+    char pattern[1000];
+    char replacement[1000];
+    printpatBracmat(fields,findex,start,end,pattern,replacement);
+    strng spattern(pattern);
+    strng sreplacement(replacement);
+    strng * nLL = 0;
+    strng * nRR = 0;
+    strng * patreps[100];
+    unsigned int i;
+    for(i = 0;i < sizeof(patreps)/sizeof(patreps[0]);++i)
+        patreps[i] = 0;
+    strng * snode = makeNode(patreps,nr,&spattern,&sreplacement,L,R,&nLL,&nRR);
+    fprintf(fmbra,"(%s)",snode->itsTxt());
+    strng nL(L);
+    strng nR(nRR);
+    nL.cat(nLL,(const strng *)0);
+    nR.cat(R,(const strng *)0);
+    delete nLL;
+    delete nRR;
+    ptrdiff_t nxt = p - rules;
+    nxt += sizeof(int) - 1;
+    nxt /= sizeof(int);
+    nxt *= sizeof(int);
+    p = rules+nxt;
+
+
+
+    if (type & 2)
+        { // several chains of children ahead
+        
+        p = printChainBracmat
+            (p
+            , rules + index
+            , indent + 2
+            , start
+            , end
+            , fmbra
+            , &nL, &nR, nr
+            , " ambiguous children"
+            );
+        }
+    else
+        {
+        p = /*printlist*/printrulesBracmat
+            (p
+            , rules + index
+            , start
+            , end
+            , fmbra
+            , &nL, &nR, nr
+            , indent + 2
+            );
+        }
+    start[slen] = '\0';
+    Strrev(end);
+    end[elen] = 0;
+    Strrev(end);
+    if (type & 1)
+        {
+        p = printChainBracmat
+            (rules + index
+            , max
+            , indent + 1
+            , start
+            , end
+            , fmbra
+            , &nL, &nR, nr
+            , " ambiguous tails of children"
+            );
+        }
+    else
+        p = /*printlist*/printrulesBracmat
+        (rules + index
+        , max
+        , start
+        , end
+        , fmbra
+        , &nL, &nR, nr
+        , indent
+        );
+
+//    p = printlistBracmat(p,rules+index,indent,start,end,fmbra,&nL,&nR,nr,true);
+    delete snode;
+    fprintf(fmbra,"\n%*s",indent*2,")\n");
+    return p;
+    }
+
+
+int prettyPrintBracmat(const char * flexrulesIn)
+    {
+    fileBuffer FileBuffer;
+    if (!FileBuffer.readRules(flexrulesIn))
+        {
+        printf("Error (prettyPrintBracmat): Cannot open %s for reading\n", flexrulesIn);
+        return false;
+        }
+
+    char brafile[1000];
+    sprintf(brafile, "%s.pretty.bra", flexrulesIn);
+    
+    FILE * fmbra = fopen(brafile, "wb");
+    if (!fmbra)
+        {
+        printf("Error (prettyPrint): Cannot open %s for writing\n", brafile);
+        return false;
+        }
+
+    char start[1000] = { 0 };
+    char end[1000] = { 0 };
+    
+    int nr = 0;
+    strng L("");
+    strng R("");
+
+    printrulesBracmat(FileBuffer.buf, FileBuffer.buf + FileBuffer.Length, start, end, fmbra, &L, &R, nr, 0);
+
+    fclose(fmbra);
+    return true;
     }
 
 class rule
@@ -1039,5 +1155,6 @@ bool flexcombi(const char * bestflexrules, const char * nextbestflexrules, const
         }
     fclose(f);
 	prettyPrint(combinedflexrules);
+    prettyPrintBracmat(combinedflexrules);
     return true;
     }

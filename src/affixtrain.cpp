@@ -3772,6 +3772,7 @@ int main(int argc,char **argv)
     if(options.b)
         {
         prettyPrint(options.b);
+	    prettyPrintBracmat(options.b);
         exit(0);
         }
 

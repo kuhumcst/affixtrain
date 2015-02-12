@@ -211,21 +211,39 @@ struct fileBuffer
     long Length;
     fileBuffer() :buf(0), Length(0L){}
     ~fileBuffer(){ delete[] buf; }
+
     bool readRules(FILE * flexrulefile)
         {
         fseek(flexrulefile, 0, SEEK_END);
         long length = ftell(flexrulefile);
-        Length = length;
-        while (Length & 3) ++Length;
-        buf = new char[Length];
-        rewind(flexrulefile);
-        if (length != (long int)fread(buf, 1, length, flexrulefile))
-            {
-            fclose(flexrulefile);
-            return false;
-            }
-        fclose(flexrulefile);
-        return true;
+		if(length > 4)
+			{
+			rewind(flexrulefile);
+
+			char V[5] = "";
+			V[4] = 0;
+			fread(V,1,4,flexrulefile);
+			if((V[0] & 1) && (V[3] & 1))
+				{
+				if(strcmp(V,"\rV3\r")) // Version string at beginning of file. If read as int, must have lowest bit set! Therefore \r (00001101).
+					return false;
+				length -= 4;
+				}
+			else
+				{
+				printf("Old version\n");
+				rewind(flexrulefile);
+				}
+
+			Length = length;
+			while (Length & 3) ++Length;
+			buf = new char[Length];
+			if (length == (long int)fread(buf, 1, length, flexrulefile))
+				{
+				return true;
+				}
+			}
+		return false;
         }
 
     bool readRules(const char * filename)
@@ -233,7 +251,9 @@ struct fileBuffer
         FILE * f = fopen(filename, "rb");
         if (f)
             {
-            return readRules(f);
+			bool read = readRules(f);
+			fclose(f);
+            return read;
             }
         return false;
         }
@@ -1127,6 +1147,7 @@ bool flexcombi(const char * bestflexrules, const char * nextbestflexrules, const
         printf("Error (flexcombi): Cannot open %s for writing\n",combinedflexrules);
         return false;
         }
+	fprintf(f,"\r%.2s\r","V31");
     treenode * TreeNode = treenodeFactory(FileBuffer.buf, FileBuffer.buf+FileBuffer.Length);
     if (TreeNode)
         {

@@ -746,7 +746,7 @@ class oneOrMore
     treenode * one;
     chain * more;
     oneOrMore(treenode * un, chain * plus) :one(un), more(plus){}
-    treenode * oneOrMore::get(treenode * example);
+    treenode * get(treenode * example);
     void merge(oneOrMore * Y);
     ~oneOrMore();
     };

@@ -98,7 +98,7 @@ strng * protect(strng * p)
 		while((pq = strpbrk(txt,"\\\"")) != NULL)
 			{
 			strng stxt(txt,pq - txt);
-			printf("stxt %s pq %s\n",stxt.itsTxt(),pq);
+			//printf("stxt %s pq %s\n",stxt.itsTxt(),pq);
 			if(*pq == '\\')
 				ret->cat(&stxt,&slash,(const strng *)0);
 			else
@@ -1498,7 +1498,7 @@ int printRules(node * nd
 #if BRACMATOUTPUT
             snode = makeNode(patreps,nr,pat,rep,L,R,&nLL,&nRR);
             fprintf(fobra,"(");
-            printf("(");
+            //printf("(");
 #else
             makeNode(patreps,pat,rep,L,R,&nLL,&nRR);
 #endif
@@ -1549,14 +1549,14 @@ int printRules(node * nd
 #endif
 #if BRACMATOUTPUT
         fprintf(fobra,"%s\n",snode->itsTxt());
-        printf("%s\n",snode->itsTxt());
+        //printf("%s\n",snode->itsTxt());
         delete snode;
 #endif
         if(nd->IfPatternSucceeds)
             {
 #if BRACMATOUTPUT
             fprintf(fobra,",");
-            printf(",");
+            //printf(",");
 #endif
             strng nL(L);
             strng nR(nRR);
@@ -1578,7 +1578,7 @@ int printRules(node * nd
                 );
 #if BRACMATOUTPUT
             fprintf(fobra,")\n");
-            printf(")\n");
+            //printf(")\n");
 #endif
             }
         delete nLL;

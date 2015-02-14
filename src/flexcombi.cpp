@@ -1152,13 +1152,13 @@ bool flexcombi(const char * bestflexrules, const char * nextbestflexrules, const
     if (TreeNode)
         {
         printf("\nTree:\n");
-        TreeNode->print(0);
+        //TreeNode->print(0);
         treenode * NextTreeNode = treenodeFactory(NextFileBuffer.buf, NextFileBuffer.buf + NextFileBuffer.Length);
         printf("\nNext Tree:\n");
-        NextTreeNode->print(0);
+        //NextTreeNode->print(0);
         TreeNode->merge(NextTreeNode);
         printf("\nCombined Tree:\n");
-        TreeNode->print(0);
+        //TreeNode->print(0);
         int length = TreeNode->copy(arr, 0);
         *(int*)arr = 0;
         for(int i = 0;i < length;++i)

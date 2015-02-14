@@ -2531,7 +2531,7 @@ static void rearrange
         {
         if(buf[i] == '\n')
             {
-			printf("\n");
+			//printf("\n");
             size[n] += sizeof(int) + sizeof(int); // room for index and '\0' byte
             size[n] >>= 2;
             size[n] <<= 2; // rounded to nearest word boundary
@@ -2552,7 +2552,7 @@ static void rearrange
         else if(doind)
             {// read nesting level
             ind[n] *= 10;
-			printf("%c",buf[i]);
+			//printf("%c",buf[i]);
             ind[n] += buf[i] - '0';
             }
         else
@@ -3336,7 +3336,8 @@ void computeParms(const char * fname/* input */,const char * extra,const char * 
                         {
                         brownNo = Nnodes;
                         brownweight = weight;
-                        printf("swath %d brownNo %d currentNo %d\n",swath,brownNo,currentNo);
+                        if (VERBOSE)
+                            printf("swath %d brownNo %d currentNo %d\n", swath, brownNo, currentNo);
                         if(  (!doweights && brownNo     <= currentNo)
                           || ( doweights && brownweight <= currentweight)
                           )
@@ -3344,7 +3345,8 @@ void computeParms(const char * fname/* input */,const char * extra,const char * 
                             bool improvement = 
                                 (!doweights && (brownNo     < currentNo))
                              || ( doweights && (brownweight < currentweight));
-                            printf("%s\n",improvement ? "IMPROVEMENT" : "same");
+                            if (VERBOSE)
+                                printf("%s\n", improvement ? "IMPROVEMENT" : "same");
                             currentNo = brownNo;
                             currentweight = brownweight;
                             betterfound(currentNo,currentweight,swath,iterations,besttxt,parmstxt,blobs,lines,fraction,fraclines,suffixonly,doweights,improvement);
@@ -3355,7 +3357,8 @@ void computeParms(const char * fname/* input */,const char * extra,const char * 
                     //onlyZeros(parmstxt);
                     }
                 }
-            printf("br1 %d br2 %d\n",br1,br2);
+                if (VERBOSE)
+                    printf("br1 %d br2 %d\n", br1, br2);
             }
         }
     remove(fbuf);

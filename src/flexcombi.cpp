@@ -1126,6 +1126,12 @@ void oneOrMore::merge(oneOrMore * Y)
         }
     }
 
+/* NOTE: if cutoff (-c option) is > 0, then the value of combinedflexrules is
+not the name of the final result. Instead, for each cutoff level <n> from 0 to
+the value of the -c option a directory <n> is created containing the flexrules
+pruned to the cutoff level <n>. Each of these flexrule files has the same file
+name. See the trainRules function in affixtrain.cpp.
+*/
 bool flexcombi(const char * bestflexrules, const char * nextbestflexrules, const char * combinedflexrules)
     {
     fileBuffer FileBuffer;

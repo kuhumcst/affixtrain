@@ -3590,43 +3590,6 @@ static void trainRules(const char * fname, const char * extra,int cutoff,const c
                     prettyPrint(newbestflexrules);
                     }
                 }
-/*
-            else //rules_0.lem
-                {
-                if(passes == 1)
-                    {
-                    if(VERBOSE)
-                        {
-                        printf("del rules.lem\n");
-                        }
-                    remove(tempDir("rules.lem"));
-                    if(VERBOSE)
-                        {
-                        printf("ren rules_01.lem rules.lem\n");
-                        }
-                    rename(tempDir("rules_01.lem"),tempDir("rules.lem"));
-                    }
-                else
-                    {
-                    char bestflexrules[1150], nextbestflexrules[1150], combinedflexrules[1150];
-                    sprintf(bestflexrules,tempDir("rules.lem"));
-                    sprintf(nextbestflexrules,tempDir("rules_0%d.lem"),passes);
-                    sprintf(combinedflexrules,tempDir("rules.lem2"));
-                    if(!flexcombi(bestflexrules, nextbestflexrules, combinedflexrules))
-                        break;
-                    if(VERBOSE)
-                        {
-                        printf("remove %s\n",bestflexrules);
-                        }
-                    remove(bestflexrules);
-                    if(VERBOSE)
-                        {
-                        printf("rename %s %s\n",combinedflexrules,bestflexrules);
-                        }
-                    rename(combinedflexrules,bestflexrules);
-                    }
-                }
-                */
             }
         fname = tempDir(pairsToTrainInNextPassName);
 
@@ -3704,15 +3667,10 @@ static void trainRules(const char * fname, const char * extra,int cutoff,const c
             if(hasDir)
                 {
                 sprintf(command,"%s%c%s",dirname,DIRSEP,filename);
+                remove(command);
                 rename(dest,command);
                 }
             }
-        /*
-        if(dest[0] > '\0')
-            rename(dest,flexrulesPass);*/ /* Remove the '.cutoffN' extension if N is
-                                     the cutoff threshold set by the parameter
-                                     -c. Indeed, those are the rules the user
-                                     asked for. */
         }
     for(int cut = 0;cut <= cutoff;++cut)
         {

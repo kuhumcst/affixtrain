@@ -1130,6 +1130,7 @@ bool flexcombi(const char * bestflexrules, const char * nextbestflexrules, const
     {
     fileBuffer FileBuffer;
     fileBuffer NextFileBuffer;
+    printf("flexcombi (V3): %s + %s -> %s\n", bestflexrules, nextbestflexrules, combinedflexrules);
     if (!FileBuffer.readRules(bestflexrules))
         {
         printf("Error (flexcombi): Cannot open %s for reading\n",bestflexrules);

@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "comp.h"
 #include "graph.h"
+#include "optionaff.h"
 #include <float.h>
 #if FLOATINGPOINTPARMS
 #define PARMS3 0
@@ -4951,34 +4952,34 @@ static int improvements = 0;
 #if FLOATINGPOINTPARMS
 //static int pcnt[(NPARMS >> 2)+1] = {0};//,0,0,0,0};
 
-void betterfound(int Nnodes,double weight,int swath,int iterations,const char * besttxt,const char * parmstxt,int blobs,int lines,double fraction,int fraclines,bool suffixonly,bool doweights,bool improvement)
+void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,int lines,double fraction,int fraclines,bool improvement,optionStruct * options)
     {
     if(improvement)
         {
         ++improvements;
-        FILE * f = fopen(parmstxt,"a");
+        FILE * f = fopen(options->currentParms(),"a");
         assert(f);
         fprintf(f,"//-> IMPROVEMENT #%d\n",improvements);
         fclose(f);
         }
     best = parms;
-    FILE * f = fopen(besttxt,"a");
+    FILE * f = fopen(options->bestParms(),"a");
     if(f)
         {
         fprintf(f,"//iteration:%d.%d\n",swath,iterations);
         fprintf(f
                ,"/*weight (%s used): %.*e suffix only: %s */\n"
-               ,doweights ? "" : "not "
+               ,options->doweights() ? "" : "not "
                ,DBL_DIG+2
                ,weight
-               ,suffixonly ? "yes" : "no"
+               ,options->suffixOnly() ? "yes" : "no"
                );
 
         fprintf(f
                ,"/* number of nodes: %d, nodes/line: %.*e weight (%s used): %.*e blobs %d lines %d * fraction %.*e = %d lines*/\n"
                ,Nnodes
                ,DBL_DIG+2,(double)Nnodes/(double)fraclines
-               ,doweights ? "" : "not "
+               ,options->doweights() ? "" : "not "
                ,DBL_DIG+2,weight
                ,blobs
                ,lines
@@ -5192,18 +5193,18 @@ bool init()
     return true;
     }
 
-void printparms(int Nnodes,double weight,const char * parmstxt,bool suffixonly,bool doweights)
+void printparms(int Nnodes,double weight,optionStruct * options)
     {
     int i;
-    FILE * f = fopen(parmstxt,"a");
+    FILE * f = fopen(options->currentParms(),"a");
     assert(f);
     fprintf(f
            ,"/*#nodes in tree: %d weight (%s used): %.*e suffix only: %s */\n"
            ,Nnodes
-           ,doweights ? "" : "not "
+           ,options->doweights() ? "" : "not "
            ,DBL_DIG+2
            ,weight
-           ,suffixonly ? "yes" : "no"
+           ,options->suffixOnly() ? "yes" : "no"
            );
     fprintf(f,"        {\n        ");
     for(i = 0;i < NPARMS;++i)
@@ -5329,7 +5330,7 @@ static void copy(int * dest,int * source,int cols)
         dest[col] = source[col];
     }
 
-void betterfound(int Nnodes,double weight,int swath,int iterations,const char * besttxt,const char * parmstxt,int blobs,int lines,double fraction,int fraclines,bool suffixonly,bool doweights,bool improvement)
+void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,int lines,double fraction,int fraclines,bool improvement,optionStruct * options)
     {
     if(improvement)
         {
@@ -5628,21 +5629,21 @@ static struct funcstruct funcstructs[] =
     };
 
 
-bool setCompetitionFunction(const char * functionname,const char * extra,bool suffixonly,bool & compute_parms,const char * parmstxt)
+bool setCompetitionFunction(const char * functionname,bool & compute_parms,const char * parmstxt,optionStruct * options)
     {
     int i;
-    if(VERBOSE)
+    if(options->verbose())
         printf("setCompetitionFunction(functionname:%s,extra:%s,suffixonly:%s,parmstxt:%s)"
 	          , functionname
-	          , extra
-	          , suffixonly ? "true" : "false"
+	          , options->extra()
+	          , options->suffixOnly() ? "true" : "false"
               , parmstxt ? parmstxt : "Not defined"
 	          );
 
-    size_t langlength = strlen(extra);
-    const char * underscore = strchr(extra,'_');
+    size_t langlength = strlen(options->extra());
+    const char * underscore = strchr(options->extra(),'_');
     if(underscore != NULL)
-        langlength = (size_t)(underscore - extra);
+        langlength = (size_t)(underscore - options->extra());
 
     for(i = 0;funcstructs[i].number;++i)
         if(!strcmp(functionname,funcstructs[i].number) || !strcmp(functionname,funcstructs[i].name))
@@ -5653,9 +5654,9 @@ bool setCompetitionFunction(const char * functionname,const char * extra,bool su
                 {
                 for(unsigned int j = 0;j < sizeof(bests)/sizeof(bests[0]);++j)
                     {
-                    if(  bests[j].suffixonly == suffixonly 
+                    if(  bests[j].suffixonly == options->suffixOnly() 
                       && (langlength == strlen(bests[j].langbase)) // 20130125
-                      && !strncmp(bests[j].langbase,extra,strlen(bests[j].langbase))
+                      && !strncmp(bests[j].langbase,options->extra(),strlen(bests[j].langbase))
                       )
                         {
                         printf("bests[%d].suffixonly == [%s] bests[%d].langbase == [%s]\n",j,bests[j].suffixonly ? "true" : "false",j,bests[j].langbase);
@@ -5665,7 +5666,7 @@ bool setCompetitionFunction(const char * functionname,const char * extra,bool su
                         nparms = bests[j].rowss * ROWPARMS;
                         if(nparms > NPARMS)
                             {
-                            fprintf(stderr,"Too many rows of parameters in bestParms struct for %s (%d, max allowed %d)\n",extra,nparms,NPARMS);
+                            fprintf(stderr,"Too many rows of parameters in bestParms struct for %s (%d, max allowed %d)\n",options->extra(),nparms,NPARMS);
                             exit(-1);
                             }
 #if FLOATINGPOINTPARMS
@@ -5702,16 +5703,16 @@ bool setCompetitionFunction(const char * functionname,const char * extra,bool su
                     }
                 if(nparms == 0)
                     {
-                    fprintf(stderr,"No parameters defined for \"%s\"\nChoose one of:\n",extra);
+                    fprintf(stderr,"No parameters defined for \"%s\"\nChoose one of:\n",options->extra());
                     for(unsigned int j = 0;j < sizeof(bests)/sizeof(bests[0]);++j)
                         {
                         fprintf(stderr,"\t%s %s\n",bests[j].langbase,bests[j].suffixonly ? "suffix":"affix");
                         }
-                    fprintf(stderr,"Or find optimal parameters for %s and put these in comp.cpp.\n",extra);
+                    fprintf(stderr,"Or find optimal parameters for %s and put these in comp.cpp.\n",options->extra());
                     getchar();
                     exit(-1);
                     }
-                if(VERBOSE)
+                if(options->verbose())
                     {
                     printf("comp_parms0_off\n");
                     }
@@ -5726,7 +5727,7 @@ bool setCompetitionFunction(const char * functionname,const char * extra,bool su
                     break;
                     }
                 }
-            if(VERBOSE)
+            if(options->verbose())
                 printf("minparmsoff = %d \n",minparmsoff);
             */
             return true;

@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "graph.h"
 #include "comp.h"
+#include "optionaff.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
@@ -808,21 +809,21 @@ void trainingPair::printSep(FILE * f)
 
 
 // Testing only. (Not called during training!)
-matchResult node::lemmatise(trainingPair * pair)
+matchResult node::lemmatise(trainingPair * pair,optionStruct * options)
     {
     char * lemma;
-    matchResult r = V->lemmatise(pair,0,&lemma);
+    matchResult r = V->lemmatise(pair,0,&lemma,options);
     if(r == failure)
         {
         if(IfPatternFails)
-            return IfPatternFails->lemmatise(pair);
+            return IfPatternFails->lemmatise(pair,options);
         }
     else 
         {
         pair->setLemma(lemma);
         if(IfPatternSucceeds)
             {
-            matchResult rr = IfPatternSucceeds->lemmatise(pair);
+            matchResult rr = IfPatternSucceeds->lemmatise(pair,options);
             if(rr != failure)
                 {
                 return rr;
@@ -843,7 +844,7 @@ matchResult node::lemmatise(trainingPair * pair)
     }
 
 
-matchResult vertex::lemmatise(trainingPair * pair,char ** pmask,char ** plemma)
+matchResult vertex::lemmatise(trainingPair * pair,char ** pmask,char ** plemma,optionStruct * options)
     {
     static char lemma[100];
     static char mask[100];
@@ -851,7 +852,7 @@ matchResult vertex::lemmatise(trainingPair * pair,char ** pmask,char ** plemma)
     pair->unset(b_ok);
     pair->unset(b_wrong);
 #endif
-    if(apply(pair,sizeof(lemma),lemma,mask))
+    if(apply(pair,sizeof(lemma),lemma,mask,options))
         {
         if(plemma)
             *plemma = lemma;
@@ -898,7 +899,7 @@ trainingPair * trainingPair::nth(int n)
     }
 
 
-int vertex::nlemmatise(trainingPair * pair,int n,bool InputRight)
+int vertex::nlemmatise(trainingPair * pair,int n,bool InputRight,optionStruct * options)
     {
     /*
     if(pair)
@@ -913,7 +914,7 @@ int vertex::nlemmatise(trainingPair * pair,int n,bool InputRight)
     while(pair && n != 0)
         {
         ++ret;
-        switch(this->lemmatise(pair,0,0))
+        switch(this->lemmatise(pair,0,0,options))
             {
             case wrong:
                 /*
@@ -1441,7 +1442,7 @@ void trainingPair::fprintAll(FILE * famb)
     //fprintf(famb,"%.*s\n",this->lemmaclasslength,this->LemmaClass);
     }
 
-void trainingPair::makeCandidateRules(hash * Hash,vertex * parent,bool alreadyRight /*20101206 used to calm makeRuleEx*/)
+void trainingPair::makeCandidateRules(hash * Hash,vertex * parent,bool alreadyRight /*20101206 used to calm makeRuleEx*/,optionStruct * options)
     {
     trainingPair * tp = this;
     while(tp)
@@ -1451,7 +1452,7 @@ void trainingPair::makeCandidateRules(hash * Hash,vertex * parent,bool alreadyRi
         tp->print(flog);
         fprintf(flog,"\n");
         */
-        tp->makeRuleEx(Hash,parent,alreadyRight);
+        tp->makeRuleEx(Hash,parent,alreadyRight,options);
         /*
         fprintf(flog,"\n");
         */
@@ -1471,6 +1472,7 @@ int printRules(node * nd
 			 , strng * L
 			 , strng * R
 			 , int & nr
+             , optionStruct * options
 			 )
     {
     int n = 0;
@@ -1485,7 +1487,7 @@ int printRules(node * nd
 		// specifies the differences with its parent pattern.
 		// pat starts with '^' and ends with '$'.
 		// Wildcards are the character in the constant ANY (currently ':')
-        if(VERBOSE)
+        if(options->verbose())
 		    printf("pat [%s] rep [%s]\n",nd->V->itsPattern(),nd->V->itsReplacement());
         strng * pat = nd->V->itsstrngPattern()->substr(1,strlen(nd->V->itsPattern()) - 2);
         strng * rep = nd->V->itsstrngReplacement()->substr(1,strlen(nd->V->itsReplacement()) - 2);
@@ -1575,6 +1577,7 @@ int printRules(node * nd
                 , &nL
                 , &nR
                 , nr
+                , options
                 );
 #if BRACMATOUTPUT
             fprintf(fobra,")\n");
@@ -1595,14 +1598,14 @@ int printRules(node * nd
     }
 
 
-void node::splitTrainingPairList(trainingPair * all,trainingPair **& pNotApplicable,trainingPair **& pWrong,trainingPair **& pRight)
+void node::splitTrainingPairList(trainingPair * all,trainingPair **& pNotApplicable,trainingPair **& pWrong,trainingPair **& pRight,optionStruct * options)
     {
     while(all)
         {
         trainingPair * nxt = all->next();
         all->setNext(0);
         char * mask = 0;
-        matchResult res = V->lemmatise(all,&mask,0);
+        matchResult res = V->lemmatise(all,&mask,0,options);
         if(mask)
             {
             all->takeMask(mask);
@@ -1642,14 +1645,14 @@ bool node::compatibleSibling(node * sib)
     }
 
 
-node * node::cleanup(node * parent)
+node * node::cleanup(node * parent,optionStruct * options)
     {
 //    int cnt;
 //    int newcnt;
     if(this->IfPatternSucceeds) 
         {
 //        cnt = countWords();
-        this->IfPatternSucceeds = this->IfPatternSucceeds->cleanup(this);
+        this->IfPatternSucceeds = this->IfPatternSucceeds->cleanup(this,options);
 //        newcnt = countWords();
 //        assert(cnt == newcnt);
         }
@@ -1657,7 +1660,7 @@ node * node::cleanup(node * parent)
         {
 //        if(parent)
 //            cnt = parent->countWords();
-        IfPatternFails = IfPatternFails->cleanup(parent);
+        IfPatternFails = IfPatternFails->cleanup(parent,options);
 /*        if(parent)
             {
             newcnt = parent->countWords();
@@ -1687,7 +1690,7 @@ node * node::cleanup(node * parent)
             //while(true)
             for(;;)
                 {
-                matchResult res = parent->V->lemmatise(R,0,0);
+                matchResult res = parent->V->lemmatise(R,0,0,options);
 
                 if(res != right)
                     {
@@ -1802,9 +1805,9 @@ static void qqsort(vertex ** pv,size_t num,size_t width,int (__cdecl *compare )(
 */
 
 #if AMBIGUOUS
-void node::init(trainingPair ** allRight,trainingPair ** allWrong/*,trainingPair ** allAmbiguous*/,int level)
+void node::init(trainingPair ** allRight,trainingPair ** allWrong/*,trainingPair ** allAmbiguous*/,int level,optionStruct * options)
 #else
-void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,vertex ** pvp,int Np*/)
+void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,vertex ** pvp,int Np*/,optionStruct * options)
 #endif
     {
     /* At entry, this node has a rule (a pattern and a replacement).
@@ -1834,8 +1837,8 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
     //if(pvp){checkPV(pvp,Np);}
 
     //int input = (*allRight ? (*allRight)->count() : 0) + (*allWrong ? (*allWrong)->count() : 0);
-    this->splitTrainingPairList(*allRight,pNotApplicableRight,pWrong,pRight);
-    this->splitTrainingPairList(*allWrong,pNotApplicableWrong,pWrong,pRight);
+    this->splitTrainingPairList(*allRight,pNotApplicableRight,pWrong,pRight,options);
+    this->splitTrainingPairList(*allWrong,pNotApplicableWrong,pWrong,pRight,options);
    // assert(pRight != &this->Right);
 //    assert(Wrong != NULL);
     //assert(this->Right != NULL);
@@ -1926,7 +1929,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
         fprintf(flog,"\nWrong going:\n");
         */
         //printf("Wrong->makeCandidateRules\n");
-        Wrong->makeCandidateRules(&Hash,this->V,false);
+        Wrong->makeCandidateRules(&Hash,this->V,false,options);
         /*
         vertex ** pvtemp = Hash.convertToList(N);
         assert(N > 0);
@@ -1952,7 +1955,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
         //printf("this->Right->makeCandidateRules\n");
     //    assert(this->Right);
         if(this->Right)
-            this->Right->makeCandidateRules(&Hash,this->V,true);
+            this->Right->makeCandidateRules(&Hash,this->V,true,options);
         /*
         fprintf(flog,"\nRules made!\n");
         */
@@ -2017,7 +2020,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
         double fraction = (double)MAXPAIRS / (double)(ntestpairWrong + ntestpairRight);
         if(fraction < 1.0)
             { // Define upper bound to make it managable memory-wise
-            if(VERBOSE)
+            if(options->verbose())
                 {
                 printf("%d < %d N=   %d\n",MAXPAIRS,(ntestpairWrong + ntestpairRight),N);
                 }
@@ -2029,7 +2032,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
 
         // Test all pairs (up to upper bound) on all candidate rules.
         //printf("Test all pairs (up to upper bound) on all candidate rules. %d\n",N);
-        if(VERBOSE)
+        if(options->verbose())
             {
             printf("             %d  \r",N);
             }
@@ -2041,7 +2044,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
         //:temp
         for(int i = 0;i < N;++i)
             {
-            if(VERBOSE)
+            if(options->verbose())
                 {
                 printf("%d \r",i);
                 }
@@ -2052,11 +2055,11 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
             */
             // Reset all counters in all candidate rules.
             pv[i]->nlemmatiseStart();
-            /*w =*/ pv[i]->nlemmatise(Wrong,wpart,false);
+            /*w =*/ pv[i]->nlemmatise(Wrong,wpart,false,options);
 #if AMBIGUOUS
             //pv[i]->nlemmatise(this->Ambiguous,wpart,false); // TODO can wpart be used here?
 #endif
-            /*r =*/ pv[i]->nlemmatise(this->Right,rpart,true);
+            /*r =*/ pv[i]->nlemmatise(this->Right,rpart,true,options);
             /*
             if(i == 0)
                 {
@@ -2098,7 +2101,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
                 fprintf(stderr,"\n***** Wrong:\n");
                 Wrong->printAll(stderr,"unmatched words that need better lemmatisation rule(s)",'\n');
                 //fclose(flog);
-                if(VERBOSE)
+                if(options->verbose())
                     {
                     printf("\nAFFIXTRAIN failed\n");
                     }
@@ -2148,9 +2151,9 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
             *pnode = new node(*pvf++);
             //(*pnode)->printSep(stdout,level);
 #if AMBIGUOUS
-            (*pnode)->init(&this->Right,&Wrong,/* &this->Ambiguous,*/level+1);
+            (*pnode)->init(&this->Right,&Wrong,/* &this->Ambiguous,*/level+1,options);
 #else
-            (*pnode)->init(&this->Right,&Wrong,level+1/*,pv+first,lastN-first*/);
+            (*pnode)->init(&this->Right,&Wrong,level+1/*,pv+first,lastN-first*/,options);
 #endif
             if(wpart < 0) // 20101207
                 {
@@ -2172,11 +2175,11 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
                     }
                 if(pvf == pvN)
                     {
-                    if(VERBOSE) /* This is not really an error. */
+                    if(options->verbose()) /* This is not really an error. */
                         fprintf(stderr,"\n***** destroyed all remaining untested rule candidates because they have become inapplicable\n");
                     }
                 }
-            if(VERBOSE && wpart >= 0)
+            if(options->verbose() && wpart >= 0)
                 {
                 if(lastN > pvN - pv)
                     {
@@ -2190,7 +2193,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
             ++first;
             if(first >= lastN)
                 {
-                if(VERBOSE) /* This is not really an error. */
+                if(options->verbose()) /* This is not really an error. */
                     fprintf(stderr,"\n***** DANGER first %ld >= lastN %ld\n",(long)first,(long)lastN);
                 }
             // hack:
@@ -2214,7 +2217,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
                  <= MAXPAIRS
               )
                 {
-                if(VERBOSE)
+                if(options->verbose())
                     {
                     //printf("%d > %d lastN=%td\n",MAXPAIRS,CnT,lastN);
                     printf("%d > %d lastN=%ld\n",MAXPAIRS,CnT,(long)lastN);
@@ -2226,8 +2229,8 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
                     {
                     // Reset all counters in remaining candidate rules.
                     pv[i]->nlemmatiseStart();
-                    pv[i]->nlemmatise(Wrong,-1,false);
-                    pv[i]->nlemmatise(this->Right,-1,true);
+                    pv[i]->nlemmatise(Wrong,-1,false,options);
+                    pv[i]->nlemmatise(this->Right,-1,true,options);
 #if AMBIGUOUS
                     //pv[i]->nlemmatise(this->Ambiguous,-1,true);
 #endif

@@ -33,8 +33,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 //        printf("usage: makeaffixrules -w <word list> -c <cutoff> -C <expected cutoff> -o <flexrules> -e <extra> -n <columns> -f <compfunc> [<word list> [<cutoff> [<flexrules> [<extra> [<columns> [<compfunc>]]]]]]\n");
 
-bool VERBOSE = false;
-static char opts[] = "?@:B:b:c:C:e:f:hH:i:j:L:n:o:O:p:P:s:v:W:R:" /* GNU: */ "wr";
+static char opts[] = "?@:B:b:c:C:e:f:hH:i:j:L:n:o:O:p:P:s:v:W:R:Q:q:" /* GNU: */ "wr";
 static char *** Ppoptions = NULL;
 static char ** Poptions = NULL;
 static int optionSets = 0;
@@ -48,8 +47,8 @@ char * dupl(const char * s)
 
 optionStruct::optionStruct()
     {
-    c = NULL; // cutoff 
-    C = NULL; // expected cutoff when determining the parameters using weightedcount()
+    c = -1; // cutoff 
+    C = -1; // expected cutoff when determining the parameters using weightedcount()
               // Rules with C+1 supporting word/lemma pairs have the highest penalty.
               // Rules with C or fewer supporting word/lemma pairs are probably best cut off.
               // To decide whether that is the case, the rules must be tested with OOV word/lemma pairs.
@@ -62,13 +61,16 @@ optionStruct::optionStruct()
     P = NULL;
     j = NULL; // temp dir
 	b = NULL; // raw file (see t)
-    computeParms = false;// compute parms
-    suffixOnly = false;// suffix rules only
-    verbose = false;// verbose
-    minfraction = -1; // L
-    maxfraction = -1; // H
-    doweights = false;
-    redo = false;
+    ComputeParms = false;// compute parms
+    SuffixOnly = false;// suffix rules only
+    SuffixOnlyParmSeen = false;
+    Verbose = false;// verbose
+    Minfraction = -1; // L
+    Maxfraction = -1; // H
+    Doweights = false;
+    Redo = false;
+    Q = 1;
+    q = 1;
     }
 
 optionStruct::~optionStruct()
@@ -80,8 +82,6 @@ optionStruct::~optionStruct()
         }
     delete [] Poptions;
     delete [] Ppoptions;
-    delete [] c;
-    delete [] C;
     delete [] e;
     delete [] f;
     delete [] i;
@@ -107,36 +107,53 @@ OptReturnTp optionStruct::doSwitch(int optchar,char * locoptarg,char * progname)
             P = dupl(locoptarg);
             break;
         case 'c': // cutoff
-            c = dupl(locoptarg);
+            if(locoptarg && *locoptarg)
+                c = *locoptarg - '0';
+
+            if(c > 9 || c < 0)
+                c = -1;
             break;
         case 'C': // cutoff for weightedcount
-            C = dupl(locoptarg);
+            if(locoptarg && *locoptarg)
+                C = *locoptarg - '0';
+
+            if(C > 9 || C < 0)
+                C = -1;
             break;
         case 'e': // extra
             e = dupl(locoptarg);
+            if(strstr(e,"_suffix"))
+                {
+                if(this->SuffixOnlyParmSeen && SuffixOnly == false)
+                    {
+                    fprintf(stderr,"Option -e [%s] and option -s %s are contradictory\n",e,locoptarg);
+                    exit(-1);
+                    }
+                SuffixOnly = true;
+                }
             break;
         case 'f': // compfunc
             f = dupl(locoptarg);
             break;
         case 'L':
-            minfraction = strtod(locoptarg,(char**)0);
-            if(minfraction > 1.0)
+            Minfraction = strtod(locoptarg,(char**)0);
+            if(Minfraction > 1.0)
                 {
                 printf("%s","Option -L: value must be less than 1.0");
                 exit(-1);
                 }
-            if(minfraction > 0 && maxfraction == -1)
-                maxfraction = minfraction;
+            if(Minfraction > 0 && Maxfraction == -1)
+                Maxfraction = Minfraction;
             break;
         case 'H':
-            maxfraction = strtod(locoptarg,(char**)0);
-            if(maxfraction > 1.0)
+            Maxfraction = strtod(locoptarg,(char**)0);
+            if(Maxfraction > 1.0)
                 {
                 printf("%s","Option -H: value must be less than 1.0");
                 exit(-1);
                 }
-            if(maxfraction > 0 && minfraction == -1)
-                minfraction = maxfraction;
+            if(Maxfraction > 0 && Minfraction == -1)
+                Minfraction = Maxfraction;
             break;
         case 'h':
         case '?':
@@ -212,6 +229,8 @@ OptReturnTp optionStruct::doSwitch(int optchar,char * locoptarg,char * progname)
             printf("  18:parms0 (Use computed parameter settings.)\n");
             printf("  19:parmsoff (obsolete, same as -f18)\n");
             printf("-b: compiled, raw rule file. Exits after pretty printing.\n");
+            printf("-Q: Max recursion depth when attempting to create candidate rule\n");
+            printf("-q: Percentage of training pairs to set aside for testing\n");
             return Leave;
         case 'i': // word list
             i = dupl(locoptarg);
@@ -226,7 +245,7 @@ OptReturnTp optionStruct::doSwitch(int optchar,char * locoptarg,char * progname)
             o = dupl(locoptarg);
             break;
         case 'p': // compute parms
-            computeParms = locoptarg && *locoptarg == '-' ? false : true;
+            ComputeParms = locoptarg && *locoptarg == '-' ? false : true;
             break;
 // GNU >>
         case 'r':
@@ -242,10 +261,19 @@ OptReturnTp optionStruct::doSwitch(int optchar,char * locoptarg,char * progname)
             return Leave;
 // << GNU
         case 's': // create suffix-only rules
-            suffixOnly = locoptarg && *locoptarg == '-' ? false : true;
+            if(SuffixOnly) // If earlier -e option has "_suffix" suffix
+                {
+                if(locoptarg && *locoptarg == '-')
+                    {
+                    fprintf(stderr,"Option -e [%s] and option -s %s are contradictory\n",e,locoptarg);
+                    exit(-1);
+                    }
+                }
+            SuffixOnly = locoptarg && *locoptarg == '-' ? false : true;
+            SuffixOnlyParmSeen = true;
             break;
         case 'v': // verbose
-            verbose = locoptarg && *locoptarg == '-' ? false : true;
+            Verbose = locoptarg && *locoptarg == '-' ? false : true;
             break;
 // GNU >>
         case 'w':
@@ -261,14 +289,44 @@ OptReturnTp optionStruct::doSwitch(int optchar,char * locoptarg,char * progname)
             return Leave;
 // << GNU
         case 'W':
-            doweights = locoptarg && *locoptarg == '-' ? false : true;
+            Doweights = locoptarg && *locoptarg == '-' ? false : true;
             break;
         case 'R':
-            redo = locoptarg && *locoptarg == '-' ? false : true;
+            Redo = locoptarg && *locoptarg == '-' ? false : true;
             break;
         case 'b': // raw rules
             b = dupl(locoptarg);
             break;
+        case 'Q': // max recursion depth when attempting to create candidate rule
+            if(locoptarg && *locoptarg)
+                {
+                Q = strtol(locoptarg,(char**)0,10);
+                if(Q < 1)
+                    {
+                    fprintf(stderr,"Option Q:Invalid value [%d]. Max recursion depth when attempting to create candidate rule must be >= 1\n",Q);
+                    exit(-1);
+                    }
+                }
+            else
+                {
+                fprintf(stderr,"Option Q:No parameter value found.\n");
+                exit(-1);
+                }
+        case 'q':
+            if(locoptarg && *locoptarg)
+                {
+                q = strtol(locoptarg,(char**)0,10);
+                if(q < 0 || 100 < q)
+                    {
+                    fprintf(stderr,"Option q:Invalid value [%d]. Percentage of training pairs to set aside for testing must be 0 <= q <= 100\n",q);
+                    exit(-1);
+                    }
+                }
+            else
+                {
+                fprintf(stderr,"Option q:No parameter value found.\n");
+                exit(-1);
+                }
         }
     return GoOn;
     }
@@ -466,6 +524,7 @@ OptReturnTp optionStruct::readOptsFromFile(char * locoptarg,char * progname)
 OptReturnTp optionStruct::readArgs(int argc, char * argv[])
     {
     int optchar;
+
     OptReturnTp result = GoOn;
     while((optchar = getopt(argc,argv, opts)) != -1)
         {
@@ -478,17 +537,23 @@ OptReturnTp optionStruct::readArgs(int argc, char * argv[])
         while(optind < argc)
             {
             if(!i)
-                i = argv[optind++];
-            else if(!c)
-                c = argv[optind++];
+                i = dupl(argv[optind++]);
+            else if(c < -1)
+                {
+                if(argv[optind] && *argv[optind])
+                    c = *argv[optind] - '0';
+
+                if(c > 9 || c < 0)
+                    c = -1;
+                }
             else if(!o)
-                o = argv[optind++];
+                o = dupl(argv[optind++]);
             else if(!e)
-                e = argv[optind++];
+                e = dupl(argv[optind++]);
             else if(!n)
-                n = argv[optind++];
+                n = dupl(argv[optind++]);
             else if(!f)
-                f = argv[optind++];
+                f = dupl(argv[optind++]);
             else
                 printf("Too many arguments:%s\n",argv[optind]);
             }
@@ -500,6 +565,68 @@ OptReturnTp optionStruct::readArgs(int argc, char * argv[])
         else
             printf("You cannot have a command line with both option-style arguments and option-less-fixed-position arguments:%s\n",argv[optind]);
         }
+
+    if(SuffixOnly)
+        {
+        if(e)
+            {
+            if(!strstr(e,"_suffix"))
+                {
+                static char * ext = new char[strlen(e)+strlen("_suffix")+1];
+                sprintf(ext,"%s_suffix",e);
+                delete [] e;
+                e = ext;
+                }
+            }
+        else
+            {
+            e = dupl("xx_suffix");
+            }
+        }
+
+    if(P == 0)
+        {
+        if(ComputeParms)
+            { 
+            if(f == NULL)
+                {
+                if(Verbose)
+                    printf("options.computeParms == true\n");
+                P = dupl("parms.txt");
+                }
+            else
+                {
+                printf("Option -p should not be set if option -f is set.\n");
+                exit(1);
+                }
+            }
+        }
+
+    if(P)
+        {
+        if(!B)
+            {
+            char * tmp = new char[strlen(e)+10]; 
+            B = tmp;
+            sprintf(tmp,"best_%s.txt",e);
+            }
+        }
+
+    if(o == NULL)
+        o = dupl("rules"); //20130125
+
+    if(!i)
+        {
+        fprintf(stderr,"Error: No training data (-i option)\n");
+        exit(2);
+        }
+
+    //const char * columns = "12634"; // Word, Lemma, LemmaClass, WordFreq, LemmaFreq
+    if(!n)
+        n = dupl("FB");// Word, Lemma
+
+
+
     return result;
     }
 

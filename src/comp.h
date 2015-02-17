@@ -52,13 +52,15 @@ extern int comp_parms(const vertex * a,const vertex * b);
 */
 //extern bool compute_parms;
 
-bool setCompetitionFunction(const char * functionname,const char * extra,bool suffixonly,bool & compute_parms,const char * parmstxt);
+class optionStruct;
+
+bool setCompetitionFunction(const char * functionname,bool & compute_parms,const char * parmstxt, optionStruct * options);
 void copybest();
 bool init();
 //void onlyZeros(const char * parmstxt);
 bool brown(/*const char * parmstxt*/);
-void printparms(int Nnodes,double weight,const char * parmstxt,bool suffixonly,bool doweights);
-void betterfound(int Nnodes,double weight,int swath,int iterations,const char * besttxt,const char * parmstxt,int blobs,int lines,double fraction,int fraclines,bool suffixonly,bool doweights,bool improvement);
+void printparms(int Nnodes,double weight,optionStruct * options);
+void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,int lines,double fraction,int fraclines,bool improvement,optionStruct * options);
 void worsefound();
 
 extern int (*comp)(const vertex * a,const vertex * b);

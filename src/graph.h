@@ -89,7 +89,7 @@ class trainingPair;
 class hash;
 class vertexCount;
 class ruleTemplate;
-
+class optionStruct;
 
 const int b_ambiguous     = 1 << 0;
 const int b_doublet       = 1 << 1;
@@ -153,9 +153,9 @@ class trainingPair
         void addRule(vertex * V,bool InputRight,bool Right);
         void allDeleteRules();
         trainingPair * nth(int n);
-        void makeCandidateRules(hash * Hash,vertex * parent,bool alreadyRight);
-        int makeRuleEx(hash * Hash,vertex * parent,bool alreadyRight);
-        int makeCorrectRules(hash * Hash,ruleTemplate * Template,const char * similar,vertex * parent, int mlow, int recurse);
+        void makeCandidateRules(hash * Hash,vertex * parent,bool alreadyRight,optionStruct * options);
+        int makeRuleEx(hash * Hash,vertex * parent,bool alreadyRight,optionStruct * options);
+        int makeCorrectRules(hash * Hash,ruleTemplate * Template,const char * similar,vertex * parent, int mlow, int recurse,optionStruct * options);
         // if recurse = 0, don't recurse. Else recurse. If a succeeding rule
         // already has been found, decrement recurse and then test whether a
         // recursive call must be made.
@@ -207,8 +207,8 @@ class trainingPair
             {
             return Next;
             }
-        static void makeChains(int allPairs,trainingPair * TrainingPair,trainingPair ** train,trainingPair ** test);
-        static int makeNextTrainingSet(int allPairs,trainingPair * TrainingPair,FILE * train,FILE * done,FILE * combined, FILE * disamb);
+        static void makeChains(int allPairs,trainingPair * TrainingPair,trainingPair ** train,trainingPair ** test,optionStruct * options);
+        static int makeNextTrainingSet(int allPairs,trainingPair * TrainingPair,FILE * train,FILE * done,FILE * combined, FILE * disamb,optionStruct * options);
         void set(int bit)
             {
             bits |= bit;
@@ -325,7 +325,7 @@ class rulePair
             {
             return itsReplacement();
             }
-        bool apply(trainingPair * trainingpair,size_t lemmalength,char * lemma,char * mask);
+        bool apply(trainingPair * trainingpair,size_t lemmalength,char * lemma,char * mask,optionStruct * options);
         edif dif(rulePair * other);
         rulePair(){++RulePairCount;}
         virtual ~rulePair(){--RulePairCount;}
@@ -433,10 +433,10 @@ class vertex : public rulePair
         ~vertex();
         void deleteThis();
         vertex(rulePair * Rule,hash * Hash);
-        matchResult lemmatise(trainingPair * pair,char ** mask,char ** plemma);
+        matchResult lemmatise(trainingPair * pair,char ** mask,char ** plemma,optionStruct * options);
         int goodness(trainingPair * pairs,topScore * Top/*,bool maycut*/);
         void nlemmatiseStart();
-        int nlemmatise(trainingPair * pairs,int n,bool InputRight);
+        int nlemmatise(trainingPair * pairs,int n,bool InputRight,optionStruct * options);
     };
 
 extern bool building;
@@ -543,8 +543,8 @@ class vertexPointer
             //trainingPair * Ambiguous; // Pattern succeeds, but replacement is wrong. However, the same word has more lemmas, one of which was produced by the rule.
 #endif
 
-            matchResult lemmatise(trainingPair * pair);
-            node * cleanup(node * parent);
+            matchResult lemmatise(trainingPair * pair,optionStruct * options);
+            node * cleanup(node * parent,optionStruct * options);
             int count()
                 {
                 int ret = 0;
@@ -693,11 +693,11 @@ class vertexPointer
            
 
 #if AMBIGUOUS
-            void init(trainingPair ** allRight,trainingPair ** allWrong/*,trainingPair ** allAmbiguous*/,int level);
+            void init(trainingPair ** allRight,trainingPair ** allWrong/*,trainingPair ** allAmbiguous*/,int level,optionStruct * options);
 #else
-            void init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,vertex ** pvp,int Np*/);
+            void init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,vertex ** pvp,int Np*/,optionStruct * options);
 #endif
-            void splitTrainingPairList(trainingPair * all,trainingPair **& pNotApplicable,trainingPair **& pWrong,trainingPair **& pRight);
+            void splitTrainingPairList(trainingPair * all,trainingPair **& pNotApplicable,trainingPair **& pWrong,trainingPair **& pRight,optionStruct * options);
             node(vertex * V):V(V),IfPatternSucceeds(0),IfPatternFails(0),Right(0)
                 {
                 ++NodeCount;
@@ -759,6 +759,7 @@ class hash
     };
 
 
+class optionStruct;
 
 int printRules
     ( node * nd
@@ -773,6 +774,7 @@ int printRules
     , strng * L
     , strng * R
     , int & nr
+    , optionStruct * options
     );
 
 

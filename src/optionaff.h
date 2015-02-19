@@ -45,7 +45,6 @@ class optionStruct
         const char * b; // raw rules
         bool ComputeParms;// compute parms
         bool SuffixOnly;// suffix only
-        bool SuffixOnlyParmSeen;
         bool Verbose;         // verbose
         double Minfraction;
         double Maxfraction;
@@ -57,11 +56,25 @@ class optionStruct
         int q; // Percentage of training pairs to set aside for testing
         // set to positive value if you want to set PERC percent
         // of the avaliable data aside for testing.
-        OptReturnTp doSwitch(int c,char * locoptarg,char * progname);
+
+        /* End of options. */
+
+        int Blobs; // Number of blobs found in word list
+        int Lines; // Number of lines found in word list
+        int FracBlobs; // Number of blobs used for training
+        int FracLines; // Number of lines used for training
+        bool SuffixOnlyParmSeen;
+        OptReturnTp doSwitch(int c, char * locoptarg, char * progname);
         OptReturnTp readOptsFromFile(char * locoptarg,char * progname);
         void detectDoubles(char * S);
     public:
-        const int cutoff() const{return c;}
+        const int blobs() const { return Blobs; }
+        const int lines() const { return Lines; }
+        const int fracblobs() const { return FracBlobs; }
+        const int fraclines() const { return FracLines; }
+        void setReadBlobs(int bl) { FracBlobs = bl; }
+        void setReadLines(int li) { FracLines = li; }
+        const int cutoff() const{ return c; }
         const int expectedCutoff() const{return C;}
         const char * extra() const{return e;}
         const char * compfunc() const{return f;}

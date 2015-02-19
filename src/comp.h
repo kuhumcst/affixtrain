@@ -54,7 +54,7 @@ extern int comp_parms(const vertex * a,const vertex * b);
 
 class optionStruct;
 
-bool setCompetitionFunction(const char * functionname,bool & compute_parms,const char * parmstxt, optionStruct * options);
+bool setCompetitionFunction(optionStruct * options);
 void copybest();
 bool init();
 //void onlyZeros(const char * parmstxt);

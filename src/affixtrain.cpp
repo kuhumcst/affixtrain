@@ -37,8 +37,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <float.h>
 #include "utf8func.h"
 
-//bool suffixonly = false;
-
 static const char * nil = "";
 static const char Start[2] = {START,0};
 static const char End[2] = {END,0};
@@ -2853,8 +2851,6 @@ static bool doTraining
     return moreToDo;
     }
 
-//computeParms(options.wordList(),options.extra(),options.flexrules(),options.columns(),options.minfraction(),options.maxfraction(),options.doweights(),options.currentParms(),options.bestParms(),options.expectedCutoff(),&options);
-//const char * fname/* input */,const char * extra,const char * nflexrules, const char * columns,double minfraction,double maxfraction,bool doweights,const char * parmstxt,const char * besttxt,int expectedCutoff,
 void computeParms(optionStruct * options)
     {
     CHECK("iglobTempDir");
@@ -3568,6 +3564,13 @@ int main(int argc,char **argv)
             exit(1);
         }
 
+    if(options.verbose())
+        {
+        options.print(stdout);
+        options.printArgFile();
+        }
+
+
     if(options.rawRules())
         {
         prettyPrint(options.rawRules());
@@ -3590,55 +3593,18 @@ int main(int argc,char **argv)
         exit(-1);
         }
 
-    if(options.currentParms())
-        initOutput(options.currentParms());
-
-    if(options.bestParms())
-        initOutput(options.currentParms());
-
     if(options.computeParms())
-        setCompetitionFunction("parms",/*out:*/compute_parms,NULL,&options);
-    else
         {
-        if(!options.compfunc())
-            {
-            fprintf(stderr,"Error: No competition function defined (-f option)\n");
-            getchar();
-            exit(2);
-            }
-        else if(!setCompetitionFunction(options.compfunc(),/*out:*/compute_parms,options.currentParms(),&options))
-        // "extra" will be interpreted as language code, eg. "is", "ru"
-            {
-            fprintf(stderr,"Error: Unknown competition function %s\n",options.compfunc());
-            getchar();
-            exit(2);
-            }
-        }
-
-    if(options.verbose())
-        {
-        assert(options.wordList());
-        printf("Wordlist:%s\n",options.wordList());
-        printf("cutoff:%d\n",options.cutoff());
-        printf("expected cutoff:%d\n",options.expectedCutoff());
-        printf("flex rules:%s\n",options.flexrules());
-        if(options.extra())
-            printf("extra name suffix:%s\n",options.extra());
-        printf("columns:%s (1=word,2=lemma,3=tags,0=other)\n",options.columns());
-        if(comp)
-            printf("competition function:%s\n",options.computeParms() ? "parms" : options.compfunc() ? options.compfunc() : "unknown");
         if(options.currentParms())
-            printf("parmstxt %s\n",options.currentParms());
-        if(options.bestParms())
-            printf("besttxt %s\n",options.bestParms());
-        }
+            initOutput(options.currentParms());
 
-    if(compute_parms)
-        {
+        if(options.bestParms())
+            initOutput(options.currentParms());
         computeParms(&options);
         }
     else
         {
+        compute_parms = setCompetitionFunction(&options);
         tagClass * Tags = NULL;
 
         Tags = collectTags(&options);
@@ -3665,6 +3631,8 @@ int main(int argc,char **argv)
             trainRules("",&options);
             }
         }
+
+
     if(options.verbose())
         {
         if(argc < 3)

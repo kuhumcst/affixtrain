@@ -679,7 +679,8 @@ static int comp_koud(const vertex * a,const vertex * b)
     return (A1>B1)?-1:(A1<B1)?1:(A2>B2)?-1:(A2<B2)?1:(A3>B3)?-1:(A3<B3)?1:0;
     }
 
-int (*comp)(const vertex * a,const vertex * b) = comp_koud;
+static int comp_parms(const vertex * a,const vertex * b);
+int (*comp)(const vertex * a,const vertex * b) = comp_parms;
 // returns b > a ? 1 : b < a ? -1 : 0
 // (Chosen like this to let qsort sort in descending order.)
 
@@ -5211,12 +5212,7 @@ void printparms(int Nnodes,double weight,optionStruct * options)
         {
         fprintf(f,"%.*e", DBL_DIG+2,parms.Matrix[i]);
         if(((i+1) % ROWPARMS) == 0)
-            {/*
-            if(i == NPARMS - 1)
-                fprintf(f,"  //%d\n        ",pcnt[i >> 2]);
-            else
-                fprintf(f,", //%d\n        ",pcnt[i >> 2]);
-                */
+            {
             if(i == NPARMS - 1)
                 fprintf(f,"\n        ");
             else
@@ -5225,8 +5221,6 @@ void printparms(int Nnodes,double weight,optionStruct * options)
         else
             fprintf(f,",");
         }
-//    fprintf(f,"                         //%9d\n",pcnt[i >> 2]);
- //   fprintf(f,"\n");
     fprintf(f,"}\n");
     fclose(f);
     }
@@ -5595,7 +5589,6 @@ static int comp_parms0_off(const vertex * a,const vertex * b)
 
 struct funcstruct
     {
-    bool compute_parms;
     const char * number;
     const char * name;
     int (*comp)(const vertex * a,const vertex * b);
@@ -5603,53 +5596,43 @@ struct funcstruct
 
 static struct funcstruct funcstructs[] =
     {
-        {true,"0","parms",comp_parms}, //makeaffix.exe mydata.txt 0 affixrules XX 123 parms
 #if _NA
-        {false,"1","fairly_good",comp_fairly_good},
-        {false,"2","even_better",comp_even_better},
-        {false,"3","affiksFEW3",comp_affiksFEW3},
-        {false,"4","affiksFEW",comp_affiksFEW},
-        {false,"5","affiksFEW2",comp_affiksFEW2},
-        {false,"6","fixNA",comp_fixNA},
-        {false,"7","fruit",comp_fruit},
-        {false,"8","ice",comp_ice},
-        {false,"9","pisang",comp_pisang},
-        {false,"10","kiwi",comp_kiwi},
-        {false,"11","carrot",comp_carrot},
-        {false,"12","peen",comp_peen},
-        {false,"13","beet",comp_beet},
-        {false,"14","sugar",comp_sugar},
-        {false,"15","affiksFEW2org",comp_affiksFEW2org},
+        {"1","fairly_good",comp_fairly_good},
+        {"2","even_better",comp_even_better},
+        {"3","affiksFEW3",comp_affiksFEW3},
+        {"4","affiksFEW",comp_affiksFEW},
+        {"5","affiksFEW2",comp_affiksFEW2},
+        {"6","fixNA",comp_fixNA},
+        {"7","fruit",comp_fruit},
+        {"8","ice",comp_ice},
+        {"9","pisang",comp_pisang},
+        {"10","kiwi",comp_kiwi},
+        {"11","carrot",comp_carrot},
+        {"12","peen",comp_peen},
+        {"13","beet",comp_beet},
+        {"14","sugar",comp_sugar},
+        {"15","affiksFEW2org",comp_affiksFEW2org},
 #endif
-        {false,"16","honey",comp_honey},
-        {false,"17","koud",comp_koud},
-        {false,"18","parms0",comp_parms0_off},
-        {false,"19","parmsoff",comp_parms0_off},
-        {false,0,0,0}
+        {"16","honey",comp_honey},
+        {"17","koud",comp_koud},
+        {"18","parms0",comp_parms0_off},
+        {"19","parmsoff",comp_parms0_off},
+        {0,0,0}
     };
 
 
-bool setCompetitionFunction(const char * functionname,bool & compute_parms,const char * parmstxt,optionStruct * options)
+bool setCompetitionFunction(optionStruct * options)
     {
-    int i;
-    if(options->verbose())
-        printf("setCompetitionFunction(functionname:%s,extra:%s,suffixonly:%s,parmstxt:%s)"
-	          , functionname
-	          , options->extra()
-	          , options->suffixOnly() ? "true" : "false"
-              , parmstxt ? parmstxt : "Not defined"
-	          );
-
     size_t langlength = strlen(options->extra());
     const char * underscore = strchr(options->extra(),'_');
     if(underscore != NULL)
         langlength = (size_t)(underscore - options->extra());
 
-    for(i = 0;funcstructs[i].number;++i)
-        if(!strcmp(functionname,funcstructs[i].number) || !strcmp(functionname,funcstructs[i].name))
+    for(int i = 0;funcstructs[i].number;++i)
+        if(!strcmp(options->compfunc(),funcstructs[i].number) || !strcmp(options->compfunc(),funcstructs[i].name))
             {
             comp = funcstructs[i].comp;
-            compute_parms = funcstructs[i].compute_parms;
+            bool compute_parms = false;
             if(comp == comp_parms0_off)
                 {
                 for(unsigned int j = 0;j < sizeof(bests)/sizeof(bests[0]);++j)
@@ -5675,9 +5658,9 @@ bool setCompetitionFunction(const char * functionname,bool & compute_parms,const
                         for(int k = 0;k < nparms;++k)
                             parms[k] = bests[j].val[k];
 #endif
-                        if(parmstxt)
+                        if(options->currentParms())
                             {
-                            FILE * f = fopen(parmstxt,"w");
+                            FILE * f = fopen(options->currentParms(),"w");
                             if(f)
                                 {
                                 fprintf(f,"bests[%d].suffixonly == [%s]\nbests[%d].langbase == [%s]\n",j,bests[j].suffixonly ? "true" : "false",j,bests[j].langbase);
@@ -5717,21 +5700,10 @@ bool setCompetitionFunction(const char * functionname,bool & compute_parms,const
                     printf("comp_parms0_off\n");
                     }
                 }
-            /*
-            for(i = 0;i < nparms; ++i)
-                {
-                if(parms.Matrix[i])
-                    {
-                    minparmsoff = i / ROWPARMS;
-                    minparmsoff *= ROWPARMS;
-                    break;
-                    }
-                }
-            if(options->verbose())
-                printf("minparmsoff = %d \n",minparmsoff);
-            */
-            return true;
+            return false;
             }
-    return false;
+    fprintf(stderr,"Error: Unknown competition function %s\n",options->compfunc());
+    getchar();
+    exit(2);
     }
 

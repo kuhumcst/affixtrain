@@ -24,7 +24,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "optionaff.h"
 #include "argopt.h"
 #include <limits.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -33,7 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 //        printf("usage: makeaffixrules -w <word list> -c <cutoff> -C <expected cutoff> -o <flexrules> -e <extra> -n <columns> -f <compfunc> [<word list> [<cutoff> [<flexrules> [<extra> [<columns> [<compfunc>]]]]]]\n");
 
-static char opts[] = "?@:B:b:c:C:e:f:hH:i:j:L:n:o:O:p:P:s:v:W:R:Q:q:" /* GNU: */ "wr";
+static char opts[] = "?@:B:b:c:C:D:e:f:hH:i:j:L:n:o:O:p:P:Q:q:R:s:v:W:" /* GNU: */ "wr";
 static char *** Ppoptions = NULL;
 static char ** Poptions = NULL;
 static int optionSets = 0;
@@ -61,6 +60,8 @@ optionStruct::optionStruct()
     P = NULL;
     j = NULL; // temp dir
 	b = NULL; // raw file (see t)
+    D = NULL;
+    nD = 0;
     ComputeParms = false;// compute parms
     SuffixOnly = false;// suffix rules only
     SuffixOnlyParmSeen = false;
@@ -91,6 +92,63 @@ optionStruct::~optionStruct()
     delete [] B;
     delete [] P;
 	delete [] b;
+    delete [] D;
+    }
+
+void optionStruct::detectDoubles(char * S)
+    {
+    int n = 0;
+    char * t = 0;
+    double Sum = 0.0;
+    double d;
+    char * s;
+    char * endptr = 0;
+    for(s = S;(t = strchr(s,';')) != 0;s = t+1)
+        {
+        d = strtod(s,&endptr);
+        if(endptr && endptr > s && (endptr[-1] == '.' || (endptr[-1] >= '0' && endptr[-1] <= '9')))
+            {
+            if(d >= 0.0)
+                Sum += d;
+            else
+                Sum -= d;
+            ++n;
+            }
+        }
+    d = strtod(s,&endptr);
+    if(endptr && endptr > s && (endptr[-1] == '.' || (endptr[-1] >= '0' && endptr[-1] <= '9')))
+        {
+        if(d >= 0.0)
+            Sum += d;
+        else
+            Sum -= d;
+        ++n;
+        }
+    if(Sum <= 0)
+        {
+        fprintf(stderr,"Sum of penalty parameters shall not be zero\n");
+        exit(-3);
+        }
+    if(n == 4 || n == 6)
+        {
+        nD = n;
+        D = new double[n];
+        n = 0;
+        for(s = S;(t = strchr(s,';')) != 0;s = t+1)
+            {
+            d = strtod(s,&endptr);
+            if(endptr && endptr > s && (endptr[-1] == '.' || (endptr[-1] >= '0' && endptr[-1] <= '9')))
+                D[n++] = d/Sum;
+            }
+        d = strtod(s,&endptr);
+        if(endptr && endptr > s && (endptr[-1] == '.' || (endptr[-1] >= '0' && endptr[-1] <= '9')))
+            D[n] = d/Sum;
+        }
+    else
+        {
+        fprintf(stderr,"There must be 4 or 6 penalty parameters\n");
+        exit(-4);
+        }
     }
 
 OptReturnTp optionStruct::doSwitch(int optchar,char * locoptarg,char * progname)
@@ -170,6 +228,7 @@ OptReturnTp optionStruct::doSwitch(int optchar,char * locoptarg,char * progname)
             printf("-i: (input) full form / lemma list\n");
             printf("-c: discard rules with little support. 0 <= cutoff <= 9\n");
             printf("-C: (together with -p) expected cutoff (parameter for rule weight function). 0 <= cutoff <= 9\n");
+            printf("-D: penalty parameters. Four or six: R__R;W__R;R__W;W__W[;R__NA;W__NA]\n");
             printf("-o: (output) default is to automatically generate file name\n");
             printf("-e: language code (da,en,is,nl,ru, etc)\n");
             printf("-p: compute parameters (overrules -f)\n");
@@ -232,6 +291,9 @@ OptReturnTp optionStruct::doSwitch(int optchar,char * locoptarg,char * progname)
             printf("-Q: Max recursion depth when attempting to create candidate rule\n");
             printf("-q: Percentage of training pairs to set aside for testing\n");
             return Leave;
+        case 'D':
+            detectDoubles(locoptarg);
+            break;
         case 'i': // word list
             i = dupl(locoptarg);
             break;
@@ -591,7 +653,7 @@ OptReturnTp optionStruct::readArgs(int argc, char * argv[])
             if(f == NULL)
                 {
                 if(Verbose)
-                    printf("options.computeParms == true\n");
+                    printf("computeParms == true\n");
                 P = dupl("parms.txt");
                 }
             else
@@ -625,8 +687,116 @@ OptReturnTp optionStruct::readArgs(int argc, char * argv[])
     if(!n)
         n = dupl("FB");// Word, Lemma
 
+    if(!f)
+        {
+        if(!ComputeParms)
+            {
+            fprintf(stderr,"Error: No competition function defined (-f option)\n");
+            getchar();
+            exit(2);
+            }
+        }
+
 
 
     return result;
     }
 
+void optionStruct::print(FILE * fp) const
+    {
+    printf(";       verbose\n-v %s\n",Verbose ? "" : "-");
+    if(b)
+        {
+        fprintf(fp,";       raw rules\n-b %s\n",b);if(b) fprintf(fp,"-b %s\n",b); else fprintf(fp,";-b not specified\n");
+        fprintf(fp,";       word list\n;-i N/A\n");
+        fprintf(fp,";       extra name suffix\n;-e N/A\n");
+        fprintf(fp,";       suffix only\n;-s N/A\n");
+        fprintf(fp,";       columns (1=word,2=lemma,3=tags,0=other)\n;-n N/A\n");
+        fprintf(fp,";       flex rules\n;-o N/A\n");
+        fprintf(fp,";       temp dir\n;-j N/A\n");
+        fprintf(fp,";       max recursion depth when attempting to create candidate rule\n;-Q N/A\n");
+        fprintf(fp,";       percentage of training pairs to set aside for testing\n;-q N/A\n");
+        fprintf(fp,";       penalties to decide which rule survives\n;-D N/A\n");
+        fprintf(fp,";       compute parms\n;-p N/A\n");
+        fprintf(fp,";       expected cutoff\n;-C N/A\n");
+        fprintf(fp,";       do weights\n;-W N/A\n");
+        fprintf(fp,";       current parameters\n;-P N/A\n");
+        fprintf(fp,";       best parameters\n;-B N/A\n");
+        fprintf(fp,";       start training with minimal fraction of training pairs\n;-L N/A\n");
+        fprintf(fp,";       end training with maximal fraction of training pairs\n;-H N/A\n");
+        fprintf(fp,";       competition function\n;-f N/A\n");
+        fprintf(fp,";       redo training after homographs for next round are removed\n;-R N/A\n");
+        fprintf(fp,";       cutoff\n;-c N/A\n");
+        }
+    else
+        {
+        fprintf(fp,";       raw rules\n;-b not specified\n");
+        fprintf(fp,";       word list\n-i %s\n",i);
+        fprintf(fp,";       extra name suffix\n"); if(e) fprintf(fp,"-e %s\n",e); else fprintf(fp,";-e not specified\n");
+        fprintf(fp,";       suffix only\n-s %s\n",SuffixOnly ? "" : "-");
+        fprintf(fp,";       columns (1=word,2=lemma,3=tags,0=other)\n-n %s\n",n);
+        fprintf(fp,";       max recursion depth when attempting to create candidate rule\n-Q %d\n",Q);
+        fprintf(fp,";       flex rules\n-o %s\n",o);
+        fprintf(fp,";       temp dir\n");if(j) fprintf(fp,"-j %s\n",j); else fprintf(fp,";-j not specified\n");
+        fprintf(fp,";       percentage of training pairs to set aside for testing\n-q %d\n",q);
+        fprintf(fp,";       penalties to decide which rule survives\n");if(nD > 0){fprintf(fp,"-D ");for(int i=0;i<nD;++i)fprintf(fp,"%f;",D[i]);fprintf(fp,"\n");}else fprintf(fp,";-D not specified\n");
+        fprintf(fp,";       compute parms\n-p %s\n",ComputeParms ? "" : "-");
+        if(ComputeParms)
+            {
+            assert(P);
+            assert(B);
+            fprintf(fp,";       expected cutoff\n-C %d\n",C);
+            fprintf(fp,";       do weights\n-W %s\n",Doweights ? "" : "-");
+            fprintf(fp,";       current parameters\n-P %s\n",P);
+            fprintf(fp,";       best parameters\n-B %s\n",B);
+            fprintf(fp,";       start training with minimal fraction of training pairs\n-L %f\n",Minfraction);
+            fprintf(fp,";       end training with maximal fraction of training pairs\n-H %f\n",Maxfraction);
+            fprintf(fp,";       competition function\n;-f N/A\n");
+            fprintf(fp,";       redo training after homographs for next round are removed\n;-R N/A\n");
+            fprintf(fp,";       cutoff\n;-c N/A\n");
+            }
+        else
+            {
+            assert(f);
+            fprintf(fp,";       expected cutoff\n;-C N/A\n");
+            fprintf(fp,";       do weights\n;-W N/A\n");
+            fprintf(fp,";       current parameters\n;-P N/A\n");
+            fprintf(fp,";       best parameters\n;-B N/A\n");
+            fprintf(fp,";       start training with minimal fraction of training pairs\n;-L N/A\n");
+            fprintf(fp,";       end training with maximal fraction of training pairs\n;-H N/A\n");
+            fprintf(fp,";       competition function\n-f %s\n", f);
+            fprintf(fp,";       redo training after homographs for next round are removed\n-R %s\n",Redo ? "" : "-");
+            fprintf(fp,";       cutoff\n-c %d\n",c);
+            }
+        }
+    }
+
+void optionStruct::printArgFile() const
+    {
+    int nameLength = strlen(i)+1+(e ? strlen(e)+1:0)+(SuffixOnly ? strlen("suf_"):0)+2+(Doweights ? 3 : 0) + 1;
+    char * name = new char[nameLength];
+    strcpy(name,i);
+    strcat(name,"_");
+    if(e)
+        {
+        strcat(name,e);
+        strcat(name,"_");
+        }
+    if(SuffixOnly)
+        {
+        strcat(name,"suf_");
+        }
+    strcat(name,"C");
+    int L = strlen(name);
+    name[L] = C + '0';
+    name[L+1] = 0;
+    if(Doweights)
+        {
+        strcat(name,"_W_");
+        }
+    int nl = strlen(name)+1;
+    assert(nameLength == nl);
+    FILE * fp = fopen(name,"wb");
+    print(fp);
+    fclose(fp);
+    }

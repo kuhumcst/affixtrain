@@ -20,19 +20,18 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include <stdio.h> // FILE
+
 typedef enum {GoOn = 0,Leave = 1,Error = 2} OptReturnTp;
 
 class optionStruct
     {
     private:
-        /* 
-        -c <cutoff> 
-        -e <extra> 
-        -f <compfunc>
-        -i <word list> 
-        -n <columns> 
-        -o <flexrules> 
-        */
+        double * D; // list of penalty parameters
+                    // R__R;W__R;R__W;W__W
+                    // or
+                    // R__R;W__R;R__W;W__W;R__NA;W__NA
+        int nD; // set by counting numbers in D
         int c; // cutoff
         int C; // expected cutoff
         const char * e; // extra
@@ -60,6 +59,7 @@ class optionStruct
         // of the avaliable data aside for testing.
         OptReturnTp doSwitch(int c,char * locoptarg,char * progname);
         OptReturnTp readOptsFromFile(char * locoptarg,char * progname);
+        void detectDoubles(char * S);
     public:
         const int cutoff() const{return c;}
         const int expectedCutoff() const{return C;}
@@ -81,6 +81,9 @@ class optionStruct
         const double maxfraction()const{return Maxfraction;}
         const bool doweights()const{return Doweights;}
         const bool redo()const{return Redo;}
+
+        void print(FILE * fp) const;
+        void printArgFile() const;
         
         optionStruct();
         ~optionStruct();

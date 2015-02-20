@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 //        printf("usage: makeaffixrules -w <word list> -c <cutoff> -C <expected cutoff> -o <flexrules> -e <extra> -n <columns> -f <compfunc> [<word list> [<cutoff> [<flexrules> [<extra> [<columns> [<compfunc>]]]]]]\n");
 
-static char opts[] = "?@:B:b:c:C:D:e:f:hH:i:j:L:n:o:O:p:P:Q:q:R:s:v:W:" /* GNU: */ "wr";
+static char opts[] = "?@:B:b:c:C:D:e:f:hH:i:j:K:L:M:N:n:o:O:p:P:Q:q:R:s:v:W:" /* GNU: */ "wr";
 static char *** Ppoptions = NULL;
 static char ** Poptions = NULL;
 static int optionSets = 0;
@@ -66,12 +66,15 @@ optionStruct::optionStruct()
     SuffixOnly = false;// suffix rules only
     SuffixOnlyParmSeen = false;
     Verbose = false;// verbose
-    Minfraction = -1; // L
-    Maxfraction = -1; // H
+    Minfraction = 1.0; // L
+    Maxfraction = 1.0; // H
     Doweights = false;
     Redo = false;
     Q = 1;
     q = 1;
+    K = 20;   // Number of differently sized fractions of trainingdata 
+    M = 10.0; // # Iterations when training with Maxfraction of input
+    N = 100.0;// # Iterations when training with Minfraction of input
 
     Blobs = 0; // Number of blobs found in word list
     Lines = 0; // Number of lines found in word list
@@ -100,7 +103,7 @@ optionStruct::~optionStruct()
     delete[] D;
     }
 
-void optionStruct::detectDoubles(char * S)
+void optionStruct::detectFloatingPointNumbers(char * S)
     {
     int n = 0;
     char * t = 0;
@@ -161,239 +164,261 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
     switch (optchar)
         {
         case '@':
-        readOptsFromFile(locoptarg, progname);
-        break;
+            readOptsFromFile(locoptarg, progname);
+            break;
         case 'B': // best parms
-        B = dupl(locoptarg);
-        break;
+            B = dupl(locoptarg);
+            break;
         case 'P': // current parms
-        P = dupl(locoptarg);
-        break;
+            P = dupl(locoptarg);
+            break;
         case 'c': // cutoff
-        if (locoptarg && *locoptarg)
-            c = *locoptarg - '0';
+            if (locoptarg && *locoptarg)
+                c = *locoptarg - '0';
 
-        if (c > 9 || c < 0)
-            c = -1;
-        break;
+            if (c > 9 || c < 0)
+                c = -1;
+            break;
         case 'C': // cutoff for weightedcount
-        if (locoptarg && *locoptarg)
-            C = *locoptarg - '0';
+            if (locoptarg && *locoptarg)
+                C = *locoptarg - '0';
 
-        if (C > 9 || C < 0)
-            C = -1;
-        break;
+            if (C > 9 || C < 0)
+                C = -1;
+            break;
         case 'e': // extra
-        e = dupl(locoptarg);
-        if (strstr(e, "_suffix"))
-            {
-            if (this->SuffixOnlyParmSeen && SuffixOnly == false)
+            e = dupl(locoptarg);
+            if (strstr(e, "_suffix"))
                 {
-                fprintf(stderr, "Option -e [%s] and option -s %s are contradictory\n", e, locoptarg);
+                if (this->SuffixOnlyParmSeen && SuffixOnly == false)
+                    {
+                    fprintf(stderr, "Option -e [%s] and option -s %s are contradictory\n", e, locoptarg);
+                    exit(-1);
+                    }
+                SuffixOnly = true;
+                }
+            break;
+        case 'f': // compfunc
+            f = dupl(locoptarg);
+            break;
+        case 'L':
+            Minfraction = strtod(locoptarg, (char**)0);
+            if (Minfraction <= 0.0 || 1.0 < Minfraction)
+                {
+                printf("%s", "Option -L: value must be greater than 0.0 and not greater than 1.0");
                 exit(-1);
                 }
-            SuffixOnly = true;
-            }
-        break;
-        case 'f': // compfunc
-        f = dupl(locoptarg);
-        break;
-        case 'L':
-        Minfraction = strtod(locoptarg, (char**)0);
-        if (Minfraction > 1.0)
-            {
-            printf("%s", "Option -L: value must be less than 1.0");
-            exit(-1);
-            }
-        if (Minfraction > 0 && Maxfraction == -1)
-            Maxfraction = Minfraction;
-        break;
+            break;
         case 'H':
-        Maxfraction = strtod(locoptarg, (char**)0);
-        if (Maxfraction > 1.0)
-            {
-            printf("%s", "Option -H: value must be less than 1.0");
-            exit(-1);
-            }
-        if (Maxfraction > 0 && Minfraction == -1)
-            Minfraction = Maxfraction;
-        break;
+            Maxfraction = strtod(locoptarg, (char**)0);
+            if (Maxfraction > 1.0)
+                {
+                printf("%s", "Option -H: value must be greater than 0.0 and not greater than 1.0");
+                exit(-1);
+                }
+            break;
+        case 'K':
+            K = strtol(locoptarg,0,10);
+            if(K <= 0)
+                {
+                printf("%s","Option -K: value must be 1 or more");
+                exit(-1);
+                }
+        case 'M':
+            M = strtod(locoptarg, (char**)0);
+            if (M < 1.0)
+                {
+                printf("%s", "Option -M: value must be 1.0 or greater");
+                exit(-1);
+                }
+            break;
+        case 'N':
+            N = strtod(locoptarg, (char**)0);
+            if (N < 1.0)
+                {
+                printf("%s", "Option -N: value must be 1.0 or greater");
+                exit(-1);
+                }
+            break;
         case 'h':
         case '?':
-        printf("usage:\n"
-               "affixtrain [-@ <option file>] -i <word list> [-c <cutoff>] [-C <expected cutoff>] [-o <flexrules>] [-e <extra>] [-n <columns>] [-f <compfunc>] [-p[-]] [-s[-]] [-v[-]] [-j <tempdir>] [-L<n>] [-H<n>]"
-               "\nor\n"
-               "affixtrain [<word list> [<cutoff> [<flexrules> [<extra> [<columns> [<compfunc>]]]]]]"
-               "\nor\n"
-               "affixtrain -b <rules>"
-               "\n");
-        printf("-@: Options are read from file with lines formatted as: -<option letter> <value>\n"
-               "    A semicolon comments out the rest of the line.\n"
-               );
-        printf("-i: (input) full form / lemma list\n");
-        printf("-c: discard rules with little support. 0 <= cutoff <= 9\n");
-        printf("-C: (together with -p) expected cutoff (parameter for rule weight function). 0 <= cutoff <= 9\n");
-        printf("-D: penalty parameters. Four or six: R__R;W__R;R__W;W__W[;R__NA;W__NA]\n");
-        printf("-o: (output) default is to automatically generate file name\n");
-        printf("-e: language code (da,en,is,nl,ru, etc)\n");
-        printf("-p: compute parameters (overrules -f)\n");
-        printf("-s: create suffix-only rules\n");
-        printf("-v: verbose\n");
-        printf("-j: directory to store the bulk of intermediate results, also textual presentations of rules. Must not include final (back)slash.\n");
-        printf("-L: minimum fraction (with option -f0 or -p)\n");
-        printf("-H: maximum fraction (with option -f0 or -p)\n");
-        printf("-W: minimise weight, not count (sum of rules) (with -p or -f0)\n");
-        printf("-P: write parameters to file (default parms.txt if -p or -f0, otherwise no parameter file)\n");
-        printf("-n: columns (default 120):\n");
-        printf("  1:Word\n");
-        printf("  F:Word\n");
-        printf("  f:Word\n");
-        printf("  W:Word\n");
-        printf("  w:Word\n");
-        printf("  2:Lemma\n");
-        printf("  B:Lemma\n");
-        printf("  b:Lemma\n");
-        printf("  L:Lemma\n");
-        printf("  l:Lemma\n");
-        printf("  3:POS tag (create rules for each of them)\n");
-        printf("  T:POS tag (create rules for each of them)\n");
-        printf("  t:POS tag (create rules for each of them)\n");
+            printf("usage:\n"
+                "affixtrain [-@ <option file>] -i <word list> [-c <cutoff>] [-C <expected cutoff>] [-o <flexrules>] [-e <extra>] [-n <columns>] [-f <compfunc>] [-p[-]] [-s[-]] [-v[-]] [-j <tempdir>] [-L<n>] [-H<n>]"
+                "\nor\n"
+                "affixtrain [<word list> [<cutoff> [<flexrules> [<extra> [<columns> [<compfunc>]]]]]]"
+                "\nor\n"
+                "affixtrain -b <rules>"
+                "\n");
+            printf("-@: Options are read from file with lines formatted as: -<option letter> <value>\n"
+                "    A semicolon comments out the rest of the line.\n"
+                );
+            printf("-i: (input) full form / lemma list\n");
+            printf("-c: discard rules with little support. 0 <= cutoff <= 9\n");
+            printf("-C: (together with -p) expected cutoff (parameter for rule weight function). 0 <= cutoff <= 9\n");
+            printf("-D: penalty parameters. Four or six: R__R;W__R;R__W;W__W[;R__NA;W__NA]\n");
+            printf("-o: (output) default is to automatically generate file name\n");
+            printf("-e: language code (da,en,is,nl,ru, etc)\n");
+            printf("-p: compute parameters (overrules -f)\n");
+            printf("-s: create suffix-only rules\n");
+            printf("-v: verbose\n");
+            printf("-j: directory to store the bulk of intermediate results, also textual presentations of rules. Must not include final (back)slash.\n");
+            printf("-L: minimum fraction (with option -f0 or -p)\n");
+            printf("-H: maximum fraction (with option -f0 or -p)\n");
+            printf("-K  number of differently sized fractions of trainingdata\n");
+            printf("-N  number of iterations of training with same fraction of training data when fraction is minimal\n");
+            printf("-M  number of iterations of training with same fraction of training data when fraction is maximal\n");
+            printf("-W: minimise weight, not count (sum of rules) (with -p or -f0)\n");
+            printf("-P: write parameters to file (default parms.txt if -p or -f0, otherwise no parameter file)\n");
+            printf("-n: columns (default 120):\n");
+            printf("  1:Word\n");
+            printf("  F:Word\n");
+            printf("  f:Word\n");
+            printf("  W:Word\n");
+            printf("  w:Word\n");
+            printf("  2:Lemma\n");
+            printf("  B:Lemma\n");
+            printf("  b:Lemma\n");
+            printf("  L:Lemma\n");
+            printf("  l:Lemma\n");
+            printf("  3:POS tag (create rules for each of them)\n");
+            printf("  T:POS tag (create rules for each of them)\n");
+            printf("  t:POS tag (create rules for each of them)\n");
 #if LEMMAINL
-        printf("  3:Word Frequency\n");
-        printf("  4:Lemma Frequency\n");
+            printf("  3:Word Frequency\n");
+            printf("  4:Lemma Frequency\n");
 #endif
 #if WORDCLASS
-        printf("  5:Word Class\n");
+            printf("  5:Word Class\n");
 #endif
 #if LEMMACLASS
-        printf("  6:Lemma Class\n");
+            printf("  6:Lemma Class\n");
 #endif
-        printf("  0:Other (don't care). (Use this to skip and ignore e.g. column with POS tags.)\n");
-        printf("-f: Name or index of comparison function (which look at number of right, wrong and not applicable cases):\n");
-        printf("  0:parms (Compute good parameter settings. Use -L and -H if training set must grow.)\n");
+            printf("  0:Other (don't care). (Use this to skip and ignore e.g. column with POS tags.)\n");
+            printf("-f: Name or index of comparison function (which look at number of right, wrong and not applicable cases):\n");
+            printf("  0:parms (Compute good parameter settings. Use -L and -H if training set must grow.)\n");
 #if _NA
-        printf("  1:fairly_good\n");
-        printf("  2:even_better (Icelandic)\n");
-        printf("  3:affiksFEW3 (Slovene)\n");
-        printf("  4:affiksFEW\n");
-        printf("  5:affiksFEW2 (Dutch, Norwegian)\n");
-        printf("  6:fixNA\n");
-        printf("  7:fruit\n");
-        printf("  8:ice\n");
-        printf("  9:pisang\n");
-        printf("  10:kiwi\n");
-        printf("  11:carrot\n");
-        printf("  12:peen (Danish, Polish)\n");
-        printf("  13:beet\n");
-        printf("  14:sugar (English, Greek, German, Swedish, Russian)\n");
-        printf("  15:affiksFEW2org ()\n");
-        printf("  16:honey ()\n");
+            printf("  1:fairly_good\n");
+            printf("  2:even_better (Icelandic)\n");
+            printf("  3:affiksFEW3 (Slovene)\n");
+            printf("  4:affiksFEW\n");
+            printf("  5:affiksFEW2 (Dutch, Norwegian)\n");
+            printf("  6:fixNA\n");
+            printf("  7:fruit\n");
+            printf("  8:ice\n");
+            printf("  9:pisang\n");
+            printf("  10:kiwi\n");
+            printf("  11:carrot\n");
+            printf("  12:peen (Danish, Polish)\n");
+            printf("  13:beet\n");
+            printf("  14:sugar (English, Greek, German, Swedish, Russian)\n");
+            printf("  15:affiksFEW2org ()\n");
+            printf("  16:honey ()\n");
 #endif
-        printf("  17:koud ()\n");
-        printf("  18:parms0 (Use computed parameter settings.)\n");
-        printf("  19:parmsoff (obsolete, same as -f18)\n");
-        printf("-b: compiled, raw rule file. Exits after pretty printing.\n");
-        printf("-Q: Max recursion depth when attempting to create candidate rule\n");
-        printf("-q: Percentage of training pairs to set aside for testing\n");
-        return Leave;
+            printf("  17:koud ()\n");
+            printf("  18:parms0 (Use computed parameter settings.)\n");
+            printf("  19:parmsoff (obsolete, same as -f18)\n");
+            printf("-b: compiled, raw rule file. Exits after pretty printing.\n");
+            printf("-Q: Max recursion depth when attempting to create candidate rule\n");
+            printf("-q: Percentage of training pairs to set aside for testing\n");
+            return Leave;
         case 'D':
-        detectDoubles(locoptarg);
-        break;
+            detectFloatingPointNumbers(locoptarg);
+            break;
         case 'i': // word list
-        i = dupl(locoptarg);
-        break;
+            i = dupl(locoptarg);
+            break;
         case 'j': // temp dir
-        j = dupl(locoptarg);
-        break;
+            j = dupl(locoptarg);
+            break;
         case 'n': // columns
-        n = dupl(locoptarg);
-        break;
+            n = dupl(locoptarg);
+            break;
         case 'o': // flexrules
-        o = dupl(locoptarg);
-        break;
+            o = dupl(locoptarg);
+            break;
         case 'p': // compute parms
-        ComputeParms = locoptarg && *locoptarg == '-' ? false : true;
-        break;
-        // GNU >>
+            ComputeParms = locoptarg && *locoptarg == '-' ? false : true;
+            break;
+            // GNU >>
         case 'r':
-        printf("12. IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING\n");
-        printf("WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR\n");
-        printf("REDISTRIBUTE THE PROGRAM AS PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES,\n");
-        printf("INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING\n");
-        printf("OUT OF THE USE OR INABILITY TO USE THE PROGRAM (INCLUDING BUT NOT LIMITED\n");
-        printf("TO LOSS OF DATA OR DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY\n");
-        printf("YOU OR THIRD PARTIES OR A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER\n");
-        printf("PROGRAMS), EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE\n");
-        printf("POSSIBILITY OF SUCH DAMAGES.\n");
-        return Leave;
-        // << GNU
+            printf("12. IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING\n");
+            printf("WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR\n");
+            printf("REDISTRIBUTE THE PROGRAM AS PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES,\n");
+            printf("INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING\n");
+            printf("OUT OF THE USE OR INABILITY TO USE THE PROGRAM (INCLUDING BUT NOT LIMITED\n");
+            printf("TO LOSS OF DATA OR DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY\n");
+            printf("YOU OR THIRD PARTIES OR A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER\n");
+            printf("PROGRAMS), EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE\n");
+            printf("POSSIBILITY OF SUCH DAMAGES.\n");
+            return Leave;
+            // << GNU
         case 's': // create suffix-only rules
-        if (SuffixOnly) // If earlier -e option has "_suffix" suffix
-            {
-            if (locoptarg && *locoptarg == '-')
+            if (SuffixOnly) // If earlier -e option has "_suffix" suffix
                 {
-                fprintf(stderr, "Option -e [%s] and option -s %s are contradictory\n", e, locoptarg);
-                exit(-1);
+                if (locoptarg && *locoptarg == '-')
+                    {
+                    fprintf(stderr, "Option -e [%s] and option -s %s are contradictory\n", e, locoptarg);
+                    exit(-1);
+                    }
                 }
-            }
-        SuffixOnly = locoptarg && *locoptarg == '-' ? false : true;
-        SuffixOnlyParmSeen = true;
-        break;
+            SuffixOnly = locoptarg && *locoptarg == '-' ? false : true;
+            SuffixOnlyParmSeen = true;
+            break;
         case 'v': // verbose
-        Verbose = locoptarg && *locoptarg == '-' ? false : true;
-        break;
-        // GNU >>
+            Verbose = locoptarg && *locoptarg == '-' ? false : true;
+            break;
+            // GNU >>
         case 'w':
-        printf("11. BECAUSE THE PROGRAM IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY\n");
-        printf("FOR THE PROGRAM, TO THE EXTENT PERMITTED BY APPLICABLE LAW.  EXCEPT WHEN\n");
-        printf("OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES\n");
-        printf("PROVIDE THE PROGRAM \"AS IS\" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED\n");
-        printf("OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF\n");
-        printf("MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.  THE ENTIRE RISK AS\n");
-        printf("TO THE QUALITY AND PERFORMANCE OF THE PROGRAM IS WITH YOU.  SHOULD THE\n");
-        printf("PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY SERVICING,\n");
-        printf("REPAIR OR CORRECTION.\n");
-        return Leave;
-        // << GNU
+            printf("11. BECAUSE THE PROGRAM IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY\n");
+            printf("FOR THE PROGRAM, TO THE EXTENT PERMITTED BY APPLICABLE LAW.  EXCEPT WHEN\n");
+            printf("OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES\n");
+            printf("PROVIDE THE PROGRAM \"AS IS\" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED\n");
+            printf("OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF\n");
+            printf("MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.  THE ENTIRE RISK AS\n");
+            printf("TO THE QUALITY AND PERFORMANCE OF THE PROGRAM IS WITH YOU.  SHOULD THE\n");
+            printf("PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY SERVICING,\n");
+            printf("REPAIR OR CORRECTION.\n");
+            return Leave;
+            // << GNU
         case 'W':
-        Doweights = locoptarg && *locoptarg == '-' ? false : true;
-        break;
+            Doweights = locoptarg && *locoptarg == '-' ? false : true;
+            break;
         case 'R':
-        Redo = locoptarg && *locoptarg == '-' ? false : true;
-        break;
+            Redo = locoptarg && *locoptarg == '-' ? false : true;
+            break;
         case 'b': // raw rules
-        b = dupl(locoptarg);
-        break;
+            b = dupl(locoptarg);
+            break;
         case 'Q': // max recursion depth when attempting to create candidate rule
-        if (locoptarg && *locoptarg)
-            {
-            Q = strtol(locoptarg, (char**)0, 10);
-            if (Q < 1)
+            if (locoptarg && *locoptarg)
                 {
-                fprintf(stderr, "Option Q:Invalid value [%d]. Max recursion depth when attempting to create candidate rule must be >= 1\n", Q);
+                Q = strtol(locoptarg, (char**)0, 10);
+                if (Q < 1)
+                    {
+                    fprintf(stderr, "Option Q:Invalid value [%d]. Max recursion depth when attempting to create candidate rule must be >= 1\n", Q);
+                    exit(-1);
+                    }
+                }
+            else
+                {
+                fprintf(stderr, "Option Q:No parameter value found.\n");
                 exit(-1);
                 }
-            }
-        else
-            {
-            fprintf(stderr, "Option Q:No parameter value found.\n");
-            exit(-1);
-            }
         case 'q':
-        if (locoptarg && *locoptarg)
-            {
-            q = strtol(locoptarg, (char**)0, 10);
-            if (q < 0 || 100 < q)
+            if (locoptarg && *locoptarg)
                 {
-                fprintf(stderr, "Option q:Invalid value [%d]. Percentage of training pairs to set aside for testing must be 0 <= q <= 100\n", q);
+                q = strtol(locoptarg, (char**)0, 10);
+                if (q < 0 || 100 < q)
+                    {
+                    fprintf(stderr, "Option q:Invalid value [%d]. Percentage of training pairs to set aside for testing must be 0 <= q <= 100\n", q);
+                    exit(-1);
+                    }
+                }
+            else
+                {
+                fprintf(stderr, "Option q:No parameter value found.\n");
                 exit(-1);
                 }
-            }
-        else
-            {
-            fprintf(stderr, "Option q:No parameter value found.\n");
-            exit(-1);
-            }
         }
     return GoOn;
     }
@@ -702,24 +727,66 @@ OptReturnTp optionStruct::readArgs(int argc, char * argv[])
             }
         }
 
+    if (ComputeParms)
+        {
+        if(M > N)
+            {
+            fprintf(stderr, "M (%f) must be <= N (%f)\n",M,N);
+            exit(2);
+            }
+
+        if (Minfraction > Maxfraction)
+            {
+            fprintf(stderr, "L (%f) must be <= H (%f)\n",Minfraction ,Maxfraction);
+            exit(2);
+            }
+        }
+
+
     FILE * f = fopen(wordList(), "r");
+    Blobs = 0; // If there are no non-empty lines, there are no blobs either.
+    Lines = 0;
+    int bl = 1;
     int kar = 0;
     int prevkar = 0;
+    unsigned int lineProfile = 0;
     while ((kar = fgetc(f)) != EOF)
         {
         if (kar == '\n')
             {
-            if (prevkar == '\n')
-                ++Blobs;
-            else if (prevkar != 0)
-                {
+            if(lineProfile & 4)
                 ++Lines;
+
+            if(lineProfile > 1)
+                { // Just finished non-empty line
+                lineProfile >>= 1; // push line before previous line out of
+                                   // memory
+                // if lineProfile is 1, we may have a bunch of empty lines
+                // before a new non-empty line appears
+                }
+            }
+        else
+            {
+            if(kar != '\r')
+                {
+                if(lineProfile == 1)
+                    {
+                    // previous line was empty. Before that, there was a 
+                    // non-empty line. Blob boundary detected!
+                    ++Blobs;
+                    }
+                lineProfile |= 4; // set third bit when making non-empty line
                 }
             }
         prevkar = kar;
         }
-    if (prevkar == 0)
-        Blobs = 0;
+    if(lineProfile & 4)
+        { // last line was not finished off with newline
+        ++Lines;
+        }
+    if(Lines > 0)
+        ++Blobs;
+
     if (verbose())
         printf("blobs:%d lines %d\n", Blobs, Lines);
     fclose(f);
@@ -733,69 +800,78 @@ void optionStruct::print(FILE * fp) const
     if (b)
         {
         fprintf(fp, ";       raw rules\n-b %s\n", b); if (b) fprintf(fp, "-b %s\n", b); else fprintf(fp, ";-b not specified\n");
-        fprintf(fp, ";       word list\n;-i N/A\n");
-        fprintf(fp, ";       extra name suffix\n;-e N/A\n");
-        fprintf(fp, ";       suffix only\n;-s N/A\n");
-        fprintf(fp, ";       columns (1=word,2=lemma,3=tags,0=other)\n;-n N/A\n");
-        fprintf(fp, ";       flex rules\n;-o N/A\n");
-        fprintf(fp, ";       temp dir\n;-j N/A\n");
-        fprintf(fp, ";       max recursion depth when attempting to create candidate rule\n;-Q N/A\n");
-        fprintf(fp, ";       percentage of training pairs to set aside for testing\n;-q N/A\n");
-        fprintf(fp, ";       penalties to decide which rule survives\n;-D N/A\n");
-        fprintf(fp, ";       compute parms\n;-p N/A\n");
-        fprintf(fp, ";       expected cutoff\n;-C N/A\n");
-        fprintf(fp, ";       do weights\n;-W N/A\n");
-        fprintf(fp, ";       current parameters\n;-P N/A\n");
-        fprintf(fp, ";       best parameters\n;-B N/A\n");
-        fprintf(fp, ";       start training with minimal fraction of training pairs\n;-L N/A\n");
-        fprintf(fp, ";       end training with maximal fraction of training pairs\n;-H N/A\n");
-        fprintf(fp, ";       competition function\n;-f N/A\n");
-        fprintf(fp, ";       redo training after homographs for next round are removed\n;-R N/A\n");
-        fprintf(fp, ";       cutoff\n;-c N/A\n");
+        fprintf(fp, ";       (N/A) raw rules\n;-b not specified\n");
+        fprintf(fp, ";       (N/A) word list\n-i %s\n", i ? i : "?");
+        fprintf(fp, ";       (N/A) extra name suffix\n"); if (e) fprintf(fp, "-e %s\n", e); else fprintf(fp, ";-e not specified\n");
+        fprintf(fp, ";       (N/A) suffix only (%s)\n-s %s\n", SuffixOnly ? "yes" : "no", SuffixOnly ? "" : "-");
+        fprintf(fp, ";       (N/A) columns (1=word,2=lemma,3=tags,0=other)\n-n %s\n", n ? n : "?");
+        fprintf(fp, ";       (N/A) max recursion depth when attempting to create candidate rule\n-Q %d\n", Q);
+        fprintf(fp, ";       (N/A) flex rules\n-o %s\n", o ? o : "?");
+        fprintf(fp, ";       (N/A) temp dir\n"); if (j) fprintf(fp, "-j %s\n", j); else fprintf(fp, ";-j not specified\n");
+        fprintf(fp, ";       (N/A) percentage of training pairs to set aside for testing\n-q %d\n", q);
+        fprintf(fp, ";       (N/A) penalties to decide which rule survives\n"); if (nD > 0){ fprintf(fp, "-D "); for (int i = 0; i < nD; ++i)fprintf(fp, "%f;", D[i]); fprintf(fp, "\n"); } else fprintf(fp, ";-D not specified\n");
+        fprintf(fp, ";       (N/A) compute parms (%s)\n-p %s\n", ComputeParms ? "yes" : "no", ComputeParms ? "" : "-");
+        fprintf(fp, ";       (N/A) expected cutoff\n-C %d\n", C);
+        fprintf(fp, ";       (N/A) do weights (%s)\n-W %s\n", Doweights ? "yes" : "no", Doweights ? "" : "-");
+        fprintf(fp, ";       (N/A) current parameters\n-P %s\n", P ? P : "?");
+        fprintf(fp, ";       (N/A) best parameters\n-B %s\n", B ? B : "?");
+        fprintf(fp, ";       (N/A) start training with minimal fraction of training pairs\n-L %f\n", Minfraction);
+        fprintf(fp, ";       (N/A) end training with maximal fraction of training pairs\n-H %f\n", Maxfraction);
+        fprintf(fp, ";       (N/A) number of differently sized fractions of trainingdata\n-K %d\n",K);
+        fprintf(fp, ";       (N/A) number of iterations of training with same fraction of training data when fraction is minimal\n-N %f\n", N);
+        fprintf(fp, ";       (N/A) number of iterations of training with same fraction of training data when fraction is maximal\n-M %f\n", M);
+        fprintf(fp, ";       (N/A) competition function\n-f %s\n", f ? f : "?");
+        fprintf(fp, ";       (N/A) redo training after homographs for next round are removed (%s)\n-R %s\n", Redo ? "yew" : "no", Redo ? "" : "-");
+        fprintf(fp, ";       (N/A) cutoff\n-c %d\n", c);
         }
     else
         {
         fprintf(fp, ";       raw rules\n;-b not specified\n");
         fprintf(fp, ";       word list\n-i %s\n", i);
         fprintf(fp, ";       extra name suffix\n"); if (e) fprintf(fp, "-e %s\n", e); else fprintf(fp, ";-e not specified\n");
-        fprintf(fp, ";       suffix only\n-s %s\n", SuffixOnly ? "" : "-");
+        fprintf(fp, ";       suffix only (%s)\n-s %s\n", SuffixOnly ? "yes" : "no", SuffixOnly ? "" : "-");
         fprintf(fp, ";       columns (1=word,2=lemma,3=tags,0=other)\n-n %s\n", n);
         fprintf(fp, ";       max recursion depth when attempting to create candidate rule\n-Q %d\n", Q);
         fprintf(fp, ";       flex rules\n-o %s\n", o);
         fprintf(fp, ";       temp dir\n"); if (j) fprintf(fp, "-j %s\n", j); else fprintf(fp, ";-j not specified\n");
         fprintf(fp, ";       percentage of training pairs to set aside for testing\n-q %d\n", q);
-        fprintf(fp, ";       penalties to decide which rule survives\n"); if (nD > 0){ fprintf(fp, "-D "); for (int i = 0; i < nD; ++i)fprintf(fp, "%f;", D[i]); fprintf(fp, "\n"); }
-        else fprintf(fp, ";-D not specified\n");
-        fprintf(fp, ";       compute parms\n-p %s\n", ComputeParms ? "" : "-");
+        fprintf(fp, ";       penalties to decide which rule survives\n"); if (nD > 0){ fprintf(fp, "-D "); for (int i = 0; i < nD; ++i)fprintf(fp, "%f;", D[i]); fprintf(fp, "\n"); } else fprintf(fp, ";-D not specified\n");
+        fprintf(fp, ";       compute parms (%s)\n-p %s\n", ComputeParms ? "yes" : "no", ComputeParms ? "" : "-");
         if (ComputeParms)
             {
             assert(P);
             assert(B);
             fprintf(fp, ";       expected cutoff\n-C %d\n", C);
-            fprintf(fp, ";       do weights\n-W %s\n", Doweights ? "" : "-");
+            fprintf(fp, ";       do weights (%s)\n-W %s\n", Doweights ? "yes" : "no", Doweights ? "" : "-");
             fprintf(fp, ";       current parameters\n-P %s\n", P);
             fprintf(fp, ";       best parameters\n-B %s\n", B);
             fprintf(fp, ";       start training with minimal fraction of training pairs\n-L %f\n", Minfraction);
             fprintf(fp, ";       end training with maximal fraction of training pairs\n-H %f\n", Maxfraction);
-            fprintf(fp, ";       competition function\n;-f N/A\n");
-            fprintf(fp, ";       redo training after homographs for next round are removed\n;-R N/A\n");
-            fprintf(fp, ";       cutoff\n;-c N/A\n");
+            fprintf(fp, ";       number of differently sized fractions of trainingdata\n-K %d\n",K);
+            fprintf(fp, ";       number of iterations of training with same fraction of training data when fraction is minimal\n-N %f\n", N);
+            fprintf(fp, ";       number of iterations of training with same fraction of training data when fraction is maximal\n-M %f\n", M);
+            fprintf(fp, ";       (N/A) competition function\n-f %s\n", f ? f : "?");
+            fprintf(fp, ";       (N/A) redo training after homographs for next round are removed (%s)\n-R %s\n", Redo ? "yew" : "no", Redo ? "" : "-");
+            fprintf(fp, ";       (N/A) cutoff\n-c %d\n", c);
             }
         else
             {
             assert(f);
-            fprintf(fp, ";       expected cutoff\n;-C N/A\n");
-            fprintf(fp, ";       do weights\n;-W N/A\n");
-            fprintf(fp, ";       current parameters\n;-P N/A\n");
-            fprintf(fp, ";       best parameters\n;-B N/A\n");
-            fprintf(fp, ";       start training with minimal fraction of training pairs\n;-L N/A\n");
-            fprintf(fp, ";       end training with maximal fraction of training pairs\n;-H N/A\n");
+            fprintf(fp, ";       (N/A) expected cutoff\n-C %d\n", C);
+            fprintf(fp, ";       (N/A) do weights (%s)\n-W %s\n", Doweights ? "yes" : "no", Doweights ? "" : "-");
+            fprintf(fp, ";       (N/A) current parameters\n-P %s\n", P ? P : "?");
+            fprintf(fp, ";       (N/A) best parameters\n-B %s\n", B ? B : "?");
+            fprintf(fp, ";       (N/A) start training with minimal fraction of training pairs\n-L %f\n", Minfraction);
+            fprintf(fp, ";       (N/A) end training with maximal fraction of training pairs\n-H %f\n", Maxfraction);
+            fprintf(fp, ";       (N/A) number of differently sized fractions of trainingdata\n-K %d\n",K);
+            fprintf(fp, ";       (N/A) number of iterations of training with same fraction of training data when fraction is minimal\n-N %f\n", N);
+            fprintf(fp, ";       (N/A) number of iterations of training with same fraction of training data when fraction is maximal\n-M %f\n", M);
             fprintf(fp, ";       competition function\n-f %s\n", f);
-            fprintf(fp, ";       redo training after homographs for next round are removed\n-R %s\n", Redo ? "" : "-");
+            fprintf(fp, ";       redo training after homographs for next round are removed (%s)\n-R %s\n", Redo ? "yew" : "no", Redo ? "" : "-");
             fprintf(fp, ";       cutoff\n-c %d\n", c);
             }
-        fprintf(fp, ";       Number of blobs found in word list: %d whereof used for training %d\n", Blobs, FracBlobs);
-        fprintf(fp, ";       Number of lines found in word list: %d whereof used for training %d\n", Lines, FracLines);
+        fprintf(fp, ";       Number of blobs found in word list: %d whereof used for training %d\n", Blobs, FracBlobs == 0 ? Blobs : FracBlobs);
+        fprintf(fp, ";       Number of lines found in word list: %d whereof used for training %d\n", Lines, FracLines == 0 ? Lines : FracLines);
         }
     }
 

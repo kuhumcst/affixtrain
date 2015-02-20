@@ -391,7 +391,17 @@ struct aFile
                     }
                 break;
                 }
-            buf = (nl ? nl + 1 : eob);
+            if(nl)
+                {
+                buf = nl + 1;
+                }
+            else
+                {
+                tab = find(buf, '\t', eob);
+                if (tab)
+                    ++line;
+                buf = eob;
+                }
             }
         if (options->verbose())
             {
@@ -419,7 +429,17 @@ struct aFile
                     }
                 break;
                 }
-            buf = (nl ? nl + 1 : eob);
+            if(nl)
+                {
+                buf = nl + 1;
+                }
+            else
+                {
+                tab = find(buf, '\t', eob);
+                if (tab)
+                    Lines[line++].cchars = buf;
+                buf = eob;
+                }
             }
         if (options->verbose())
             {
@@ -2866,11 +2886,21 @@ const int partOfFile(const char * fbuf, const double fraction, optionStruct * op
         {
         int bl = 1;
         int li = 0;
+        int blbs = 0; // If there are no non-empty lines, there are no blobs
+                     // either.
         int prevkar = 0;
+        unsigned int lineProfile = 0;
         while ((kar = fgetc(f)) != EOF)
             {
             if (kar == '\n')
                 {
+                if(lineProfile > 1)
+                    { // Just finished non-empty line
+                    lineProfile >>= 1; // push line before previous line out of
+                                       // memory
+                    // if lineProfile is 1, we may have a bunch of empty lines
+                    // before a new non-empty line appears
+                    }
                 if (prevkar == '\n')
                     {
                     if (bucket >= 1.0)
@@ -2889,10 +2919,30 @@ const int partOfFile(const char * fbuf, const double fraction, optionStruct * op
                         }
                     }
                 }
-            else if (bucket >= 1.0)
-                fputc(kar, f2);
+            else
+                {
+                if(kar != '\r')
+                    {
+                    if(lineProfile == 1)
+                        {
+                        // previous line was empty. Before that, there was a 
+                        // non-empty line. Blob boundary detected!
+                        ++blbs;
+                        }
+                    lineProfile |= 4; // set third bit when making non-empty line
+                    }
+                if (bucket >= 1.0)
+                    fputc(kar, f2);
+                }
             prevkar = kar;
             }
+        if(lineProfile & 4)
+            { // last line was not finished off with newline
+            ++li;
+            }
+        if(li > 0)
+            ++blbs;
+        printf("li %d blbs %d\n",li,blbs);
         if (options->currentParms() && !flog)
             {
             flog = fopenOrExit(options->currentParms(), "a", "log file");
@@ -2952,7 +3002,7 @@ const int partOfFile(const char * fbuf, const double fraction, optionStruct * op
 void computeParms(optionStruct * options)
     {
     CHECK("iglobTempDir");
-    int maxswath = MAXSWATH;
+    int maxswath = options->swaths();//MAXSWATH;
     int currentNo = 0;
     int brownNo = 0;
     double currentweight = 0.0;
@@ -2960,8 +3010,8 @@ void computeParms(optionStruct * options)
     double fraction = 0.0; // 0.0 <= fraction <= 1.0
     double factor = 0.0;
     double iterationsfactor = 1;
-    double miniterations = MINITERATIONS;
-    double maxiterations = MAXITERATIONS;
+    double miniterations = options->minIterations();//MINITERATIONS;
+    double maxiterations = options->maxIterations();//MAXITERATIONS;
     const char * tag = "";
     node::mostPenalized = options->expectedCutoff() + 1; // parameter to weight function
     if (options->minfraction() > 0.0)
@@ -3009,10 +3059,10 @@ void computeParms(optionStruct * options)
                 fraclines = partOfFile(fbuf, fraction, options);
                 }
             CHECK("D1globTempDir");
-            while (brown()); // until not all parms are zero
+            brown(); // until not all parms are zero
             ++br1;
             if (swath == 0)
-                init();
+                init(options);
             else
                 copybest(); // go on with best result so far.
             char wordsGroupedByRuleName[1024];
@@ -3056,113 +3106,96 @@ void computeParms(optionStruct * options)
             betterfound(currentNo, currentweight, swath, -1, blobs, lines, fraction, fraclines, false, options);
             printparms(Nnodes, weight, options);
             }
+        int looplimit = (int)(maxiterations*pow(iterationsfactor, -swath));
 #if FLOATINGPOINTPARMS
-        for (int iterations = 0; iterations < (int)(maxiterations*pow(iterationsfactor, -swath)); ++iterations)
+        for (int iterations = 0; iterations < looplimit; ++iterations)
 #else
         for(int iterations = 0;iterations < 64;++iterations)
 #endif
             {
             CHECK("D2aglobTempDir");
-            bool skip = false;
-            skip = brown();
+            brown();
             ++br2;
             CHECK("D2bglobTempDir");
-
-            if (swath + iterations > 0 && skip)
+            if (options->currentParms() && !flog)
                 {
-                if (options->currentParms() && !flog)
-                    {
-                    flog = fopenOrExit(options->currentParms(), "a", "log file");
-                    fprintf(flog, "//fraction: %f  blobs:%d  lines: %d fraclines: %d most penalized=%d\n", fraction, blobs, lines, fraclines, node::mostPenalized);
-                    fprintf(flog, "//iteration:%d.%d SKIPPED\n", swath, iterations);
-                    fclose(flog);
-                    flog = 0;
-                    }
-                printparms(Nnodes, weight, options);
+                flog = fopenOrExit(options->currentParms(), "a", "log file");
+                CHECK("D2dglobTempDir");
+                fprintf(flog, "//iteration:%d.%d %s\n", swath, iterations, options->doweights() ? "weights" : "count");
+                CHECK("D2eglobTempDir");
+                fclose(flog);
+                flog = 0;
+                }
+            CHECK("D2fglobTempDir");
+            if (options->verbose())
+                {
+                printf("%d.%d ", swath, iterations);
+                }
+            CHECK("D2globTempDir");
+
+            char wordsGroupedByRuleName[1024];
+            if (sizeof(wordsGroupedByRuleName) <= (size_t)sprintf(wordsGroupedByRuleName, "words_%s%s.txt", ext, tag))
+                {
+                printf("computeParms: wordsGroupedByRuleName 2 small");
+                exit(-1);
+                }
+            char numbersName[1024];
+            if (sizeof(numbersName) <= (size_t)sprintf(numbersName, "numbers_%s%s.tab", ext, tag))
+                {
+                printf("computeParms: numbersName 2 small");
+                exit(-1);
+                }
+
+            int filelines;
+            doTraining
+                (/* const char *                                */  filename
+                ,/* const char *                                */  ext
+                ,/* int cutoff                                  */  0
+                ,/* const char * nflexrulesFormat               */  options->flexrules()
+                ,/* const char *                                */  options->columns()
+                ,/* char * pairsToTrainInNextPassName           */  NULL
+                ,/* char * ingestedFractionOfAmbiguousPairsName */  NULL
+                ,/* char * allPairsName                         */  NULL
+                ,/* char * allIngestedPairsName                 */  NULL
+                ,/* char *                                      */  wordsGroupedByRuleName
+                ,/* char *                                      */  numbersName
+                ,/* int &                                       */  Nnodes
+                ,/* double &                                    */  weight
+                ,/* const char *                                */  tag
+                ,/* int * filelines                             */  &filelines
+                , options
+                ); // sets Nnodes
+            if (lines == 0)
+                fraclines = lines = filelines;
+
+            printparms(Nnodes, weight, options);
+            if (options->verbose())
+                {
+                printf("\r%d %d %f %d %f           \n", iterations, currentNo, currentweight, brownNo, brownweight);
+                }
+
+            if (currentNo == 0)
+                {
+                currentNo = Nnodes;
+                currentweight = weight;
                 }
             else
                 {
-                CHECK("D2cglobTempDir");
-                if (options->currentParms() && !flog)
-                    {
-                    flog = fopenOrExit(options->currentParms(), "a", "log file");
-                    CHECK("D2dglobTempDir");
-                    fprintf(flog, "//iteration:%d.%d %s\n", swath, iterations, options->doweights() ? "weights" : "count");
-                    CHECK("D2eglobTempDir");
-                    fclose(flog);
-                    flog = 0;
-                    }
-                CHECK("D2fglobTempDir");
+                brownNo = Nnodes;
+                brownweight = weight;
                 if (options->verbose())
+                    printf("swath %d brownNo %d currentNo %d\n", swath, brownNo, currentNo);
+                if ((!options->doweights() && brownNo <= currentNo) || (options->doweights() && brownweight <= currentweight))
                     {
-                    printf("%d.%d ", swath, iterations);
-                    }
-                CHECK("D2globTempDir");
-
-                char wordsGroupedByRuleName[1024];
-                if (sizeof(wordsGroupedByRuleName) <= (size_t)sprintf(wordsGroupedByRuleName, "words_%s%s.txt", ext, tag))
-                    {
-                    printf("computeParms: wordsGroupedByRuleName 2 small");
-                    exit(-1);
-                    }
-                char numbersName[1024];
-                if (sizeof(numbersName) <= (size_t)sprintf(numbersName, "numbers_%s%s.tab", ext, tag))
-                    {
-                    printf("computeParms: numbersName 2 small");
-                    exit(-1);
-                    }
-
-                int filelines;
-                doTraining
-                    (/* const char *                                */  filename
-                    ,/* const char *                                */  ext
-                    ,/* int cutoff                                  */  0
-                    ,/* const char * nflexrulesFormat               */  options->flexrules()
-                    ,/* const char *                                */  options->columns()
-                    ,/* char * pairsToTrainInNextPassName           */  NULL
-                    ,/* char * ingestedFractionOfAmbiguousPairsName */  NULL
-                    ,/* char * allPairsName                         */  NULL
-                    ,/* char * allIngestedPairsName                 */  NULL
-                    ,/* char *                                      */  wordsGroupedByRuleName
-                    ,/* char *                                      */  numbersName
-                    ,/* int &                                       */  Nnodes
-                    ,/* double &                                    */  weight
-                    ,/* const char *                                */  tag
-                    ,/* int * filelines                             */  &filelines
-                    , options
-                    ); // sets Nnodes
-                if (lines == 0)
-                    fraclines = lines = filelines;
-
-                printparms(Nnodes, weight, options);
-                if (options->verbose())
-                    {
-                    printf("\r%d %d %f %d %f           \n", iterations, currentNo, currentweight, brownNo, brownweight);
-                    }
-
-                if (currentNo == 0)
-                    {
-                    currentNo = Nnodes;
-                    currentweight = weight;
+                    bool improvement = (!options->doweights() && (brownNo < currentNo)) || (options->doweights() && (brownweight < currentweight));
+                    if (options->verbose())
+                        printf("%s\n", improvement ? "IMPROVEMENT" : "same");
+                    currentNo = brownNo;
+                    currentweight = brownweight;
+                    betterfound(currentNo, currentweight, swath, iterations, blobs, lines, fraction, fraclines, improvement, options);
                     }
                 else
-                    {
-                    brownNo = Nnodes;
-                    brownweight = weight;
-                    if (options->verbose())
-                        printf("swath %d brownNo %d currentNo %d\n", swath, brownNo, currentNo);
-                    if ((!options->doweights() && brownNo <= currentNo) || (options->doweights() && brownweight <= currentweight))
-                        {
-                        bool improvement = (!options->doweights() && (brownNo < currentNo)) || (options->doweights() && (brownweight < currentweight));
-                        if (options->verbose())
-                            printf("%s\n", improvement ? "IMPROVEMENT" : "same");
-                        currentNo = brownNo;
-                        currentweight = brownweight;
-                        betterfound(currentNo, currentweight, swath, iterations, blobs, lines, fraction, fraclines, improvement, options);
-                        }
-                    else
-                        worsefound();
-                    }
+                    worsefound();
                 }
             }
         if (options->verbose())
@@ -3511,7 +3544,6 @@ static void initOutput(const char * path)
 
 int main(int argc, char **argv)
     {
-    bool compute_parms = false;
     if (argc < 2)
         {
         printf("affixtrain - supervised learning of affix rules for AFFIXTRAIN, version " VERSION "\n");
@@ -3571,7 +3603,7 @@ int main(int argc, char **argv)
             }
         else
             {
-            compute_parms = setCompetitionFunction(&options);
+            setCompetitionFunction(&options);
             tagClass * Tags = NULL;
             options.setReadLines(options.lines());
             Tags = collectTags(&options);

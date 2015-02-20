@@ -26,12 +26,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <float.h>
 #if FLOATINGPOINTPARMS
 #define PARMS3 0
-static int ROWPARMS = 6;
-#define NPARMS ROWPARMS
+//static int parms.ROWPARMS = 6;
+#define NPARMS parms.ROWPARMS
 #else
-#define NUMBER_OF_ROWS_IN_R (sizeof(R)/(ROWPARMS*sizeof(R[0])))
-#if NPARMS % ROWPARMS != 0
-#error NPARMS must be a multiple of ROWPARMS
+#define NUMBER_OF_ROWS_IN_R (sizeof(R)/(parms.ROWPARMS*sizeof(R[0])))
+#if NPARMS % parms.ROWPARMS != 0
+#error NPARMS must be a multiple of parms.ROWPARMS
 #endif
 #endif
 
@@ -707,11 +707,27 @@ int (*comp)(const vertex * a,const vertex * b) = comp_parms;
 struct rotation
     {
     double Matrix[6];
+    int ROWPARMS;
+    void init(optionStruct * options)
+        {
+        ROWPARMS = options->numberOfParms();
+        for(int i = 0;i < ROWPARMS;++i)
+            {
+            Matrix[i] = options->parm(i);
+            }
+        }
+    void better(optionStruct * options)
+        {
+        for(int i = 0;i < ROWPARMS;++i)
+            {
+            options->setParm(i,Matrix[i]);
+            }
+        }
     } rotation;
 
 static struct rotation parms = 
    /* R_R   W_R   R_W   W_W  R_NA  W_NA */   
-    {{  0.0,  3.0, -2.0,  1.0,  0.0,  0.0}}
+    {{  0.0,  3.0, -2.0,  1.0,  0.0,  0.0},6}
     ;
 #else
 static int parms[NPARMS]    = {0};
@@ -731,24 +747,24 @@ static void printvector(const char * msg,double * row,int cols)
 static void normalise(double * ROW)
     {
     double modulus = 0.0;
-    for(int i = 0;i < ROWPARMS;++i)
+    for(int i = 0;i < parms.ROWPARMS;++i)
         modulus += ROW[i] * ROW[i];
     modulus = sqrt(modulus);
-    for(int i = 0;i < ROWPARMS;++i)
+    for(int i = 0;i < parms.ROWPARMS;++i)
         ROW[i] /= modulus;
     }
 
 static double inner(double * a, double * b)
     {
     double ret = 0;
-    for(int i = 0;i < ROWPARMS;++i)
+    for(int i = 0;i < parms.ROWPARMS;++i)
         ret += a[i]*b[i];
     return ret;
     }
 
 static void times(double * a, double f)
     {
-    for(int i = 0;i < ROWPARMS;++i)
+    for(int i = 0;i < parms.ROWPARMS;++i)
         a[i] *= f;
     }
 #endif
@@ -4964,6 +4980,8 @@ void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,int
         fclose(f);
         }
     best = parms;
+    parms.better(options);
+    options->printArgFile();
     FILE * f = fopen(options->bestParms(),"a");
     if(f)
         {
@@ -4993,7 +5011,7 @@ void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,int
         for(;i < NPARMS;++i)
             {
             fprintf(f,"%.*e", DBL_DIG+2,parms.Matrix[i]);
-            if(((i+1) % ROWPARMS) == 0)
+            if(((i+1) % parms.ROWPARMS) == 0)
                 {
                 /*
                 if(i == NPARMS - 1)
@@ -5140,21 +5158,18 @@ bool brown()
         normalise(parms.Matrix);
         return false;
         }
-//    double tangens = 0.1*pow(0.9981,it);
     double tangens = 0.1*pow(0.995,it);
-    printf("tangens %f ",tangens);
     double vector[6];
     double radius2 = 0.0;
-    //printvector("parms",parms.Matrix,ROWPARMS);
     do
         {
         int i;
         radius2 = 0.0;
 #if PARMS3
         vector[0] = 0; // R__R seems to be irrelevant
-        for(i = 1;i < ROWPARMS;++i)
+        for(i = 1;i < parms.ROWPARMS;++i)
 #else
-        for(i = 0;i < ROWPARMS;++i)
+        for(i = 0;i < parms.ROWPARMS;++i)
 #endif
             {
             vector[i] = rand() - (RAND_MAX/2);
@@ -5162,35 +5177,23 @@ bool brown()
             }
         }
     while(radius2 > ((double)RAND_MAX/2.0)*((double)RAND_MAX/2.0));
-    //printvector("vector1",vector,ROWPARMS);
     normalise(vector);
-    //printvector("vector2",vector,ROWPARMS);
     double inproduct = inner(parms.Matrix,vector); // Only first row. Ignore the rest.
-    //printf("inproduct: %f\n",inproduct);
     struct rotation diff = parms;
     times(diff.Matrix,-inproduct);
-    //printvector("diff",diff.Matrix,ROWPARMS);
-    plus(vector,diff.Matrix,ROWPARMS);
-    //printvector("vector3",vector,ROWPARMS);
+    plus(vector,diff.Matrix,parms.ROWPARMS);
     normalise(vector);
-    //printvector("vector4",vector,ROWPARMS);
     times(vector,tangens);
-    //printvector("vector5",vector,ROWPARMS);
-    //printf("test %f\n",inner(vector,parms.Matrix));
-    plus(parms.Matrix,vector,ROWPARMS);
-    //printvector("parms2",parms.Matrix,ROWPARMS);
+    plus(parms.Matrix,vector,parms.ROWPARMS);
     normalise(parms.Matrix);
-    printvector("parms3",parms.Matrix,ROWPARMS);
-    //getchar();
+    printvector("parms3",parms.Matrix,parms.ROWPARMS);
     return false;
     }
 
-bool init()
+bool init(optionStruct * options)
     {
-//    if(allZeros())
-        {
-        parms = best;
-        }
+    parms.init(options);
+    //parms = best;
     return true;
     }
 
@@ -5211,7 +5214,7 @@ void printparms(int Nnodes,double weight,optionStruct * options)
     for(i = 0;i < NPARMS;++i)
         {
         fprintf(f,"%.*e", DBL_DIG+2,parms.Matrix[i]);
-        if(((i+1) % ROWPARMS) == 0)
+        if(((i+1) % parms.ROWPARMS) == 0)
             {
             if(i == NPARMS - 1)
                 fprintf(f,"\n        ");
@@ -5235,7 +5238,7 @@ void printparms(int Nnodes,double weight,optionStruct * options)
 #if 0
 static int comp_parms(const vertex * a,const vertex * b)
     {
-    //for(int o = 0;o < NPARMS;o += ROWPARMS)
+    //for(int o = 0;o < NPARMS;o += parms.ROWPARMS)
     if(  a->R__R != b->R__R
       || a->W__R != b->W__R
       || a->R__W != b->R__W
@@ -5253,7 +5256,7 @@ static int comp_parms(const vertex * a,const vertex * b)
         //double N = sqrt((double)(a->R__R*a->R__R + a->W__R*a->W__R + a->R__W*a->R__W + a->W__W*a->W__W));
         double D = 20.0/N;
         double e = 4.0;
-        for(int o = 0;o < NPARMS;o += ROWPARMS)
+        for(int o = 0;o < NPARMS;o += parms.ROWPARMS)
             {
             double x = parms.Matrix[o+RR]*a->R__R + parms.Matrix[o+WR]*a->W__R + parms.Matrix[o+RW]*a->R__W + parms.Matrix[o+WW]*a->W__W;
             double y = parms.Matrix[o+RR]*b->R__R + parms.Matrix[o+WR]*b->W__R + parms.Matrix[o+RW]*b->R__W + parms.Matrix[o+WW]*b->W__W;
@@ -5286,7 +5289,7 @@ static int comp_parms(const vertex * a,const vertex * b)
         {
         double A = parms.Matrix[RR]*a->R__R + parms.Matrix[WR]*a->W__R + parms.Matrix[RW]*a->R__W + parms.Matrix[WW]*a->W__W;
         double B = parms.Matrix[RR]*b->R__R + parms.Matrix[WR]*b->W__R + parms.Matrix[RW]*b->R__W + parms.Matrix[WW]*b->W__W;
-        if(ROWPARMS == 6)
+        if(parms.ROWPARMS == 6)
             {
             A += parms.Matrix[RN]*a->R__NA + parms.Matrix[WN]*a->W__NA;
             B += parms.Matrix[RN]*b->R__NA + parms.Matrix[WN]*b->W__NA;
@@ -5306,7 +5309,7 @@ static int comp_parms0_off(const vertex * a,const vertex * b)
     {   
     double A = parms.Matrix[RR]*a->R__R + parms.Matrix[WR]*a->W__R + parms.Matrix[RW]*a->R__W + parms.Matrix[WW]*a->W__W;
     double B = parms.Matrix[RR]*b->R__R + parms.Matrix[WR]*b->W__R + parms.Matrix[RW]*b->R__W + parms.Matrix[WW]*b->W__W;
-    if(ROWPARMS == 6)
+    if(parms.ROWPARMS == 6)
         {
         A += parms.Matrix[RN]*a->R__NA + parms.Matrix[WN]*a->W__NA;
         B += parms.Matrix[RN]*b->R__NA + parms.Matrix[WN]*b->W__NA;
@@ -5372,7 +5375,7 @@ void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,int
 #else
             fprintf(f,"%d",parms[i]);
 #endif
-            if(((i+1) % ROWPARMS) == 0)
+            if(((i+1) % parms.ROWPARMS) == 0)
                 {
                 /*
                 if(i == NPARMS - 1)
@@ -5431,13 +5434,13 @@ bool brown(/*const char * parmstxt*/)
 
     int i;
     int T = it;
-    int R0 = (T % NUMBER_OF_ROWS_IN_R) * ROWPARMS;   // row selector in R[]: 0 4 8 12 ... 60 0 4 8 12 ... 60 0 4 ...
+    int R0 = (T % NUMBER_OF_ROWS_IN_R) * parms.ROWPARMS;   // row selector in R[]: 0 4 8 12 ... 60 0 4 8 12 ... 60 0 4 ...
     T /= NUMBER_OF_ROWS_IN_R;                 // strip lowest 4 bits (it / 16)
-    int P0 = (NPARMS - ROWPARMS) - (T % ROWPARMS) * ROWPARMS;   // row selector in parms. After NUMBER_OF_ROWS_IN_R iterations, the previous row is modified:  [...] 8 8 ... (NPARMSx) 4 ... (NPARMSx) 0 ... (NPARMSx) 12 ..
-	T /= ROWPARMS;
-    int fac = (T & 1) ? -1 : 1;  // 1 1 1 ... ((NUMBER_OF_ROWS_IN_R x ROWPARMS)x) -1 -1 -1 ... ((NUMBER_OF_ROWS_IN_R x ROWPARMS)x) 1 ...
+    int P0 = (NPARMS - parms.ROWPARMS) - (T % parms.ROWPARMS) * parms.ROWPARMS;   // row selector in parms. After NUMBER_OF_ROWS_IN_R iterations, the previous row is modified:  [...] 8 8 ... (NPARMSx) 4 ... (NPARMSx) 0 ... (NPARMSx) 12 ..
+	T /= parms.ROWPARMS;
+    int fac = (T & 1) ? -1 : 1;  // 1 1 1 ... ((NUMBER_OF_ROWS_IN_R x parms.ROWPARMS)x) -1 -1 -1 ... ((NUMBER_OF_ROWS_IN_R x parms.ROWPARMS)x) 1 ...
 	T /= 2;
-    if(T * (int)(NUMBER_OF_ROWS_IN_R * ROWPARMS * 2) == it)            // it = 0 (16 x 8) (16 x 8) x 2 ...
+    if(T * (int)(NUMBER_OF_ROWS_IN_R * parms.ROWPARMS * 2) == it)            // it = 0 (16 x 8) (16 x 8) x 2 ...
         {                        // double all parms of the best parameter setting and start a new round
         for(i = 0;i < NPARMS;++i)
             best[i] *= 2;        
@@ -5448,7 +5451,7 @@ bool brown(/*const char * parmstxt*/)
         */
     copybest();
     //copy(parms,best,NPARMS); // go on with best result so far.
-    for(i = 0;i < ROWPARMS;++i)
+    for(i = 0;i < parms.ROWPARMS;++i)
         parms[P0+i] += fac*R[R0+i]; // 4N <= R0+i <= 4N+3
     ++it;
 
@@ -5458,8 +5461,8 @@ bool brown(/*const char * parmstxt*/)
         {
         if(parms[i])
             {
-            minparmsoff = i / ROWPARMS;
-            minparmsoff *= ROWPARMS;
+            minparmsoff = i / parms.ROWPARMS;
+            minparmsoff *= parms.ROWPARMS;
             break;
             }
         }
@@ -5517,7 +5520,7 @@ void printparms(int Nnodes,double weight,const char * parmstxt,bool suffixonly,b
     for(i = 0;i < NPARMS;++i)
         {
         fprintf(f,"%5d",parms[i]);
-        if(((i+1) % ROWPARMS) == 0)
+        if(((i+1) % parms.ROWPARMS) == 0)
             {
             if(i == NPARMS - 1)
                 fprintf(f,"  //%d\n        ",pcnt[i >> 2]);
@@ -5534,7 +5537,7 @@ void printparms(int Nnodes,double weight,const char * parmstxt,bool suffixonly,b
 
 static int comp_parms(const vertex * a,const vertex * b)
     {
-    //for(int o = 0;o < NPARMS;o += ROWPARMS)
+    //for(int o = 0;o < NPARMS;o += parms.ROWPARMS)
     if(  a->R__R != b->R__R
       || a->W__R != b->W__R
       || a->R__W != b->R__W
@@ -5544,7 +5547,7 @@ static int comp_parms(const vertex * a,const vertex * b)
         int off = minparmsoff;
         if(off < parmsoff)
             off = parmsoff;
-        for(int o = off;o < NPARMS;o += ROWPARMS)
+        for(int o = off;o < NPARMS;o += parms.ROWPARMS)
             {
             int A = parms[o]*a->R__R + parms[o+1]*a->W__R + parms[o+2]*a->R__W + parms[o+3]*a->W__W;
             int B = parms[o]*b->R__R + parms[o+1]*b->W__R + parms[o+2]*b->R__W + parms[o+3]*b->W__W;
@@ -5573,7 +5576,7 @@ static int comp_parms0_off(const vertex * a,const vertex * b)
         fprintf(stderr,"parmsoff is set to high. There are not enough rows of parameters. Fix in graph.cpp\n");
         exit(-1);
         }
-    for(int o = off;o < nparms;o += ROWPARMS)
+    for(int o = off;o < nparms;o += parms.ROWPARMS)
         {
         int A = parms[o]*a->R__R + parms[o+1]*a->W__R + parms[o+2]*a->R__W + parms[o+3]*a->W__W;
         int B = parms[o]*b->R__R + parms[o+1]*b->W__R + parms[o+2]*b->R__W + parms[o+3]*b->W__W;
@@ -5621,7 +5624,7 @@ static struct funcstruct funcstructs[] =
     };
 
 
-bool setCompetitionFunction(optionStruct * options)
+void setCompetitionFunction(optionStruct * options)
     {
     size_t langlength = strlen(options->extra());
     const char * underscore = strchr(options->extra(),'_');
@@ -5646,7 +5649,7 @@ bool setCompetitionFunction(optionStruct * options)
                         printf("comp = comp_parms0_off\n");
                         comp = comp_parms0_off;
                         printf("bests[%d].rows == [%d]\n",j,bests[j].rowss);
-                        nparms = bests[j].rowss * ROWPARMS;
+                        nparms = bests[j].rowss * parms.ROWPARMS;
                         if(nparms > NPARMS)
                             {
                             fprintf(stderr,"Too many rows of parameters in bestParms struct for %s (%d, max allowed %d)\n",options->extra(),nparms,NPARMS);
@@ -5669,7 +5672,7 @@ bool setCompetitionFunction(optionStruct * options)
                                 fprintf(f,"  R->R     W->R     R->W     W->W\n");
                                 for(int k = 0;k < nparms;++k)
                                     {
-                                    if(k % ROWPARMS == 0)
+                                    if(k % parms.ROWPARMS == 0)
                                         fprintf(f,"\n");
 #if FLOATINGPOINTPARMS
                                     fprintf(f,"%6f ",parms.Matrix[k]);
@@ -5700,7 +5703,7 @@ bool setCompetitionFunction(optionStruct * options)
                     printf("comp_parms0_off\n");
                     }
                 }
-            return false;
+            return;
             }
     fprintf(stderr,"Error: Unknown competition function %s\n",options->compfunc());
     getchar();

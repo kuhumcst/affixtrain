@@ -388,9 +388,9 @@ Read word class from file.
 #else
 #define FLOATINGPOINTPARMS 1
 #endif
-#define MAXSWATH 20
-#define MAXITERATIONS 100
-#define MINITERATIONS 10
+//#define MAXSWATH 20
+//#define MAXITERATIONS 100
+//#define MINITERATIONS 10
 #if FLOATINGPOINTPARMS
 #else
 #define ROWPARMS 4

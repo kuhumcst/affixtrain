@@ -48,6 +48,9 @@ class optionStruct
         bool Verbose;         // verbose
         double Minfraction;
         double Maxfraction;
+        int K;    // Number of differently sized fractions of trainingdata 
+        double M; // # Iterations when training with Maxfraction of input
+        double N; // # Iterations when training with Minfraction of input
         bool Doweights;
         bool Redo; // option R. Set to true if training has to be done once more 
         // after the removal of the homographs that will be handled in
@@ -66,7 +69,7 @@ class optionStruct
         bool SuffixOnlyParmSeen;
         OptReturnTp doSwitch(int c, char * locoptarg, char * progname);
         OptReturnTp readOptsFromFile(char * locoptarg,char * progname);
-        void detectDoubles(char * S);
+        void detectFloatingPointNumbers(char * S);
     public:
         const int blobs() const { return Blobs; }
         const int lines() const { return Lines; }
@@ -94,6 +97,12 @@ class optionStruct
         const double maxfraction()const{return Maxfraction;}
         const bool doweights()const{return Doweights;}
         const bool redo()const{return Redo;}
+        const int swaths()const{return K;}
+        const double minIterations()const{return M;}
+        const double maxIterations()const{return N;}
+        const int numberOfParms()const{return nD;}
+        const double parm(int i)const{return (0<=i&&i<nD) ? D[i] : 0.0;}
+        const void setParm(int i,double v){if(0<=i&&i<nD)D[i]=v;}
 
         void print(FILE * fp) const;
         void printArgFile() const;

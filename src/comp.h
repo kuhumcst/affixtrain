@@ -50,23 +50,17 @@ extern int comp_koud(const vertex * a,const vertex * b);
 
 extern int comp_parms(const vertex * a,const vertex * b);
 */
-//extern bool compute_parms;
 
 class optionStruct;
 
-bool setCompetitionFunction(optionStruct * options);
+void setCompetitionFunction(optionStruct * options);
 void copybest();
-bool init();
-//void onlyZeros(const char * parmstxt);
-bool brown(/*const char * parmstxt*/);
+bool init(optionStruct * options);
+bool brown();
 void printparms(int Nnodes,double weight,optionStruct * options);
 void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,int lines,double fraction,int fraclines,bool improvement,optionStruct * options);
 void worsefound();
 
 extern int (*comp)(const vertex * a,const vertex * b);
-
-//extern bool suffixonly;
-//extern const char * besttxt;
-//extern const char * parmstxt;
 
 #endif

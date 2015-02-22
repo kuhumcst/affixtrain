@@ -154,7 +154,7 @@ void optionStruct::detectFloatingPointNumbers(char * S)
         }
     else
         {
-        fprintf(stderr, "There must be 4 or 6 penalty parameters\n");
+        fprintf(stderr, "There must be 4 or 6 penalty parameters, separated by semicolon and no spaces\n");
         exit(-4);
         }
     }
@@ -796,7 +796,7 @@ OptReturnTp optionStruct::readArgs(int argc, char * argv[])
 
 void optionStruct::print(FILE * fp) const
     {
-    printf(";       verbose\n-v %s\n", Verbose ? "" : "-");
+    fprintf(fp,";       verbose\n-v %s\n", Verbose ? "" : "-");
     if (b)
         {
         fprintf(fp, ";       raw rules\n-b %s\n", b); if (b) fprintf(fp, "-b %s\n", b); else fprintf(fp, ";-b not specified\n");

@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "applyaffrules.h"
 #include "optionaff.h"
 #include "argopt.h"
+#include <float.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
@@ -746,7 +747,6 @@ OptReturnTp optionStruct::readArgs(int argc, char * argv[])
     FILE * f = fopen(wordList(), "r");
     Blobs = 0; // If there are no non-empty lines, there are no blobs either.
     Lines = 0;
-    int bl = 1;
     int kar = 0;
     int prevkar = 0;
     unsigned int lineProfile = 0;
@@ -796,82 +796,91 @@ OptReturnTp optionStruct::readArgs(int argc, char * argv[])
 
 void optionStruct::print(FILE * fp) const
     {
-    fprintf(fp,";       verbose\n-v %s\n", Verbose ? "" : "-");
+    fprintf(fp,"               ; verbose\n-v %s\n", Verbose ? "" : "-");
     if (b)
         {
-        fprintf(fp, ";       raw rules\n-b %s\n", b); if (b) fprintf(fp, "-b %s\n", b); else fprintf(fp, ";-b not specified\n");
-        fprintf(fp, ";       (N/A) raw rules\n;-b not specified\n");
-        fprintf(fp, ";       (N/A) word list\n-i %s\n", i ? i : "?");
-        fprintf(fp, ";       (N/A) extra name suffix\n"); if (e) fprintf(fp, "-e %s\n", e); else fprintf(fp, ";-e not specified\n");
-        fprintf(fp, ";       (N/A) suffix only (%s)\n-s %s\n", SuffixOnly ? "yes" : "no", SuffixOnly ? "" : "-");
-        fprintf(fp, ";       (N/A) columns (1=word,2=lemma,3=tags,0=other)\n-n %s\n", n ? n : "?");
-        fprintf(fp, ";       (N/A) max recursion depth when attempting to create candidate rule\n-Q %d\n", Q);
-        fprintf(fp, ";       (N/A) flex rules\n-o %s\n", o ? o : "?");
-        fprintf(fp, ";       (N/A) temp dir\n"); if (j) fprintf(fp, "-j %s\n", j); else fprintf(fp, ";-j not specified\n");
-        fprintf(fp, ";       (N/A) percentage of training pairs to set aside for testing\n-q %d\n", q);
-        fprintf(fp, ";       (N/A) penalties to decide which rule survives\n"); if (nD > 0){ fprintf(fp, "-D "); for (int i = 0; i < nD; ++i)fprintf(fp, "%f;", D[i]); fprintf(fp, "\n"); } else fprintf(fp, ";-D not specified\n");
-        fprintf(fp, ";       (N/A) compute parms (%s)\n-p %s\n", ComputeParms ? "yes" : "no", ComputeParms ? "" : "-");
-        fprintf(fp, ";       (N/A) expected cutoff\n-C %d\n", C);
-        fprintf(fp, ";       (N/A) do weights (%s)\n-W %s\n", Doweights ? "yes" : "no", Doweights ? "" : "-");
-        fprintf(fp, ";       (N/A) current parameters\n-P %s\n", P ? P : "?");
-        fprintf(fp, ";       (N/A) best parameters\n-B %s\n", B ? B : "?");
-        fprintf(fp, ";       (N/A) start training with minimal fraction of training pairs\n-L %f\n", Minfraction);
-        fprintf(fp, ";       (N/A) end training with maximal fraction of training pairs\n-H %f\n", Maxfraction);
-        fprintf(fp, ";       (N/A) number of differently sized fractions of trainingdata\n-K %d\n",K);
-        fprintf(fp, ";       (N/A) number of iterations of training with same fraction of training data when fraction is minimal\n-N %f\n", N);
-        fprintf(fp, ";       (N/A) number of iterations of training with same fraction of training data when fraction is maximal\n-M %f\n", M);
-        fprintf(fp, ";       (N/A) competition function\n-f %s\n", f ? f : "?");
-        fprintf(fp, ";       (N/A) redo training after homographs for next round are removed (%s)\n-R %s\n", Redo ? "yew" : "no", Redo ? "" : "-");
-        fprintf(fp, ";       (N/A) cutoff\n-c %d\n", c);
+        fprintf(fp, "               ; raw rules\n-b %s\n", b); if (b) fprintf(fp, "-b %s\n", b); else fprintf(fp, ";-b not specified\n");
+        fprintf(fp, "               ; (N/A) raw rules\n;-b not specified\n");
+        fprintf(fp, "               ; (N/A) word list\n-i %s\n", i ? i : "?");
+        fprintf(fp, "               ; (N/A) extra name suffix\n"); if (e) fprintf(fp, "-e %s\n", e); else fprintf(fp, ";-e not specified\n");
+        fprintf(fp, "               ; (N/A) suffix only (%s)\n-s %s\n", SuffixOnly ? "yes" : "no", SuffixOnly ? "" : "-");
+        fprintf(fp, "               ; (N/A) columns (1=word,2=lemma,3=tags,0=other)\n-n %s\n", n ? n : "?");
+        fprintf(fp, "               ; (N/A) max recursion depth when attempting to create candidate rule\n-Q %d\n", Q);
+        fprintf(fp, "               ; (N/A) flex rules\n-o %s\n", o ? o : "?");
+        fprintf(fp, "               ; (N/A) temp dir\n"); if (j) fprintf(fp, "-j %s\n", j); else fprintf(fp, ";-j not specified\n");
+        fprintf(fp, "               ; (N/A) percentage of training pairs to set aside for testing\n-q %d\n", q);
+        fprintf(fp, "               ; (N/A) penalties to decide which rule survives\n"); if (nD > 0){ fprintf(fp, "-D "); for (int i = 0; i < nD; ++i)fprintf(fp, "%f;", D[i]); fprintf(fp, "\n"); } else fprintf(fp, ";-D not specified\n");
+        fprintf(fp, "               ; (N/A) compute parms (%s)\n-p %s\n", ComputeParms ? "yes" : "no", ComputeParms ? "" : "-");
+        fprintf(fp, "               ; (N/A) expected cutoff\n-C %d\n", C);
+        fprintf(fp, "               ; (N/A) do weights (%s)\n-W %s\n", Doweights ? "yes" : "no", Doweights ? "" : "-");
+        fprintf(fp, "               ; (N/A) current parameters\n-P %s\n", P ? P : "?");
+        fprintf(fp, "               ; (N/A) best parameters\n-B %s\n", B ? B : "?");
+        fprintf(fp, "               ; (N/A) start training with minimal fraction of training pairs\n-L %f\n", Minfraction);
+        fprintf(fp, "               ; (N/A) end training with maximal fraction of training pairs\n-H %f\n", Maxfraction);
+        fprintf(fp, "               ; (N/A) number of differently sized fractions of trainingdata\n-K %d\n",K);
+        fprintf(fp, "               ; (N/A) number of iterations of training with same fraction of training data when fraction is minimal\n-N %f\n", N);
+        fprintf(fp, "               ; (N/A) number of iterations of training with same fraction of training data when fraction is maximal\n-M %f\n", M);
+        fprintf(fp, "               ; (N/A) competition function\n-f %s\n", f ? f : "?");
+        fprintf(fp, "               ; (N/A) redo training after homographs for next round are removed (%s)\n-R %s\n", Redo ? "yew" : "no", Redo ? "" : "-");
+        fprintf(fp, "               ; (N/A) cutoff\n-c %d\n", c);
         }
     else
         {
-        fprintf(fp, ";       raw rules\n;-b not specified\n");
-        fprintf(fp, ";       word list\n-i %s\n", i);
-        fprintf(fp, ";       extra name suffix\n"); if (e) fprintf(fp, "-e %s\n", e); else fprintf(fp, ";-e not specified\n");
-        fprintf(fp, ";       suffix only (%s)\n-s %s\n", SuffixOnly ? "yes" : "no", SuffixOnly ? "" : "-");
-        fprintf(fp, ";       columns (1=word,2=lemma,3=tags,0=other)\n-n %s\n", n);
-        fprintf(fp, ";       max recursion depth when attempting to create candidate rule\n-Q %d\n", Q);
-        fprintf(fp, ";       flex rules\n-o %s\n", o);
-        fprintf(fp, ";       temp dir\n"); if (j) fprintf(fp, "-j %s\n", j); else fprintf(fp, ";-j not specified\n");
-        fprintf(fp, ";       percentage of training pairs to set aside for testing\n-q %d\n", q);
-        fprintf(fp, ";       penalties to decide which rule survives\n"); if (nD > 0){ fprintf(fp, "-D "); for (int i = 0; i < nD; ++i)fprintf(fp, "%f;", D[i]); fprintf(fp, "\n"); } else fprintf(fp, ";-D not specified\n");
-        fprintf(fp, ";       compute parms (%s)\n-p %s\n", ComputeParms ? "yes" : "no", ComputeParms ? "" : "-");
+        fprintf(fp, "               ; raw rules\n;-b not specified\n");
+        fprintf(fp, "               ; word list\n-i %s\n", i);
+        fprintf(fp, "               ; extra name suffix\n"); if (e) fprintf(fp, "-e %s\n", e); else fprintf(fp, ";-e not specified\n");
+        fprintf(fp, "               ; suffix only (%s)\n-s %s\n", SuffixOnly ? "yes" : "no", SuffixOnly ? "" : "-");
+        fprintf(fp, "               ; columns (1=word,2=lemma,3=tags,0=other)\n-n %s\n", n);
+        fprintf(fp, "               ; max recursion depth when attempting to create candidate rule\n-Q %d\n", Q);
+        fprintf(fp, "               ; flex rules\n-o %s\n", o);
+        fprintf(fp, "               ; temp dir\n"); if (j) fprintf(fp, "-j %s\n", j); else fprintf(fp, ";-j not specified\n");
+        fprintf(fp, "               ; percentage of training pairs to set aside for testing\n-q %d\n", q);
+        fprintf(fp, "               ; penalties to decide which rule survives\n"); if (nD > 0){ fprintf(fp, "-D "); for (int i = 0; i < nD; ++i)fprintf(fp, "%f;", D[i]); fprintf(fp, "\n"); } else fprintf(fp, ";-D not specified\n");
+        fprintf(fp, "               ; compute parms (%s)\n-p %s\n", ComputeParms ? "yes" : "no", ComputeParms ? "" : "-");
         if (ComputeParms)
             {
             assert(P);
             assert(B);
-            fprintf(fp, ";       expected cutoff\n-C %d\n", C);
-            fprintf(fp, ";       do weights (%s)\n-W %s\n", Doweights ? "yes" : "no", Doweights ? "" : "-");
-            fprintf(fp, ";       current parameters\n-P %s\n", P);
-            fprintf(fp, ";       best parameters\n-B %s\n", B);
-            fprintf(fp, ";       start training with minimal fraction of training pairs\n-L %f\n", Minfraction);
-            fprintf(fp, ";       end training with maximal fraction of training pairs\n-H %f\n", Maxfraction);
-            fprintf(fp, ";       number of differently sized fractions of trainingdata\n-K %d\n",K);
-            fprintf(fp, ";       number of iterations of training with same fraction of training data when fraction is minimal\n-N %f\n", N);
-            fprintf(fp, ";       number of iterations of training with same fraction of training data when fraction is maximal\n-M %f\n", M);
-            fprintf(fp, ";       (N/A) competition function\n-f %s\n", f ? f : "?");
-            fprintf(fp, ";       (N/A) redo training after homographs for next round are removed (%s)\n-R %s\n", Redo ? "yew" : "no", Redo ? "" : "-");
-            fprintf(fp, ";       (N/A) cutoff\n-c %d\n", c);
+            fprintf(fp, "               ; expected cutoff\n-C %d\n", C);
+            fprintf(fp, "               ; do weights (%s)\n-W %s\n", Doweights ? "yes" : "no", Doweights ? "" : "-");
+            fprintf(fp, "               ; current parameters\n-P %s\n", P);
+            fprintf(fp, "               ; best parameters\n-B %s\n", B);
+            fprintf(fp, "               ; start training with minimal fraction of training pairs\n-L %f\n", Minfraction);
+            fprintf(fp, "               ; end training with maximal fraction of training pairs\n-H %f\n", Maxfraction);
+            fprintf(fp, "               ; number of differently sized fractions of trainingdata\n-K %d\n",K);
+            fprintf(fp, "               ; number of iterations of training with same fraction of training data when fraction is minimal\n-N %f\n", N);
+            fprintf(fp, "               ; number of iterations of training with same fraction of training data when fraction is maximal\n-M %f\n", M);
+            fprintf(fp, "               ; (N/A) competition function\n-f %s\n", f ? f : "?");
+            fprintf(fp, "               ; (N/A) redo training after homographs for next round are removed (%s)\n-R %s\n", Redo ? "yew" : "no", Redo ? "" : "-");
+            fprintf(fp, "               ; (N/A) cutoff\n-c %d\n", c);
             }
         else
             {
             assert(f);
-            fprintf(fp, ";       (N/A) expected cutoff\n-C %d\n", C);
-            fprintf(fp, ";       (N/A) do weights (%s)\n-W %s\n", Doweights ? "yes" : "no", Doweights ? "" : "-");
-            fprintf(fp, ";       (N/A) current parameters\n-P %s\n", P ? P : "?");
-            fprintf(fp, ";       (N/A) best parameters\n-B %s\n", B ? B : "?");
-            fprintf(fp, ";       (N/A) start training with minimal fraction of training pairs\n-L %f\n", Minfraction);
-            fprintf(fp, ";       (N/A) end training with maximal fraction of training pairs\n-H %f\n", Maxfraction);
-            fprintf(fp, ";       (N/A) number of differently sized fractions of trainingdata\n-K %d\n",K);
-            fprintf(fp, ";       (N/A) number of iterations of training with same fraction of training data when fraction is minimal\n-N %f\n", N);
-            fprintf(fp, ";       (N/A) number of iterations of training with same fraction of training data when fraction is maximal\n-M %f\n", M);
-            fprintf(fp, ";       competition function\n-f %s\n", f);
-            fprintf(fp, ";       redo training after homographs for next round are removed (%s)\n-R %s\n", Redo ? "yew" : "no", Redo ? "" : "-");
-            fprintf(fp, ";       cutoff\n-c %d\n", c);
+            fprintf(fp, "               ; (N/A) expected cutoff\n-C %d\n", C);
+            fprintf(fp, "               ; (N/A) do weights (%s)\n-W %s\n", Doweights ? "yes" : "no", Doweights ? "" : "-");
+            fprintf(fp, "               ; (N/A) current parameters\n-P %s\n", P ? P : "?");
+            fprintf(fp, "               ; (N/A) best parameters\n-B %s\n", B ? B : "?");
+            fprintf(fp, "               ; (N/A) start training with minimal fraction of training pairs\n-L %f\n", Minfraction);
+            fprintf(fp, "               ; (N/A) end training with maximal fraction of training pairs\n-H %f\n", Maxfraction);
+            fprintf(fp, "               ; (N/A) number of differently sized fractions of trainingdata\n-K %d\n",K);
+            fprintf(fp, "               ; (N/A) number of iterations of training with same fraction of training data when fraction is minimal\n-N %f\n", N);
+            fprintf(fp, "               ; (N/A) number of iterations of training with same fraction of training data when fraction is maximal\n-M %f\n", M);
+            fprintf(fp, "               ; competition function\n-f %s\n", f);
+            fprintf(fp, "               ; redo training after homographs for next round are removed (%s)\n-R %s\n", Redo ? "yew" : "no", Redo ? "" : "-");
+            fprintf(fp, "               ; cutoff\n-c %d\n", c);
             }
-        fprintf(fp, ";       Number of blobs found in word list: %d whereof used for training %d\n", Blobs, FracBlobs == 0 ? Blobs : FracBlobs);
-        fprintf(fp, ";       Number of lines found in word list: %d whereof used for training %d\n", Lines, FracLines == 0 ? Lines : FracLines);
+        fprintf(fp, "               ; Number of blobs found in word list: %d whereof used for training %d\n", Blobs, FracBlobs == 0 ? Blobs : FracBlobs);
+        fprintf(fp, "               ; Number of lines found in word list: %d whereof used for training %d\n", Lines, FracLines == 0 ? Lines : FracLines);
+        fprintf(fp, "               ; Current training size step: %d\n", Swath);
+        fprintf(fp, "               ; Current iteration in current training size step: %d\n", SwathIteration);
+        fprintf(fp, "               ; Current number of nodes: %d\n", NumberOfNodes);
+        fprintf(fp, "               ; Current number of lines: %d\n", TrainingPairsLines);
+        fprintf(fp, "               ; Nodes/line: %.*e\n", DBL_DIG+2,(double)NumberOfNodes/(double)TrainingPairsLines);
+        if(Doweights)
+            fprintf(fp, "               ; Current weight: %.*e\n", DBL_DIG+2,Weight);
+        else
+            fprintf(fp, "               ; Current weight: N/A\n");
         }
     }
 
@@ -894,7 +903,7 @@ void optionStruct::printArgFile() const
         {
         strcat(name, "C");
         int L = strlen(name);
-        name[L] = C + '0';
+        name[L] = (char)(C + '0');
         name[L + 1] = 0;
         }
     if (Doweights)

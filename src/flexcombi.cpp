@@ -770,7 +770,7 @@ class treenode
                 tp += 1;
             if (Child.more)
                 tp += 2;
-            return tp;
+            return (typetype)tp;
             }
         treenode(char * rl, char * end, treenode * Sib, chain * ASib, treenode * Chld, chain * AChld)
             :Rule(rl,end),Sibling(Sib,ASib),Child(Chld,AChld){}

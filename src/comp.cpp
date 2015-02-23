@@ -4981,7 +4981,29 @@ void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,int
         }
     best = parms;
     parms.better(options);
+    options->setSwath(swath);
+    options->setSwathIteration(iterations);
+    options->setNumberOfNodes(Nnodes);
+    options->setTrainingPairsLines(lines);
+    options->setWeight(weight);
+
     options->printArgFile();
+    printf("%d.%d %d  \tparms ",swath,iterations,Nnodes);
+    int i = 0;
+    for(;i < NPARMS;++i)
+        {
+        printf("%7.6f",parms.Matrix[i]);
+        if(((i+1) % parms.ROWPARMS) == 0)
+            {
+            if(i == NPARMS - 1)
+                printf("\n");
+            else
+                printf(";\n");
+            }
+        else
+            printf(";");
+        }
+
     FILE * f = fopen(options->bestParms(),"a");
     if(f)
         {
@@ -5005,7 +5027,6 @@ void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,int
                ,DBL_DIG+2,fraction
                ,fraclines
                );
-//        fprintf(f,"        {         \t         \t         \t          // # decisions\n        ");
         fprintf(f,"        {{\n        ");
         int i = 0;
         for(;i < NPARMS;++i)
@@ -5013,12 +5034,6 @@ void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,int
             fprintf(f,"%.*e", DBL_DIG+2,parms.Matrix[i]);
             if(((i+1) % parms.ROWPARMS) == 0)
                 {
-                /*
-                if(i == NPARMS - 1)
-                    fprintf(f,"  //%d\n        ",pcnt[i >> 2]);
-                else
-                    fprintf(f,", //%d\n        ",pcnt[i >> 2]);
-                */
                 if(i == NPARMS - 1)
                     fprintf(f,"\n        ");
                 else
@@ -5027,7 +5042,6 @@ void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,int
             else
                 fprintf(f,",\t");
             }
-//        fprintf(f,"}         \t         \t         \t          //(%d unresolved comparisons)\n\n",pcnt[NPARMS >> 2]);
         fprintf(f,"}}\n\n");
         fclose(f);
         }
@@ -5150,15 +5164,16 @@ void testAngle()
     getchar();
     }
 
-bool brown()
+void brown()
     {
     static int it = 0;
     if(it++ < 2)
         {
         normalise(parms.Matrix);
-        return false;
+        return;
         }
-    double tangens = 0.1*pow(0.995,it);
+    double tangens = 1.0*pow(0.995,it);
+    //printf("tangens %f\n",tangens);
     double vector[6];
     double radius2 = 0.0;
     do
@@ -5186,8 +5201,7 @@ bool brown()
     times(vector,tangens);
     plus(parms.Matrix,vector,parms.ROWPARMS);
     normalise(parms.Matrix);
-    printvector("parms3",parms.Matrix,parms.ROWPARMS);
-    return false;
+    //printvector("parms3",parms.Matrix,parms.ROWPARMS);
     }
 
 bool init(optionStruct * options)
@@ -5635,7 +5649,6 @@ void setCompetitionFunction(optionStruct * options)
         if(!strcmp(options->compfunc(),funcstructs[i].number) || !strcmp(options->compfunc(),funcstructs[i].name))
             {
             comp = funcstructs[i].comp;
-            bool compute_parms = false;
             if(comp == comp_parms0_off)
                 {
                 for(unsigned int j = 0;j < sizeof(bests)/sizeof(bests[0]);++j)

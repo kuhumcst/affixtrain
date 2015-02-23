@@ -67,6 +67,11 @@ class optionStruct
         int FracBlobs; // Number of blobs used for training
         int FracLines; // Number of lines used for training
         bool SuffixOnlyParmSeen;
+        int Swath;
+        int SwathIteration;
+        int NumberOfNodes;
+        int TrainingPairsLines;
+        double Weight;
         OptReturnTp doSwitch(int c, char * locoptarg, char * progname);
         OptReturnTp readOptsFromFile(char * locoptarg,char * progname);
         void detectFloatingPointNumbers(char * S);
@@ -102,7 +107,13 @@ class optionStruct
         const double maxIterations()const{return N;}
         const int numberOfParms()const{return nD;}
         const double parm(int i)const{return (0<=i&&i<nD) ? D[i] : 0.0;}
-        const void setParm(int i,double v){if(0<=i&&i<nD)D[i]=v;}
+        void setParm(int i,double v){if(0<=i&&i<nD)D[i]=v;}
+
+        void setSwath(int S){Swath = S;}
+        void setSwathIteration(int SI){SwathIteration = SI;}
+        void setNumberOfNodes(int NoN){NumberOfNodes = NoN;}
+        void setTrainingPairsLines(int TPL){TrainingPairsLines = TPL;}
+        void setWeight(double W){Weight = W;}
 
         void print(FILE * fp) const;
         void printArgFile() const;

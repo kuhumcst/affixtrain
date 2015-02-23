@@ -2724,7 +2724,6 @@ static bool doTraining
     {
     bool moreToDo = false;
     Nnodes = 0;
-
     VertexPointerCount = 0;
 
     aFile afile(fname, options);

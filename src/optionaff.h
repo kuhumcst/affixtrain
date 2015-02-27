@@ -46,6 +46,7 @@ class optionStruct
         bool ComputeParms;// compute parms
         bool SuffixOnly;// suffix only
         bool Verbose;         // verbose
+        bool Test;
         double Minfraction;
         double Maxfraction;
         int K;    // Number of differently sized fractions of trainingdata 
@@ -98,6 +99,7 @@ class optionStruct
         const bool computeParms()const{return ComputeParms;}
         const bool suffixOnly()const{return SuffixOnly;}
         const bool verbose()const{return Verbose;}
+        const bool test()const{return Test;}
         const double minfraction()const{return Minfraction;}
         const double maxfraction()const{return Maxfraction;}
         const bool doweights()const{return Doweights;}
@@ -115,10 +117,20 @@ class optionStruct
         void setTrainingPairsLines(int TPL){TrainingPairsLines = TPL;}
         void setWeight(double W){Weight = W;}
 
+        void seti(const char * WordList);
+        void seto(const char * Result);
+        void sete(const char * Extra);
+        void setn(const char * Columns);
+        void setf(const char * Compfunc);
+        void setP(const char * ParamFile);
+        void setc(int cutoff){c = cutoff;}
+
         void print(FILE * fp) const;
         void printArgFile() const;
         
         optionStruct();
+        optionStruct(optionStruct & O);
         ~optionStruct();
+        void completeArgs();
         OptReturnTp readArgs(int argc, char * argv[]);
     };

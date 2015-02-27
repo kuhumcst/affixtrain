@@ -20,8 +20,9 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "1.73"
+#define VERSION "1.74"
 
+#include "testrules.h"
 #include "flexcombi.h"
 #include "optionaff.h"
 #include "applyaffrules.h"
@@ -3204,7 +3205,7 @@ void computeParms(optionStruct * options)
     delete[] fbuf;
     }
 
-static void trainRules(const char * tag, optionStruct * options)
+void trainRules(const char * tag, optionStruct * options)
     {
     CHECK("jglobTempDir");
     assert(options->flexrules() != NULL); // 20130125
@@ -3554,12 +3555,12 @@ int main(int argc, char **argv)
     switch (options.readArgs(argc, argv))
         {
         case GoOn:
-        break;
+            break;
         case Leave:
-        exit(0);
+            exit(0);
         case Error:
-        fprintf(stderr, "Error: Error in options. Exiting\n");
-        exit(1);
+            fprintf(stderr, "Error: Error in options. Exiting\n");
+            exit(1);
         }
 
     if (options.verbose())
@@ -3628,6 +3629,10 @@ int main(int argc, char **argv)
                     printf("NOT doing Tags\n");
                 trainRules("", &options);
                 }
+            }
+
+        if(options.test())
+            {
             }
 
         if (options.verbose())

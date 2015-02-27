@@ -21,10 +21,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
 #include "applyaffrules.h"
-#if DOTEST
-#include <stdio.h>
-#include <string.h>
 #include <assert.h>
+#include <string.h>
+#include <stdio.h>
+
+typedef unsigned char typetype;
 
 struct var
     {
@@ -32,219 +33,414 @@ struct var
     const char * e;
     };
 
-static char * buf = NULL;
-static long end;
-static char * result = NULL;
-static bool NewStyle = false;
-static bool newStyleRules()
-    {
-    return NewStyle;
-    }
+static char bufbuf[] = "\0\0\0\0\t\t\t\n"; //20090811: corrected wrong value // "lemma == word" default rule set
+static char * buf = bufbuf; // Setting buf directly to a constant string generates a warning in newer gcc
+static long buflen = 8;
+static char * result = 0;
 
-static const char * samestart(const char ** fields,const char * s,const char * we)
+static bool readRules(FILE * flexrulefile, long & end)
     {
-    const char * f = fields[0];
-    const char * e = fields[1]-1;
-    while((f < e) && (s < we) && (*f == *s))
+    if (flexrulefile)
         {
-        ++f;
-        ++s;
-        }
-    return f == e ? s : NULL;
-    }
-
-static const char * sameend(const char ** fields,const char * s,const char * wordend)
-    {
-    const char * f = fields[2];
-    const char * e = fields[3]-1;
-    const char * S = wordend - (e-f);
-    if(S >= s)
-        {
-        s = S;
-        while(f < e && *f == *S)
+        int start;
+        if (fread(&start, sizeof(int), 1, flexrulefile) != 1)
+            return 0;
+        if (start != *(int*)"\rV3\r")
             {
-            ++f;
-            ++S;
+            return 0;
             }
+        fseek(flexrulefile, 0, SEEK_END);
+        end = ftell(flexrulefile);
+        fseek(flexrulefile, sizeof(int), SEEK_SET);
+        end -= sizeof(int);
+        char * buf = new char[end + 1];
+        buflen = end;
+        if (buf && end > 0)
+            {
+            if (fread(buf, 1, end, flexrulefile) != (size_t)end)
+                return 0;
+            buf[end] = '\0';
+            }
+        return true;
         }
-    return f == e ? s : NULL;
+    return false;
     }
 
-static bool substr(const char ** fields,int k,const char * w,const char * wend,var * vars,int vindex)
+static bool substr(const char ** fields, int k, const char * w, const char * wend, var * vars, int vindex)
     {
-    if(w == wend)
+    if (w == wend)
         return false;
     const char * f = fields[k];
-    const char * e = fields[k+1]-1;
+    const char * e = fields[k + 1] - 1;
     const char * p = w;
     assert(f != e);
     const char * ff;
     const char * pp;
     do
         {
-        while((p < wend) && (*p != *f))
+        while ((p < wend) && (*p != *f))
             {
             ++p;
             }
-        if(p == wend)
+        if (p == wend)
             return false;
         pp = ++p;
-        ff = f+1;
-        while(ff < e)
+        ff = f + 1;
+        while (ff < e)
             {
-            if(pp == wend)
+            if (pp == wend)
                 return false;
-            if(*pp != *ff)
+            if (*pp != *ff)
                 break;
             ++pp;
             ++ff;
             }
-        }
-    while(ff != e);
-    vars[vindex].e = p-1;
-    vars[vindex+1].s = pp;
-    return true;
+        } while (ff != e);
+        vars[vindex].e = p - 1;
+        vars[vindex + 1].s = pp;
+        return true;
     }
 
-/*
-static void printpat(const char ** fields,int findex)
+static const char * samestart(const char ** fields, const char * s, const char * we)
     {
-    printf("findex %d {%.*s]",findex,fields[1] - fields[0] - 1,fields[0]);//,vars[0].e - vars[0].s,vars[0].s);
-    for(int m = 1;2*m+3 < findex;++m)
+    const char * f = fields[0];
+    const char * e = fields[1] - 1;
+    while ((f < e) && (s < we) && (*f == *s))
         {
-        int M = 2*m+3;
-        printf("[%.*s]",fields[M] - fields[M-1] - 1,fields[M-1]);//,vars[m].e - vars[m].s,vars[m].s);
+        ++f;
+        ++s;
         }
-    if(findex > 2)
-        printf("[%.*s}\n",fields[3] - fields[2] - 1,fields[2]);
-    else
-        printf("\n");
+    // On success: return pointer to first unparsed character
+    // On failure: return 0
+    return f == e ? s : 0;
     }
-*/
-static bool lemmatiseer(const char * word,const char * wordend,const char * buf,int maxpos)
+
+static const char * sameend(const char ** fields, const char * s, const char * wordend)
     {
-    int pos = 0;
-    do
+    const char * f = fields[2];
+    const char * e = fields[3] - 1;
+    const char * S = wordend - (e - f);
+    if (S >= s)
         {
-        var vars[20];
-        const char * fields[44];
-        // output=fields[1]+vars[0]+fields[5]+vars[1]+fields[7]+vars[2]+...+fields[2*n+3]+vars[n]+...+fields[3]
-        const char * wend = wordend;
-        buf += pos;
-        pos = *(int*)buf;
-        const char * p = buf + sizeof(int);
-        fields[0] = p;
-        int findex = 1;
-        while(*p != '\n')
+        s = S;
+        while (f < e && *f == *S)
             {
-            if(*p == '\t')
-                fields[findex++] = ++p;
-            else
-                ++p;
+            ++f;
+            ++S;
             }
-        fields[findex] = ++p; // p is now within 3 bytes from the next record.
-//        printpat(fields,findex);
-        // check Lpat
-        vars[0].s = samestart(fields,word,wend);
-        if(vars[0].s)
+        }
+    // On success: return pointer to successor of last unparsed character
+    // On failure: return 0
+    return f == e ? s : 0;
+    }
+
+static char * rewrite(const char *& word, const char *& wordend, const char * p)
+    {
+    var vars[20];
+    const char * fields[44]; // 44 = (2*20 + 3) + 1
+    // The even numbered fields contain patterns
+    // The odd numbered fields contain replacements
+    // The first two fields (0,1) refer to the prefix
+    // The third and fourth (2,3) fields refer to the affix
+    // The remaining fields (4,5,..,..) refer to infixes, from left to right
+    // output=fields[1]+vars[0]+fields[5]+vars[1]+fields[7]+vars[2]+...+fields[2*n+3]+vars[n]+...+fields[3]
+    const char * wend = wordend;
+    fields[0] = p;
+    int findex = 1;
+    while (*p != '\n')
+        {
+        if (*p == '\t')
+            fields[findex++] = ++p;
+        else
+            ++p;
+        }
+    fields[findex] = ++p;
+    //printpat(fields, findex);
+    // fields[findex] points to character after \n. 
+    // When 1 is subtracted, it points to the character following the last replacement.
+    // p is now within 3 bytes from the first Record of the subtree
+    //        printpat(fields,findex);
+    // check Lpat
+    vars[0].s = samestart(fields, word, wend);
+    if (vars[0].s)
+        {
+        // Lpat succeeded
+        vars[0].e = wend;
+        char * destination = NULL;
+        int printed = 0;
+        if (findex > 2) // there is more than just a prefix
             {
-            // Lpat succeeded
-            vars[0].e = wend;
-            if(findex > 2)
-                {
-                const char * newend = sameend(fields,vars[0].s,wend);
-                if(newend)
-                    wend = newend;
-                else
-                    continue;
-
-                int k;
-                const char * w = vars[0].s;
-                int vindex = 0;
-                for(k = 4;k < findex;k += 2)
-                    {
-                    if(!substr(fields,k,w,wend,vars,vindex))
-                        break;
-                    ++vindex;
-                    w = vars[vindex].s;
-                    }
-                if(k < findex)
-                    continue;
-                vars[vindex].e = newend;
-                long nxt = p - buf;
-                nxt += 3;
-                nxt >>= 2;
-                nxt <<= 2;
-                if(pos)
-                    maxpos = pos;
-                if(nxt >= maxpos || !lemmatiseer(vars[0].s,wend,buf+nxt,maxpos))
-                    {
-                    int resultlength = (fields[2] - fields[1] - 1) + (vars[0].e - vars[0].s) + (fields[4] - fields[3] - 1);
-                    int m;
-                    for(m = 1;2*m+3 < findex;++m)
-                        {
-                        int M = 2*m+3;
-                        resultlength += (fields[M+1] - fields[M] - 1) + (vars[m].e - vars[m].s);
-                        }
-                    result = new char[resultlength+1];
-                    int printed = sprintf(result,"%.*s%.*s",fields[2] - fields[1] - 1,fields[1],vars[0].e - vars[0].s,vars[0].s);
-
-                    for(m = 1;2*m+3 < findex;++m)
-                        {
-                        int M = 2*m+3;
-                        printed += sprintf(result+printed,"%.*s%.*s",fields[M+1] - fields[M] - 1,fields[M],vars[m].e - vars[m].s,vars[m].s);
-                        }
-                    sprintf(result+printed,"%.*s",fields[4] - fields[3] - 1,fields[3]);
-                    }
-                }
-            else if(vars[0].e == vars[0].s)
-                { 
-                result = new char[(fields[2] - fields[1] - 1)+1];
-                sprintf(result,"%.*s",fields[2] - fields[1] - 1,fields[1]);
-                }
+            const char * newend = sameend(fields, vars[0].s, wend);
+            if (newend)
+                wend = newend;
             else
-                continue;
+                return 0; //suffix didn't match
 
-    
-            return true;
+            int k;
+            const char * w = vars[0].s;
+            int vindex = 0;
+            for (k = 4; k < findex; k += 2)
+                {
+                if (!substr(fields, k, w, wend, vars, vindex))
+                    break;
+                ++vindex;
+                w = vars[vindex].s;
+                }
+            if (k < findex)
+                return 0;
+
+            vars[vindex].e = newend;
+            //                     length of prefix       length of first unmatched         length of suffix
+            ptrdiff_t resultlength = (fields[2] - fields[1] - 1) + (vars[0].e - vars[0].s) + (fields[4] - fields[3] - 1);/*20120709 int -> ptrdiff_t*/
+            int m;
+            for (m = 1; 2 * m + 3 < findex; ++m)
+                {
+                int M = 2 * m + 3;
+                //                    length of infix       length of unmatched after infix
+                resultlength += (fields[M + 1] - fields[M] - 1) + (vars[m].e - vars[m].s);
+                }
+            //++news;
+            destination = new char[resultlength + 1];
+            printed = sprintf(destination, "%.*s%.*s", (int)(fields[2] - fields[1] - 1), fields[1], (int)(vars[0].e - vars[0].s), vars[0].s);
+            for (m = 1; 2 * m + 3 < findex; ++m)
+                {
+                int M = 2 * m + 3;
+                printed += sprintf(destination + printed, "%.*s%.*s", (int)(fields[M + 1] - fields[M] - 1), fields[M], (int)(vars[m].e - vars[m].s), vars[m].s);
+                }
+            printed += sprintf(destination + printed, "%.*s", (int)(fields[4] - fields[3] - 1), fields[3]);
+            word = vars[0].s;
+            wordend = newend;
+            }
+        else if (vars[0].e == vars[0].s) // whole-word match: everything matched by "prefix"
+            {
+            //++news;
+            destination = new char[(fields[2] - fields[1] - 1) + 1];
+            printed = sprintf(destination, "%.*s", (int)(fields[2] - fields[1] - 1), fields[1]);
+            }
+        else
+            return 0; // something unmatched
+
+        return destination;
+        }
+    else
+        {
+        // Lpat failed
+        return 0; // prefix failed
+        }
+    }
+
+static char ** addLemma(char ** lemmas, const char * lemma)
+    {
+    if (lemma)
+        {
+        if (lemmas)
+            {
+            int i;
+            for (i = 0; lemmas[i]; ++i)
+                {
+                if (!strcmp(lemmas[i], lemma))
+                    {
+                    return lemmas;
+                    }
+                }
+            //++news;
+            char ** nlemmas = new char *[i + 2];
+            for (i = 0; lemmas[i]; ++i)
+                {
+                nlemmas[i] = lemmas[i];
+                }
+            //--news;
+            delete[] lemmas;
+            lemmas = nlemmas;
+            //++news;
+            lemmas[i] = new char[strlen(lemma) + 1];
+            strcpy(lemmas[i], lemma);
+            lemmas[++i] = 0;
             }
         else
             {
-            // Lpat failed
-            continue;
+            //++news;
+            lemmas = new char *[2];
+            lemmas[1] = 0;
+            //++news;
+            lemmas[0] = new char[strlen(lemma) + 1];
+            strcpy(lemmas[0], lemma);
             }
         }
-    while(pos);
-    return false;
+    return lemmas;
     }
 
 
-static bool readRules(FILE * flexrulefile)
+static char ** lemmatiseerV3(const char * word, const char * wordend, const char * buf, const char * maxpos, const char * parentcandidate, char ** lemmas);
+
+static char ** chainV3(const char * word, const char * wordend, const char * buf, const char * maxpos, const char * parentcandidate, char ** lemmas)
     {
-    fseek(flexrulefile,0,SEEK_END);
-    end = ftell(flexrulefile);
-
-    buf = new char[end+1];// 20140224 +1
-    rewind(flexrulefile);
-    fread(buf,1,end,flexrulefile);
-    buf[end] = '\0';// 20140224 new
-    fclose(flexrulefile);
-    NewStyle = true;
-    return true;
+    for (int next = *(int*)buf
+         ;
+         ; buf += next, next = *(int*)buf
+         )
+        {
+        assert((next & 3) == 0);
+        assert(next == -4 || next == 0 || next == 4 || next >= 12);
+        if (next == -4 || next == 4)
+            {
+            // add parent candidate to lemmas.
+            lemmas = addLemma(lemmas, parentcandidate);
+            }
+        else
+            {
+            char ** temp = lemmatiseerV3(word, wordend, buf + sizeof(int), next > 0 ? buf + next : maxpos, parentcandidate, lemmas);
+            if (temp)
+                {
+                lemmas = temp;
+                }
+            else
+                {
+                lemmas = addLemma(lemmas, parentcandidate);
+                }
+            }
+        if (next <= 0)
+            break;
+        }
+    return lemmas;
     }
 
+static char ** lemmatiseerV3(const char * word, const char * wordend, const char * buf, const char * maxpos, const char * parentcandidate, char ** lemmas)
+    {
+    if (maxpos <= buf)
+        return 0;
+    const char * cword = word;
+    const char * cwordend = wordend;
+    int pos = 0;
+    pos = *(int*)buf;
+    const char * until;
+    char ** result;
+    assert((pos & 3) == 0);
+    assert(pos >= 0);
+    if (pos == 0)
+        until = maxpos;
+    else
+        until = buf + pos;
+    typetype type;
+    const char * p = buf + sizeof(int);
+    type = *(typetype*)p;
+    /*
+    buf+4   first bit  0: Fail branch is unambiguous, buf points to tree. (A)
+    first bit  1: Fail branch is ambiguous, buf points to chain. (B)
+    second bit 0: Success branch is unambiguous, buf+8 points to tree (C)
+    second bit 1: Success branch is ambiguous, buf+8 points to chain (D)
+    */
+    if (type < 4)
+        {
+        ++p;
+        }
+    else
+        {
+        type = 0; // no ambiguity
+        }
+    char * candidate = rewrite(cword, cwordend, p);
+    p = strchr(p, '\n');
+    ptrdiff_t off = p - buf;
+    off += sizeof(int);
+    off /= sizeof(int);
+    off *= sizeof(int);
+    p = buf + off;
+    if (candidate)
+        {
+        switch (type)
+            {
+            case 0:
+            case 1:
+                {
+                /* Unambiguous children. If no child succeeds, take the
+                candidate, otherwise take the succeeding child's result. */
+                char ** childcandidates = lemmatiseerV3(cword, cwordend, p, until, candidate, lemmas);
+                result = childcandidates ? childcandidates : addLemma(lemmas, candidate);
+                //--news;
+                delete[] candidate;
+                return result;
+                }
+            case 2:
+            case 3:
+                {
+                /* Ambiguous children. If no child succeeds, take the
+                candidate, otherwise take the succeeding children's result
+                Some child may in fact refer to its parent, which is our
+                current candidate. We pass the candidate so it can be put
+                in the right position in the sequence of answers. */
+                char ** childcandidates = chainV3(cword, cwordend, p, until, candidate, lemmas);
+                result = childcandidates ? childcandidates : addLemma(lemmas, candidate);
+                //--news;
+                delete[] candidate;
+                return result;
+                }
+            }
+        }
+    else
+        {
+        switch (type)
+            {
+            case 0:
+            case 2:
+                {
+                /* Unambiguous siblings. If no sibling succeeds, take the
+                parent's candidate. */
+                char ** childcandidates = lemmatiseerV3(word, wordend, until, maxpos, parentcandidate, lemmas);
+                result = childcandidates ? childcandidates : addLemma(lemmas, parentcandidate);
+                return result;
+                }
+            case 1:
+            case 3:
+                {
+                /* Ambiguous siblings. If a sibling fails, the parent's
+                candidate is taken. */
+                char ** childcandidates = chainV3(word, wordend, until, maxpos, parentcandidate, lemmas);
+                result = childcandidates ? childcandidates : addLemma(lemmas, parentcandidate);
+                return result;
+                }
+            }
+        }
+
+    return lemmas;
+    }
+
+static char * concat(char ** L)
+    {
+    if (L)
+        {
+        int lngth = 0;
+        int i;
+        for (i = 0; L[i]; ++i)
+            lngth += strlen(L[i]) + 1;
+        ++lngth;
+        //++news;
+        char * ret = new char[lngth];
+        ret[0] = 0;
+        for (i = 0; L[i]; ++i)
+            {
+            strcat(ret, L[i]);
+            //--news;
+            delete[] L[i];
+            strcat(ret, " ");
+            }
+        //--news;
+        delete[] L;
+        ret[lngth-2] = 0;
+        return ret;
+        }
+    else
+        return 0;
+    }
 
 bool readRules(const char * filename)
     {
     FILE * f = fopen(filename,"rb");
     if(f)
         {
-        return readRules(f);
+        return readRules(f,buflen);
         }
     return false;
     }
-
-
 
 void deleteRules()
     {
@@ -252,7 +448,6 @@ void deleteRules()
     buf = NULL;
     delete [] result;
     result = NULL;
-    NewStyle = false;
     }
 
 
@@ -263,10 +458,10 @@ const char * applyRules(const char * word)
         int len = strlen(word);
         delete [] result;
         result = NULL;
-        lemmatiseer(word,word+len,buf,end);
+        char ** lemmas = 0;
+        result = concat(lemmatiseerV3(word,word+len,buf,buf+buflen,0,lemmas));
         return result;
         }
     return NULL;
     }
 
-#endif

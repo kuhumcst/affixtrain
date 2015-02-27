@@ -33,7 +33,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 //        printf("usage: makeaffixrules -w <word list> -c <cutoff> -C <expected cutoff> -o <flexrules> -e <extra> -n <columns> -f <compfunc> [<word list> [<cutoff> [<flexrules> [<extra> [<columns> [<compfunc>]]]]]]\n");
 
-static char opts[] = "?@:B:b:c:C:D:e:f:hH:i:j:K:L:M:N:n:o:O:p:P:Q:q:R:s:v:W:" /* GNU: */ "wr";
+static char opts[] = "?@:B:b:c:C:D:e:f:hH:i:j:K:L:M:N:n:o:O:p:P:Q:q:R:s:t:v:W:" /* GNU: */ "wr";
 static char *** Ppoptions = NULL;
 static char ** Poptions = NULL;
 static int optionSets = 0;
@@ -43,6 +43,44 @@ char * dupl(const char * s)
     char * d = new char[strlen(s) + 1];
     strcpy(d, s);
     return d;
+    }
+
+optionStruct::optionStruct(optionStruct & O)
+    {
+    c = O.c;
+    C = O.C;
+    e = dupl(O.e);
+    f = dupl(O.f);
+    i = dupl(O.i);
+    n = dupl(O.n);
+    o = dupl(O.o);
+    B = dupl(O.B);
+    P = dupl(O.P);
+    j = dupl(O.j);
+    b = dupl(O.b);
+    nD = O.nD;
+    D = new double[nD];
+    for(int ii = 0;ii < nD;++ii)
+        D[ii] = O.D[ii];
+    ComputeParms = O.ComputeParms;
+    SuffixOnly = O.SuffixOnly;
+    SuffixOnlyParmSeen = O.SuffixOnlyParmSeen;
+    Verbose = O.Verbose;
+    Minfraction = O.Minfraction;
+    Maxfraction = O.Maxfraction;
+    Doweights = O.Doweights;
+    Redo = O.Redo;
+    Test = O.Test;
+    Q = O.Q;
+    q = O.q;
+    K = O.K;
+    M = O.M;
+    N = O.N;
+
+    Blobs = O.Blobs;
+    Lines = O.Lines;
+    FracBlobs = O.FracBlobs;
+    FracLines = O.FracLines;
     }
 
 optionStruct::optionStruct()
@@ -71,6 +109,7 @@ optionStruct::optionStruct()
     Maxfraction = 1.0; // H
     Doweights = false;
     Redo = false;
+    Test = false;
     Q = 1;
     q = 1;
     K = 20;   // Number of differently sized fractions of trainingdata 
@@ -265,11 +304,12 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
             printf("-j: directory to store the bulk of intermediate results, also textual presentations of rules. Must not include final (back)slash.\n");
             printf("-L: minimum fraction (with option -f0 or -p)\n");
             printf("-H: maximum fraction (with option -f0 or -p)\n");
-            printf("-K  number of differently sized fractions of trainingdata\n");
-            printf("-N  number of iterations of training with same fraction of training data when fraction is minimal\n");
-            printf("-M  number of iterations of training with same fraction of training data when fraction is maximal\n");
+            printf("-K: number of differently sized fractions of trainingdata\n");
+            printf("-N: number of iterations of training with same fraction of training data when fraction is minimal\n");
+            printf("-M: number of iterations of training with same fraction of training data when fraction is maximal\n");
             printf("-W: minimise weight, not count (sum of rules) (with -p or -f0)\n");
             printf("-P: write parameters to file (default parms.txt if -p or -f0, otherwise no parameter file)\n");
+            printf("-t: test the rules\n");
             printf("-n: columns (default 120):\n");
             printf("  1:Word\n");
             printf("  F:Word\n");
@@ -367,6 +407,9 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
             break;
         case 'v': // verbose
             Verbose = locoptarg && *locoptarg == '-' ? false : true;
+            break;
+        case 't': // test
+            Test = locoptarg && *locoptarg == '-' ? false : true;
             break;
             // GNU >>
         case 'w':
@@ -614,51 +657,8 @@ OptReturnTp optionStruct::readOptsFromFile(char * locoptarg, char * progname)
     return result;
     }
 
-OptReturnTp optionStruct::readArgs(int argc, char * argv[])
+void optionStruct::completeArgs()
     {
-    int optchar;
-
-    OptReturnTp result = GoOn;
-    while ((optchar = getopt(argc, argv, opts)) != -1)
-        {
-        OptReturnTp res = doSwitch(optchar, optarg, argv[0]);
-        if (res > result)
-            result = res;
-        }
-    if (!i && !c && !o && !e && !n && !f)
-        {
-        while (optind < argc)
-            {
-            if (!i)
-                i = dupl(argv[optind++]);
-            else if (c < -1)
-                {
-                if (argv[optind] && *argv[optind])
-                    c = *argv[optind] - '0';
-
-                if (c > 9 || c < 0)
-                    c = -1;
-                }
-            else if (!o)
-                o = dupl(argv[optind++]);
-            else if (!e)
-                e = dupl(argv[optind++]);
-            else if (!n)
-                n = dupl(argv[optind++]);
-            else if (!f)
-                f = dupl(argv[optind++]);
-            else
-                printf("Too many arguments:%s\n", argv[optind]);
-            }
-        }
-    else if (optind < argc)
-        {
-        if (i && c && o && e && n && f)
-            printf("Too many arguments:%s\n", argv[optind]);
-        else
-            printf("You cannot have a command line with both option-style arguments and option-less-fixed-position arguments:%s\n", argv[optind]);
-        }
-
     if (SuffixOnly)
         {
         if (e)
@@ -790,7 +790,55 @@ OptReturnTp optionStruct::readArgs(int argc, char * argv[])
     if (verbose())
         printf("blobs:%d lines %d\n", Blobs, Lines);
     fclose(f);
+    }
 
+
+OptReturnTp optionStruct::readArgs(int argc, char * argv[])
+    {
+    int optchar;
+
+    OptReturnTp result = GoOn;
+    while ((optchar = getopt(argc, argv, opts)) != -1)
+        {
+        OptReturnTp res = doSwitch(optchar, optarg, argv[0]);
+        if (res > result)
+            result = res;
+        }
+    if (!i && !c && !o && !e && !n && !f)
+        {
+        while (optind < argc)
+            {
+            if (!i)
+                i = dupl(argv[optind++]);
+            else if (c < -1)
+                {
+                if (argv[optind] && *argv[optind])
+                    c = *argv[optind] - '0';
+
+                if (c > 9 || c < 0)
+                    c = -1;
+                }
+            else if (!o)
+                o = dupl(argv[optind++]);
+            else if (!e)
+                e = dupl(argv[optind++]);
+            else if (!n)
+                n = dupl(argv[optind++]);
+            else if (!f)
+                f = dupl(argv[optind++]);
+            else
+                printf("Too many arguments:%s\n", argv[optind]);
+            }
+        }
+    else if (optind < argc)
+        {
+        if (i && c && o && e && n && f)
+            printf("Too many arguments:%s\n", argv[optind]);
+        else
+            printf("You cannot have a command line with both option-style arguments and option-less-fixed-position arguments:%s\n", argv[optind]);
+        }
+
+    completeArgs();
     return result;
     }
 
@@ -883,6 +931,43 @@ void optionStruct::print(FILE * fp) const
             fprintf(fp, "               ; Current weight: N/A\n");
         }
     }
+
+void optionStruct::seti(const char * WordList)
+    {
+    delete i;
+    i = dupl(WordList);
+    }
+
+void optionStruct::seto(const char * Result)
+    {
+    delete o;
+    o = dupl(Result);
+    }
+
+void optionStruct::sete(const char * Extra)
+    {
+    delete e;
+    e = dupl(Extra);
+    }
+
+void optionStruct::setn(const char * Columns)
+    {
+    delete n;
+    n = dupl(Columns);
+    }
+
+void optionStruct::setf(const char * Compfunc)
+    {
+    delete f;
+    f = dupl(Compfunc);
+    }
+
+void optionStruct::setP(const char * ParamFile)
+    {
+    delete P;
+    P = dupl(ParamFile);
+    }
+
 
 void optionStruct::printArgFile() const
     {

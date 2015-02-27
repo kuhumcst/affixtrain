@@ -25,9 +25,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "settingsaffixtrain.h"
 
-#if DOTEST
 bool readRules(const char * filename);
 const char * applyRules(const char * word);
 void deleteRules();
-#endif
+
 #endif

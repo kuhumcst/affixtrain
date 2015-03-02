@@ -1821,7 +1821,9 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
     */
     /** /
     flog = fopen("flog.txt","ab");
+    ++openfiles;
     this->V->print(flog,level);
+    --openfiles;
     fclose(flog);
     //*/
 
@@ -1866,6 +1868,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
     trainingPair * Ambiguous = 0;
     /** /
     flog = fopen("flog.txt","ab");
+    ++openfiles;
     if(this->Right)
         {
         fprintf(flog,"%.*s",level,"");
@@ -1876,6 +1879,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
         fprintf(flog,"%.*s",level,"");
         Wrong->printAll(flog,"wrong:");
         }
+    --openfiles;
     fclose(flog);
     //*/
     //if(pvp){checkPV(pvp,Np);}
@@ -1969,7 +1973,9 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
             {
             /** /
             flog = fopen("flog.txt","ab");
+            ++openfiles;
             fprintf(flog,"*** NO RULES MADE! ***\n");
+            --openfiles;
             fclose(flog);
             //*/
             delete [] pv;

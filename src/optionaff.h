@@ -24,6 +24,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 typedef enum {GoOn = 0,Leave = 1,Error = 2} OptReturnTp;
 
+void cleanUpOptions();
+
 class optionStruct
     {
     private:
@@ -47,6 +49,7 @@ class optionStruct
         bool SuffixOnly;// suffix only
         bool Verbose;         // verbose
         bool Test;
+        bool TrainTest;
         double Minfraction;
         double Maxfraction;
         int K;    // Number of differently sized fractions of trainingdata 
@@ -100,6 +103,7 @@ class optionStruct
         const bool suffixOnly()const{return SuffixOnly;}
         const bool verbose()const{return Verbose;}
         const bool test()const{return Test;}
+        const bool trainTest()const{return TrainTest;}        
         const double minfraction()const{return Minfraction;}
         const double maxfraction()const{return Maxfraction;}
         const bool doweights()const{return Doweights;}

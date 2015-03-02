@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define VERSION "1.74"
 
+#include "affixtrain.h"
 #include "testrules.h"
 #include "flexcombi.h"
 #include "optionaff.h"
@@ -50,6 +51,9 @@ static const char StartAnyEnd[4] = { START, ANY, END, 0 };
 static const char * SCUT = ".cutoff";
 #define CHECK(a)
 
+
+int openfiles = 0;
+
 const char * tempDir(const char * filename, optionStruct * options)
     {
     static char * fullname = NULL;
@@ -62,7 +66,7 @@ const char * tempDir(const char * filename, optionStruct * options)
             delete[] fullname;
         length = strlen(options->tempDir()) + strlen(filename) + 2;
         fullname = new char[length];
-        written = sprintf(fullname, "%s%c%s", options->tempDir(), DIRSEP, filename);
+        written = sprintf(fullname, "%s%s", options->tempDir(), filename);
         if ((size_t)written >= length)
             {
             printf("tempDir: Buffer overrun");
@@ -140,8 +144,10 @@ FILE * fopenOrExit(const char * name, const char * mode, const char * descriptio
     assert(mode);
     assert(descriptionOfFile);
     FILE * fp = fopen(name, mode);
+    ++openfiles;
     if (!fp)
         {
+        printf("Open files: %d\n",openfiles);
         fprintf
             (stderr
             , "%s: Cannot open file %s for %s (%s). Exiting.\n"
@@ -366,6 +372,7 @@ struct aFile
             file.chars[size++] = (char)kar;
             }
         file.chars[size] = '\0';
+        --openfiles;
         fclose(fp);
 
         eob = file.chars + size;
@@ -2261,7 +2268,9 @@ static void markTheAmbiguousPairs(trainingPair * TrainingPair, const char * ext,
     FILE * fallFile = fopenOrExit(tempDir(filename, options), "wb", "fallFile");
 
     /*int ambi =*/ markAmbiguous(pairs, TrainingPair, famb, fallFile, options);
+    --openfiles;
     fclose(famb);
+    --openfiles;
     fclose(fallFile);
 
 #if PESSIMISTIC
@@ -2269,7 +2278,10 @@ static void markTheAmbiguousPairs(trainingPair * TrainingPair, const char * ext,
     FILE * fparadigms = fopenOrExit(filename,"wb","fparadigms");
     markParadigms(pairs,TrainingPair,fparadigms);
     if(fparadigms)
+        {
+        --openfiles;
         fclose(fparadigms);
+        }
 #endif
     }
 
@@ -2296,12 +2308,14 @@ static void writeAllAvailablePairs(trainingPair * TrainingPair, const char * ext
                                );
     if (ftrain)
         {
+        --openfiles;
         fclose(ftrain);
         ftrain = NULL;
         }
 #if WRITEINVERTED
     if(fpinverted)
         {
+        --openfiles;
         fclose(fpinverted);
         ftrain = NULL;
         }
@@ -2328,8 +2342,11 @@ static void writeAllTestPairs(trainingPair * TrainingPair, const char * ext, int
         {
         printf("trainingpairs_%s.txt testpairs_%s.txt tests_%s.txt written\n", ext, ext, ext);
         }
+    --openfiles;
     fclose(ftrain);
+    --openfiles;
     fclose(ftestp);
+    --openfiles;
     fclose(ftests);
     }
 /*
@@ -2486,6 +2503,7 @@ static void rearrange
             written++;
             }
         }
+    --openfiles;
     fclose(fo);
     delete[] buf;
     delete[] size;
@@ -2511,6 +2529,7 @@ static bool writeAndTest(node * tree, const char * ext, int threshold, const cha
         int NnodesR = 0;
         int N = tree->print(foo,0,Nnodes,NnodesR);
         fprintf(foo,"threshold %d:%d words %d nodes %d weight %f nodes with words\n\n",threshold,N,Nnodes,NnodesR,weight);
+        --openfiles;
         fclose(foo);
         sprintf(filename,"rules_%d%s.txt",threshold,ext);
         foo = fopenOrExit(filename,"wb","rules");
@@ -2554,6 +2573,7 @@ static bool writeAndTest(node * tree, const char * ext, int threshold, const cha
             fprintf(foo,"tree={%d %f}\n",Nnodes,weight); // "rules_%d%s.txt"
 #endif
             fprintf(fono, "%d\n%f", Nnodes, weight); // "numberOfRules_%d.txt"
+            --openfiles;
             fclose(fono);
             int nr = 0;
             strng L("");
@@ -2574,9 +2594,11 @@ static bool writeAndTest(node * tree, const char * ext, int threshold, const cha
                 , options
                 );
 #if BRACMATOUTPUT
+            --openfiles;
             fclose(fobra);
 #endif
 #if RULESASTEXTINDENTED
+            --openfiles;
             fclose(foo);
 #endif
             if (nflexrules)
@@ -2606,6 +2628,7 @@ static bool writeAndTest(node * tree, const char * ext, int threshold, const cha
                     );
                 filename[strlen(filename) - 1]--; // change ".lem" back to ".lel"
                 }
+            --openfiles;
             fclose(folel);
             if (remove(tempDir(filename, options))) // del ".lel"
                 {
@@ -2616,26 +2639,45 @@ static bool writeAndTest(node * tree, const char * ext, int threshold, const cha
                     }
                 }
 #if RULESASTEXT
+            --openfiles;
             fclose(foleltxt);
 #endif
             return true;
             }
         else
             {
+            if(fono)
+                {
+                --openfiles;
+                fclose(fono);
+                }
+
 #if RULESASTEXTINDENTED
             if(foo)
+                {
+                --openfiles;
                 fclose(foo);
+                }
 
 #endif
 #if BRACMATOUTPUT
             if (fobra)
+                {
+                --openfiles;
                 fclose(fobra);
+                }
 #endif
             if (folel)
+                {
+                --openfiles;
                 fclose(folel);
+                }
 #if RULESASTEXT
             if(foleltxt)
+                {
+                --openfiles;
                 fclose(foleltxt);
+                }
 #endif
             }
         }
@@ -2654,6 +2696,7 @@ static void testf(node * tree,trainingPair * TestPair,const char * ext,int thres
         lemmatise(tree,TestPair);
         sprintf(filename,"test_%d%s.txt",threshold,ext);
         FILE * ftest = fopen(filename,"ab+");
+        ++openfiles;
         if(!ftest)
             fprintf(stderr,"Error (testf): Cannot open \"%s\" for appending\n",filename);
         showResults(TestPair,wrong,right,both,ftest);
@@ -2661,6 +2704,7 @@ static void testf(node * tree,trainingPair * TestPair,const char * ext,int thres
         if(ftest)
             fprintf(ftest,"test pairs %d threshold %d vertices %d right %d (%f) wrong %d (%f) both %d (%f)\n\n",tot,threshold,tree->count(),right,(right*100.0)/tot,wrong,(wrong*100.0)/tot,both,(both*100.0)/tot);
         fresults = fopen("results.txt","ab+");
+        ++openfiles;
         if(!fresults)
             fprintf(stderr,"Error (testf): Cannot open \"%s\" for appending\n","results.txt");
         if(fresults)
@@ -2676,9 +2720,15 @@ static void testf(node * tree,trainingPair * TestPair,const char * ext,int thres
                 }
             }
         if(fresults)
+            {
+            --openfiles;
             fclose(fresults);
+            }
         if(ftest)
+            {
+            --openfiles;
             fclose(ftest);
+            }
         }
     else // requires PERC <= 0
         {
@@ -2763,13 +2813,25 @@ static bool doTraining
         }
 
     if (nexttrain)
+        {
+        --openfiles;
         fclose(nexttrain); /* The training that still has to be done, containing all unambiguous pairs and all that remains of the ambiguous pairs. */
+        }
     if (done)
+        {
+        --openfiles;
         fclose(done); /* Those parts of ambiguous pairs that are done in this pass. These are typically the most regular parts of ambiguous pairs. */
+        }
     if (combined)
+        {
+        --openfiles;
         fclose(combined); /* The sum of the above two. */
+        }
     if (disamb)
+        {
+        --openfiles;
         fclose(disamb);  /* The training that has been done, containing all unambiguous pairs and all parts of ambiguous pairs that were done in this pass. */
+        }
 
     FILE * wordsFile = fopenOrExit(tempDir(wordsGroupedByRuleName, options), "wb", "words file");
     ambivalentWords = 0;
@@ -2781,6 +2843,7 @@ static bool doTraining
             , allwords
             , ambivalentWords
             , alternatives);
+    --openfiles;
     fclose(wordsFile); /* Lists all words, grouped by the rule that creates each word's lemma. */
 
     FILE * fcounting = fopenOrExit(tempDir(numbersName, options), "wb", "counting");
@@ -2788,6 +2851,7 @@ static bool doTraining
     fprintf(fcounting, "Nodes\tPairs\tlog(Nodes)\tlog(Pairs)\n");
     int locnodes = 0, locpairs = 0;
     top->Counting(locnodes, locpairs, fcounting);
+    --openfiles;
     fclose(fcounting);
 
     if (nflexrulesFormat)
@@ -2875,6 +2939,7 @@ const int partOfFile(const char * fbuf, const double fraction, optionStruct * op
         {
         flog = fopenOrExit(options->currentParms(), "a", "log file");
         fprintf(flog, "%s: blobs=%d lines=%d fraction=%f most penalized=%d\n", options->wordList(), options->blobs(), options->lines(), fraction, node::mostPenalized);
+        --openfiles;
         fclose(flog);
         flog = 0;
         }
@@ -2882,6 +2947,7 @@ const int partOfFile(const char * fbuf, const double fraction, optionStruct * op
     double bucket = fraction;
     int kar;
     FILE * f = fopen(options->wordList(), "r");
+    ++openfiles;
     if ((double)options->blobs() * fraction > 1.0)
         {
         int bl = 1;
@@ -2946,7 +3012,9 @@ const int partOfFile(const char * fbuf, const double fraction, optionStruct * op
         if (options->currentParms() && !flog)
             {
             flog = fopenOrExit(options->currentParms(), "a", "log file");
+            ++openfiles;
             fprintf(flog, "Read %d blobs\n", bl);
+            --openfiles;
             fclose(flog);
             flog = 0;
             }
@@ -2973,6 +3041,9 @@ const int partOfFile(const char * fbuf, const double fraction, optionStruct * op
             fputc(kar, f2);
             }
         }
+    --openfiles;
+    fclose(f);
+    --openfiles;
     fclose(f2);
 
     f2 = fopenOrExit(fbuf, "r", "computeParms");
@@ -2982,12 +3053,14 @@ const int partOfFile(const char * fbuf, const double fraction, optionStruct * op
         if (kar == '\n')
             ++fraclines;
         }
+    --openfiles;
     fclose(f2);
     options->setReadLines(fraclines);
     if (options->currentParms() && !flog)
         {
         flog = fopenOrExit(options->currentParms(), "a", "log file");
         fprintf(flog, "Use %d lines of %d\n", fraclines, options->lines());
+        --openfiles;
         fclose(flog);
         flog = 0;
         }
@@ -3123,6 +3196,7 @@ void computeParms(optionStruct * options)
                 CHECK("D2dglobTempDir");
                 fprintf(flog, "//iteration:%d.%d %s\n", swath, iterations, options->doweights() ? "weights" : "count");
                 CHECK("D2eglobTempDir");
+                --openfiles;
                 fclose(flog);
                 flog = 0;
                 }
@@ -3374,6 +3448,7 @@ void trainRules(const char * tag, optionStruct * options)
         duration = (double)(finish - start) / CLOCKS_PER_SEC;
 
         fprintf(fo, "%2.1f seconds\n", duration);
+        --openfiles;
         fclose(fo);
         if (options->verbose())
             {
@@ -3474,11 +3549,13 @@ void trainRules(const char * tag, optionStruct * options)
                 if (options->verbose())
                     printf("testfile %s\n", testfile);
                 FILE * fptest = fopen(testfile, "w");
+                ++openfiles;
                 bool hasDir = false;
                 if (fptest)
                     {
                     if (options->verbose())
                         printf("testfile created\n");
+                    --openfiles;
                     fclose(fptest);
                     remove(testfile);
                     if (options->verbose())
@@ -3494,10 +3571,12 @@ void trainRules(const char * tag, optionStruct * options)
                         printf("command %s\n", command);
                     system(command);
                     fptest = fopen(testfile, "w");
+                    ++openfiles;
                     if (fptest)
                         {
                         if (options->verbose())
                             printf("testfile created\n");
+                        --openfiles;
                         fclose(fptest);
                         remove(testfile);
                         if (options->verbose())
@@ -3539,6 +3618,7 @@ static void initOutput(const char * path)
     if (!path)
         return;
     FILE * fp = fopenOrExit(path, "w", "initOutput");
+    --openfiles;
     fclose(fp);
     }
 
@@ -3578,8 +3658,10 @@ int main(int argc, char **argv)
     else
         {
         FILE * fptest = fopen(tempDir("testFile", &options), "wb");
+        ++openfiles;
         if (fptest)
             {
+            --openfiles;
             fclose(fptest);
             remove(tempDir("testFile", &options));
             }
@@ -3633,6 +3715,7 @@ int main(int argc, char **argv)
 
         if(options.test())
             {
+            testrules(&options);
             }
 
         if (options.verbose())
@@ -3642,4 +3725,5 @@ int main(int argc, char **argv)
             printf("\nAffixTrain OK\n");
             }
         }
+    cleanUpOptions();
     }

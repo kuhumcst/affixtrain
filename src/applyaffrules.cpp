@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
 #include "applyaffrules.h"
+#include "affixtrain.h"
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
@@ -33,33 +34,53 @@ struct var
     const char * e;
     };
 
-static char bufbuf[] = "\0\0\0\0\t\t\t\n"; //20090811: corrected wrong value // "lemma == word" default rule set
-static char * buf = bufbuf; // Setting buf directly to a constant string generates a warning in newer gcc
-static long buflen = 8;
+//static char * buf = 0;
+//static long buflen = 0;
+
+class buffer
+    {
+    public:
+        char * buf;
+        long buflen;
+        buffer()
+            {
+            buf = 0;
+            buflen = 0;
+            }
+        ~buffer()
+            {
+            delete [] buf;
+            }
+    };
+
 static char * result = 0;
 
-static bool readRules(FILE * flexrulefile, long & end)
+static bool readRules(FILE * flexrulefile, buffer * Buffer)
     {
     if (flexrulefile)
         {
         int start;
         if (fread(&start, sizeof(int), 1, flexrulefile) != 1)
             return 0;
-        if (start != *(int*)"\rV3\r")
-            {
-            return 0;
-            }
         fseek(flexrulefile, 0, SEEK_END);
-        end = ftell(flexrulefile);
-        fseek(flexrulefile, sizeof(int), SEEK_SET);
-        end -= sizeof(int);
-        char * buf = new char[end + 1];
-        buflen = end;
-        if (buf && end > 0)
+        Buffer->buflen = ftell(flexrulefile);
+        if (start == *(int*)"\rV3\r")
             {
-            if (fread(buf, 1, end, flexrulefile) != (size_t)end)
+            fseek(flexrulefile, sizeof(int), SEEK_SET);
+            Buffer->buflen -= sizeof(int);
+            }
+        else if (start == 0)
+            {
+            fseek(flexrulefile, 0, SEEK_SET);
+            }
+        else
+            return false;
+        Buffer->buf = new char[Buffer->buflen + 1];
+        if (Buffer->buf && Buffer->buflen > 0)
+            {
+            if (fread(Buffer->buf, 1, Buffer->buflen, flexrulefile) != (size_t)Buffer->buflen)
                 return 0;
-            buf[end] = '\0';
+            Buffer->buf[Buffer->buflen] = '\0';
             }
         return true;
         }
@@ -412,56 +433,114 @@ static char * concat(char ** L)
         int i;
         for (i = 0; L[i]; ++i)
             lngth += strlen(L[i]) + 1;
-        ++lngth;
+        //++lngth;
         //++news;
         char * ret = new char[lngth];
         ret[0] = 0;
-        for (i = 0; L[i]; ++i)
+        if(L[0])
             {
+            strcat(ret, L[0]);
+            delete[] L[0];
+            }
+        for (i = 1; L[i]; ++i)
+            {
+            strcat(ret, "|");
             strcat(ret, L[i]);
-            //--news;
             delete[] L[i];
-            strcat(ret, " ");
             }
         //--news;
         delete[] L;
-        ret[lngth-2] = 0;
+        ret[lngth-1] = 0;
         return ret;
         }
     else
         return 0;
     }
 
-bool readRules(const char * filename)
+bool readRules(const char * filename,buffer * Buffer)
     {
     FILE * f = fopen(filename,"rb");
+    ++openfiles;
     if(f)
         {
-        return readRules(f,buflen);
+        bool result = readRules(f,Buffer);
+        --openfiles;
+        fclose(f);
+        return result;
         }
     return false;
     }
 
 void deleteRules()
     {
-    delete [] buf;
-    buf = NULL;
     delete [] result;
     result = NULL;
     }
 
 
-const char * applyRules(const char * word)
+const char * applyRules(const char * word,buffer * Buffer)
     {
-    if(buf)
+    if(Buffer->buf)
         {
         int len = strlen(word);
         delete [] result;
         result = NULL;
         char ** lemmas = 0;
-        result = concat(lemmatiseerV3(word,word+len,buf,buf+buflen,0,lemmas));
+        result = concat(lemmatiseerV3(word,word+len,Buffer->buf,Buffer->buf+Buffer->buflen,0,lemmas));
         return result;
         }
     return NULL;
+    }
+
+bool lemmatiseFile(const char * OneWordPerLineFile,const char * rulefile,const char * resultFile)
+    {
+    //return false;
+    buffer Buffer;
+    if(!readRules(rulefile,&Buffer))
+        return false;
+
+    FILE * OWPLF = fopen(OneWordPerLineFile,"rb");
+    ++openfiles;
+    if(!OWPLF)
+        {
+        deleteRules();
+        return false;
+        }
+
+    FILE * rf = fopen(resultFile,"wb");
+    ++openfiles;
+    if(!rf)
+        {
+        --openfiles;
+        fclose(OWPLF);
+        deleteRules();
+        return false;
+        }
+
+    fseek(OWPLF, 0, SEEK_END);
+    long wend = ftell(OWPLF);
+    fseek(OWPLF, 0, SEEK_SET);
+    char * wbuf = new char[wend + 1];
+    if (wbuf && wend > 0)
+        {
+        if (fread(wbuf, 1, wend, OWPLF) != (size_t)wend)
+            return 0;
+        wbuf[wend] = '\0';
+        }
+
+    char * q;
+    for(char * p = wbuf;(q = strchr(p,'\n')) != 0;p = q + 1)
+        {
+        *q = 0;
+        fprintf(rf,"%s\n",applyRules(p,&Buffer));
+        }
+
+    delete [] wbuf;
+    deleteRules();
+    --openfiles;
+    fclose(rf);
+    --openfiles;
+    fclose(OWPLF);
+    return true;
     }
 

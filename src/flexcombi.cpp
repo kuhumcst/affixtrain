@@ -83,9 +83,10 @@ buf+8   prefix pattern starts here
 
 */
 
-#include "strng.h"
-#include "settingsaffixtrain.h"
 #include "flexcombi.h"
+#include "strng.h"
+#include "affixtrain.h"
+#include "settingsaffixtrain.h"
 #include <stdio.h>
 #include <stddef.h>
 #include <string.h>
@@ -249,9 +250,11 @@ struct fileBuffer
     bool readRules(const char * filename)
         {
         FILE * f = fopen(filename, "rb");
+        ++openfiles;
         if (f)
             {
 			bool read = readRules(f);
+            --openfiles;
 			fclose(f);
             return read;
             }
@@ -458,6 +461,7 @@ int prettyPrint(const char * flexrulesIn)
     sprintf(filenameOut, "%s.pretty.txt", flexrulesIn);
 
     FILE * fm = fopen(filenameOut, "wb");
+    ++openfiles;
     if (!fm)
         {
         printf("Error (prettyPrint): Cannot open %s for writing\n", filenameOut);
@@ -466,6 +470,7 @@ int prettyPrint(const char * flexrulesIn)
     char start[1000] = { 0 };
     char end[1000] = { 0 };
     printrules(FileBuffer.buf, FileBuffer.buf + FileBuffer.Length, start, end, fm, 0);
+    --openfiles;
     fclose(fm);
     return true;
     }
@@ -677,6 +682,7 @@ int prettyPrintBracmat(const char * flexrulesIn)
     sprintf(brafile, "%s.pretty.bra", flexrulesIn);
     
     FILE * fmbra = fopen(brafile, "wb");
+    ++openfiles;
     if (!fmbra)
         {
         printf("Error (prettyPrint): Cannot open %s for writing\n", brafile);
@@ -692,6 +698,7 @@ int prettyPrintBracmat(const char * flexrulesIn)
 
     printrulesBracmat(FileBuffer.buf, FileBuffer.buf + FileBuffer.Length, start, end, fmbra, &L, &R, nr, 0);
 
+    --openfiles;
     fclose(fmbra);
     return true;
     }
@@ -1149,6 +1156,7 @@ bool flexcombi(const char * bestflexrules, const char * nextbestflexrules, const
         }
     char * arr = new char[2 * (FileBuffer.Length + NextFileBuffer.Length)];
     FILE * f = fopen(combinedflexrules, "wb");
+    ++openfiles;
     if(!f)
         {
         printf("Error (flexcombi): Cannot open %s for writing\n",combinedflexrules);
@@ -1171,6 +1179,7 @@ bool flexcombi(const char * bestflexrules, const char * nextbestflexrules, const
         for(int i = 0;i < length;++i)
 			fputc(arr[i],f);
         }
+    --openfiles;
     fclose(f);
 	prettyPrint(combinedflexrules);
     prettyPrintBracmat(combinedflexrules);

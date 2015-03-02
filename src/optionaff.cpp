@@ -20,8 +20,9 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#include "applyaffrules.h"
 #include "optionaff.h"
+#include "applyaffrules.h"
+#include "affixtrain.h"
 #include "argopt.h"
 #include <float.h>
 #include <limits.h>
@@ -33,16 +34,20 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 //        printf("usage: makeaffixrules -w <word list> -c <cutoff> -C <expected cutoff> -o <flexrules> -e <extra> -n <columns> -f <compfunc> [<word list> [<cutoff> [<flexrules> [<extra> [<columns> [<compfunc>]]]]]]\n");
 
-static char opts[] = "?@:B:b:c:C:D:e:f:hH:i:j:K:L:M:N:n:o:O:p:P:Q:q:R:s:t:v:W:" /* GNU: */ "wr";
+static char opts[] = "?@:B:b:c:C:D:e:f:hH:i:j:K:L:M:N:n:o:O:p:P:Q:q:R:s:T:t:v:W:" /* GNU: */ "wr";
 static char *** Ppoptions = NULL;
 static char ** Poptions = NULL;
 static int optionSets = 0;
 
 char * dupl(const char * s)
     {
-    char * d = new char[strlen(s) + 1];
-    strcpy(d, s);
-    return d;
+    if(s)
+        {
+        char * d = new char[strlen(s) + 1];
+        strcpy(d, s);
+        return d;
+        }
+    return 0;
     }
 
 optionStruct::optionStruct(optionStruct & O)
@@ -71,6 +76,7 @@ optionStruct::optionStruct(optionStruct & O)
     Doweights = O.Doweights;
     Redo = O.Redo;
     Test = O.Test;
+    TrainTest = O.TrainTest;
     Q = O.Q;
     q = O.q;
     K = O.K;
@@ -110,6 +116,7 @@ optionStruct::optionStruct()
     Doweights = false;
     Redo = false;
     Test = false;
+    TrainTest = false;
     Q = 1;
     q = 1;
     K = 20;   // Number of differently sized fractions of trainingdata 
@@ -122,7 +129,7 @@ optionStruct::optionStruct()
     FracLines = 0; // Number of lines used for training
     }
 
-optionStruct::~optionStruct()
+void cleanUpOptions()
     {
     for (int I = 0; I < optionSets; ++I)
         {
@@ -131,6 +138,10 @@ optionStruct::~optionStruct()
         }
     delete[] Poptions;
     delete[] Ppoptions;
+    }
+
+optionStruct::~optionStruct()
+    {
     delete[] e;
     delete[] f;
     delete[] i;
@@ -408,7 +419,10 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
         case 'v': // verbose
             Verbose = locoptarg && *locoptarg == '-' ? false : true;
             break;
-        case 't': // test
+        case 'T': // test with training data
+            TrainTest = locoptarg && *locoptarg == '-' ? false : true;
+            break;
+        case 't': // test (not with training data)
             Test = locoptarg && *locoptarg == '-' ? false : true;
             break;
             // GNU >>
@@ -474,6 +488,7 @@ OptReturnTp optionStruct::readOptsFromFile(char * locoptarg, char * progname)
     char ** poptions;
     char * options;
     FILE * fpopt = fopen(locoptarg, "r");
+    ++openfiles;
     OptReturnTp result = GoOn;
     if (fpopt)
         {
@@ -648,6 +663,7 @@ OptReturnTp optionStruct::readOptsFromFile(char * locoptarg, char * progname)
                 }
             lineno++;
             }
+        --openfiles;
         fclose(fpopt);
         }
     else
@@ -745,6 +761,7 @@ void optionStruct::completeArgs()
 
 
     FILE * f = fopen(wordList(), "r");
+    ++openfiles;
     Blobs = 0; // If there are no non-empty lines, there are no blobs either.
     Lines = 0;
     int kar = 0;
@@ -789,6 +806,7 @@ void optionStruct::completeArgs()
 
     if (verbose())
         printf("blobs:%d lines %d\n", Blobs, Lines);
+    --openfiles;
     fclose(f);
     }
 
@@ -855,7 +873,7 @@ void optionStruct::print(FILE * fp) const
         fprintf(fp, "               ; (N/A) columns (1=word,2=lemma,3=tags,0=other)\n-n %s\n", n ? n : "?");
         fprintf(fp, "               ; (N/A) max recursion depth when attempting to create candidate rule\n-Q %d\n", Q);
         fprintf(fp, "               ; (N/A) flex rules\n-o %s\n", o ? o : "?");
-        fprintf(fp, "               ; (N/A) temp dir\n"); if (j) fprintf(fp, "-j %s\n", j); else fprintf(fp, ";-j not specified\n");
+        fprintf(fp, "               ; (N/A) temp dir (including separator at end!)\n"); if (j) fprintf(fp, "-j %s\n", j); else fprintf(fp, ";-j not specified\n");
         fprintf(fp, "               ; (N/A) percentage of training pairs to set aside for testing\n-q %d\n", q);
         fprintf(fp, "               ; (N/A) penalties to decide which rule survives\n"); if (nD > 0){ fprintf(fp, "-D "); for (int i = 0; i < nD; ++i)fprintf(fp, "%f;", D[i]); fprintf(fp, "\n"); } else fprintf(fp, ";-D not specified\n");
         fprintf(fp, "               ; (N/A) compute parms (%s)\n-p %s\n", ComputeParms ? "yes" : "no", ComputeParms ? "" : "-");
@@ -881,7 +899,7 @@ void optionStruct::print(FILE * fp) const
         fprintf(fp, "               ; columns (1=word,2=lemma,3=tags,0=other)\n-n %s\n", n);
         fprintf(fp, "               ; max recursion depth when attempting to create candidate rule\n-Q %d\n", Q);
         fprintf(fp, "               ; flex rules\n-o %s\n", o);
-        fprintf(fp, "               ; temp dir\n"); if (j) fprintf(fp, "-j %s\n", j); else fprintf(fp, ";-j not specified\n");
+        fprintf(fp, "               ; temp dir (including separator at end!)\n"); if (j) fprintf(fp, "-j %s\n", j); else fprintf(fp, ";-j not specified\n");
         fprintf(fp, "               ; percentage of training pairs to set aside for testing\n-q %d\n", q);
         fprintf(fp, "               ; penalties to decide which rule survives\n"); if (nD > 0){ fprintf(fp, "-D "); for (int i = 0; i < nD; ++i)fprintf(fp, "%f;", D[i]); fprintf(fp, "\n"); } else fprintf(fp, ";-D not specified\n");
         fprintf(fp, "               ; compute parms (%s)\n-p %s\n", ComputeParms ? "yes" : "no", ComputeParms ? "" : "-");
@@ -917,6 +935,14 @@ void optionStruct::print(FILE * fp) const
             fprintf(fp, "               ; competition function\n-f %s\n", f);
             fprintf(fp, "               ; redo training after homographs for next round are removed (%s)\n-R %s\n", Redo ? "yew" : "no", Redo ? "" : "-");
             fprintf(fp, "               ; cutoff\n-c %d\n", c);
+            }
+        if(this->TrainTest)
+            {
+            fprintf(fp, "               ; test without training data (%s)\n-T %s\n", TrainTest ? "yes" : "no", TrainTest ? "" : "-");
+            }
+        if(this->Test)
+            {
+            fprintf(fp, "               ; test (without training data) (%s)\n-t %s\n", Test ? "yes" : "no", Test ? "" : "-");
             }
         fprintf(fp, "               ; Number of blobs found in word list: %d whereof used for training %d\n", Blobs, FracBlobs == 0 ? Blobs : FracBlobs);
         fprintf(fp, "               ; Number of lines found in word list: %d whereof used for training %d\n", Lines, FracLines == 0 ? Lines : FracLines);
@@ -998,6 +1024,8 @@ void optionStruct::printArgFile() const
     int nl = strlen(name) + 1;
     assert(nameLength == nl);
     FILE * fp = fopen(name, "wb");
+    ++openfiles;
     print(fp);
+    --openfiles;
     fclose(fp);
     }

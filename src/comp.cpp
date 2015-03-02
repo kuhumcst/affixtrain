@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
 #include "comp.h"
+#include "affixtrain.h"
 #include "graph.h"
 #include "optionaff.h"
 #include <float.h>
@@ -4975,8 +4976,10 @@ void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,int
         {
         ++improvements;
         FILE * f = fopen(options->currentParms(),"a");
+        ++openfiles;
         assert(f);
         fprintf(f,"//-> IMPROVEMENT #%d\n",improvements);
+        --openfiles;
         fclose(f);
         }
     best = parms;
@@ -5005,6 +5008,7 @@ void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,int
         }
 
     FILE * f = fopen(options->bestParms(),"a");
+    ++openfiles;
     if(f)
         {
         fprintf(f,"//iteration:%d.%d\n",swath,iterations);
@@ -5043,6 +5047,7 @@ void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,int
                 fprintf(f,",\t");
             }
         fprintf(f,"}}\n\n");
+        --openfiles;
         fclose(f);
         }
     }
@@ -5215,6 +5220,7 @@ void printparms(int Nnodes,double weight,optionStruct * options)
     {
     int i;
     FILE * f = fopen(options->currentParms(),"a");
+    ++openfiles;
     assert(f);
     fprintf(f
            ,"/*#nodes in tree: %d weight (%s used): %.*e suffix only: %s */\n"
@@ -5239,6 +5245,7 @@ void printparms(int Nnodes,double weight,optionStruct * options)
             fprintf(f,",");
         }
     fprintf(f,"}\n");
+    --openfiles;
     fclose(f);
     }
 
@@ -5347,8 +5354,10 @@ void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,int
         {
         ++improvements;
         FILE * f = fopen(parmstxt,"a");
+        ++openfiles;
         assert(f);
         fprintf(f,"//-> IMPROVEMENT #%d\n",improvements);
+        --openfiles;
         fclose(f);
         }
 #if FLOATINGPOINTPARMS
@@ -5357,6 +5366,7 @@ void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,int
     copy(best,parms,NPARMS);
 #endif
     FILE * f = fopen(besttxt,"a");
+    ++openfiles;
     if(f)
         {
         fprintf(f,"//iteration:%d.%d\n",swath,iterations);
@@ -5407,6 +5417,7 @@ void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,int
             }
 //        fprintf(f,"}         \t         \t         \t          //(%d unresolved comparisons)\n\n",pcnt[NPARMS >> 2]);
         fprintf(f,"}\n\n");
+        --openfiles;
         fclose(f);
         }
     }
@@ -5509,9 +5520,11 @@ void onlyZeros(const char * parmstxt,bool suffixonly)
     if(parmstxt)
         {
         FILE * f = fopen(parmstxt,"a");
+        ++openfiles;
         assert(f);
         fprintf(f,"//OnlyZeros %d \n",OnlyZeros);
         fprintf(f,"//suffix only %s \n",suffixonly ? "yes" : "no");
+        --openfiles;
         fclose(f);
         }
     }
@@ -5521,6 +5534,7 @@ void printparms(int Nnodes,double weight,const char * parmstxt,bool suffixonly,b
     {
     int i;
     FILE * f = fopen(parmstxt,"a");
+    ++openfiles;
     assert(f);
     fprintf(f
            ,"/*#nodes in tree: %d weight (%s used): %.*e suffix only: %s */\n"
@@ -5546,6 +5560,7 @@ void printparms(int Nnodes,double weight,const char * parmstxt,bool suffixonly,b
         }
     fprintf(f,"                         //%9d\n",pcnt[i >> 2]);
     fprintf(f,"        }\n");
+    --openfiles;
     fclose(f);
     }
 
@@ -5677,6 +5692,7 @@ void setCompetitionFunction(optionStruct * options)
                         if(options->currentParms())
                             {
                             FILE * f = fopen(options->currentParms(),"w");
+                            ++openfiles;
                             if(f)
                                 {
                                 fprintf(f,"bests[%d].suffixonly == [%s]\nbests[%d].langbase == [%s]\n",j,bests[j].suffixonly ? "true" : "false",j,bests[j].langbase);
@@ -5694,6 +5710,7 @@ void setCompetitionFunction(optionStruct * options)
 #endif
                                     }
                                 fprintf(f,"\n");
+                                --openfiles;
                                 fclose(f);
                                 }
                             }

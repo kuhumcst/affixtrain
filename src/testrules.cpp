@@ -1,4 +1,6 @@
 #include "testrules.h"
+#include "applyaffrules.h"
+#include "settingsaffixtrain.h"
 #include "affixtrain.h"
 #include "optionaff.h"
 #include <stdio.h>
@@ -10,23 +12,22 @@
 #include <assert.h>
 
 #ifdef WIN32
-#define HOME "D:\\projects\\train\\"
+#define HOME ""
 #ifdef ATHOME
-#define BASEDIR "D:\\projects\\train\\"
-#define RESOURCEDIR "D:\\projects\\sandkasse\\res\\"
+#define BASEDIR ""
+#define RESOURCEDIR ""
 #else
-#define BASEDIR "J:\\sandkasse\\train\\"
-#define RESOURCEDIR "J:\\sandkasse\\res\\"
+#define BASEDIR ""
+#define RESOURCEDIR ""
 #endif
-#define BINDIR "C:\\utils\\"
-#define SLASH "\\"
+#define BINDIR ""
+#define SLASH "--"
 #define QUOTE "\"" 
 #else
-#define HOME "/home/zgk261/"
-//#define HOME "/users/bart/"
-#define BASEDIR HOME "sandkasse/"
-#define RESOURCEDIR HOME "sandkasse/"
-#define BINDIR HOME "bin/"
+#define HOME ""
+#define BASEDIR HOME ""
+#define RESOURCEDIR HOME ""
+#define BINDIR HOME ""
 #define SLASH "/" 
 #define QUOTE "\'" 
 #endif
@@ -67,12 +68,41 @@ static bool TRAINTEST;// = false;// Set to true if the lemmatisation test has to
 
 static int globmaxcount = 0;
 
-const char * lemmaliste = NULL;
-const char * reducedlemmaliste = NULL;
-const char * newStyleRules = NULL;
-const char * LG = NULL;
-const char * XTR = NULL;
+static const char * XTRf(optionStruct * Options)
+    {
+    static char xtr[10];
+    sprintf(xtr,"C%d%s%s%s"
+        ,Options->expectedCutoff()
+        ,Options->redo() ? "R" : ""
+        ,Options->suffixOnly() ? "S" : ""
+        ,Options->doweights() ? "W" : ""
+        );
+    return xtr;
+    }
 
+static const char * LGf(optionStruct * Options)
+    {
+    return Options->extra();
+    }
+
+static const char * lemmalistef(optionStruct * Options)
+    {
+    return Options->wordList();
+    }
+
+static const char * reducedlemmalistef(optionStruct * Options)
+    {
+    static char rwl[1000];
+    sprintf(rwl,"%s.reduced",Options->wordList());
+    return rwl;
+    }
+
+static const char * newStyleRulesf(optionStruct * Options)
+    {
+    static char nsr[1000];
+    sprintf(nsr,"%s.%s.newstyle",Options->wordList(),Options->extra());
+    return nsr;
+    }
 
 static char tr_pathname[256];
 
@@ -595,6 +625,7 @@ static void randomix(clump * clumps,int clumpcnt)
 static void countLemmas()
     {
     FILE * fplemma = fopen(Lemmas,"rb");
+    ++openfiles;
     if(fplemma)
         {
         int kar;
@@ -629,6 +660,7 @@ static void countLemmas()
             else
                 *pbuf++ = (char)kar;
             }
+        --openfiles;
         fclose(fplemma);
         qsort(lines2,linecnt,sizeof(line),mystrcmp);
         printf("linecnt lemma %d\n",linecnt);
@@ -639,6 +671,7 @@ static void countLemmas()
             printf(" After removing duplicate lines linecnt = %d",linecnt);
             }
         fplemma = fopen(Lemmas,"wb");
+        ++openfiles;
         if(fplemma)
             {
             int i;
@@ -646,6 +679,7 @@ static void countLemmas()
                 {
                 fprintf(fplemma,"%s\n",lines2[i].s);
                 }
+            --openfiles;
             fclose(fplemma);
             fplemma = NULL;
             }
@@ -661,15 +695,17 @@ static int readlines(int columnfull,int columnbase,int columnPOS/*,bool TAGGED*/
 #if CLUMPSENSITIVE
                      ,clump *& clumps,int & clumpcnt
 #endif
+                     ,optionStruct * Options
                      )
     {
     FILE * fpi = NULL;
     int kar;
     int linecnt = 0;
-    fpi = fopen(lemmaliste,"r");
+    fpi = fopen(lemmalistef(Options),"r");
+    ++openfiles;
     if(!fpi)
         {
-        fprintf(stderr,"Cannot open \"%s\" for reading\n",lemmaliste);
+        fprintf(stderr,"Cannot open \"%s\" for reading\n",lemmalistef(Options));
         return 0;
         }
 
@@ -708,7 +744,8 @@ static int readlines(int columnfull,int columnbase,int columnPOS/*,bool TAGGED*/
     else
         clumps = NULL;
 #endif
-    printf("fileRead\n");
+    printf("fileRead. Open files:%d\n",::openfiles);
+
     linecnt = fileRead(lines,
 #if CLUMPSENSITIVE
         clumps,
@@ -716,10 +753,11 @@ static int readlines(int columnfull,int columnbase,int columnPOS/*,bool TAGGED*/
         fpi,columnfull,columnbase,columnPOS,sep);
     if(linecnt < 0)
         {
-        printf("Error in file \"%s\"\n",lemmaliste);
+        printf("Error in file \"%s\"\n",lemmalistef(Options));
         exit(-1);
         }
     printf("fileRead DONE\n");
+    --openfiles;
     fclose(fpi);
 #if CLUMPSENSITIVE
     if(clumpcnt < 2)
@@ -727,12 +765,14 @@ static int readlines(int columnfull,int columnbase,int columnPOS/*,bool TAGGED*/
         {
         printf("clumpcnt < 2\n");
         FILE * ff = fopen("liste.wri","wb");
+        ++openfiles;
         if(ff)
             {
             for(int h = 0;h < linecnt;++h)
                 {
                 fprintf(ff,"%s\n",lines[h].s ? lines[h].s : "NULLLL");
                 }
+            --openfiles;
             fclose(ff);
             }
         else
@@ -758,6 +798,7 @@ static int readlines(int columnfull,int columnbase,int columnPOS/*,bool TAGGED*/
         if(COUNTLEMMAS)
             {
             fplemma = fopen(Lemmas,"wb");
+            ++openfiles;
             if(!fplemma)
                 COUNTLEMMAS = false;
             }
@@ -766,11 +807,13 @@ static int readlines(int columnfull,int columnbase,int columnPOS/*,bool TAGGED*/
         if(WRITEWEIRD)
             {
             fpweird = fopen(Weird,"wb");
+            ++openfiles;
             if(!fpweird)
                 WRITEWEIRD = false;
             }
             
-        FILE * fpo = fopen(reducedlemmaliste,"wb");
+        FILE * fpo = fopen(reducedlemmalistef(Options),"wb");
+        ++openfiles;
         if(fpo)
             {
             int i;
@@ -839,10 +882,12 @@ static int readlines(int columnfull,int columnbase,int columnPOS/*,bool TAGGED*/
                     }
                 
                 }
+            --openfiles;
             fclose(fpo);
             fpo = NULL;
             if(WRITEWEIRD)
                 {
+                --openfiles;
                 fclose(fpweird);
                 fpweird = NULL;
                 }
@@ -850,12 +895,26 @@ static int readlines(int columnfull,int columnbase,int columnPOS/*,bool TAGGED*/
                 {
                 assert(fplemma);
                 //if(fplemma)
+                --openfiles;
                 fclose(fplemma);
                 fplemma = NULL;
                 countLemmas();
                 }   
             }
     //    getchar();
+        if(fplemma)
+            {
+            --openfiles;
+            fclose(fplemma);
+            fplemma = NULL;
+            }
+        if(fpweird)
+            {
+            --openfiles;
+            fclose(fpweird);
+            fpweird = NULL;
+            }
+
         randomix(lines,linecnt);
         assert(fplemma == NULL);
         //if(fplemma)
@@ -963,6 +1022,7 @@ static int splitLemmaliste
     FILE * fptraintest = NULL;
     FILE * fptraincontrol = NULL;
     fptrain = fopen(training,"wb");
+    ++openfiles;
 //    int lines = 1000000;
     int trainlines = 0;
     int trainclumps = 0;
@@ -973,7 +1033,9 @@ static int splitLemmaliste
     if(TRAINTEST)
         {
         fptraintest = fopen(traintest,"wb");
+        ++openfiles;
         fptraincontrol = fopen(traincontrol,"wb");
+        ++openfiles;
         }
 
     if(clumpcnt && fptrain)
@@ -983,7 +1045,9 @@ static int splitLemmaliste
         //        bool slashprinted = false;
         //        bool printstop = false;
         fptest = fopen(test,"wb");
+        ++openfiles;
         fpcontrol = fopen(control,"wb");
+        ++openfiles;
         if(fptest && fpcontrol && (!TRAINTEST || (fptraintest && fptraincontrol)))
             {
             while(testclumps > 0 || trainclumps > 0)
@@ -1019,15 +1083,17 @@ static int splitLemmaliste
                     ++k;
                     }
                 }
+            --openfiles;
             fclose(fptest);     fptest = NULL;
+            --openfiles;
             fclose(fpcontrol);  fpcontrol = NULL;
             }
         }
-    if(fptest)          fclose(fptest);
-    if(fpcontrol)       fclose(fpcontrol);
-    if(fptraintest)     fclose(fptraintest);
-    if(fptraincontrol)  fclose(fptraincontrol);
-    if(fptrain)         fclose(fptrain);
+    if(fptest){--openfiles;fclose(fptest);}
+    if(fpcontrol){--openfiles;fclose(fpcontrol);}
+    if(fptraintest){--openfiles;fclose(fptraintest);}
+    if(fptraincontrol){--openfiles;fclose(fptraincontrol);}
+    if(fptrain){--openfiles;fclose(fptrain);
     return trainlines;
     }
 #endif
@@ -1051,6 +1117,7 @@ static int splitLemmaliste
     FILE * fptraintest = NULL;
     FILE * fptraincontrol = NULL;
     fptrain = fopen(training,"wb");
+    ++openfiles;
 //    int lines = 1000000;
     int trainlines = 0;
     int ret;
@@ -1065,7 +1132,9 @@ static int splitLemmaliste
     if(TRAINTEST)
         {
         fptraintest = fopen(traintest,"wb");
+        ++openfiles;
         fptraincontrol = fopen(traincontrol,"wb");
+        ++openfiles;
         }
 
     if(linecnt && fptrain)
@@ -1073,7 +1142,9 @@ static int splitLemmaliste
         if(fraction < 10000)
             {
             fptest = fopen(test,"wb");
+            ++openfiles;
             fpcontrol = fopen(control,"wb");
+            ++openfiles;
             if(fptest && fpcontrol && (!TRAINTEST || (fptraintest && fptraincontrol)))
                 {
                 while(testlines > 0 || trainlines > 0)
@@ -1105,7 +1176,9 @@ static int splitLemmaliste
                         ++k;
                         }
                     }
+                --openfiles;
                 fclose(fptest);     fptest = NULL;
+                --openfiles;
                 fclose(fpcontrol);  fpcontrol = NULL;
                 }
             }
@@ -1119,11 +1192,11 @@ static int splitLemmaliste
                 }
             }
         }
-    if(fptest)          fclose(fptest);
-    if(fpcontrol)       fclose(fpcontrol);
-    if(fptraintest)     fclose(fptraintest);
-    if(fptraincontrol)  fclose(fptraincontrol);
-    if(fptrain)         fclose(fptrain);
+    if(fptest)          {--openfiles;fclose(fptest);}
+    if(fpcontrol)       {--openfiles;fclose(fpcontrol);}
+    if(fptraintest)     {--openfiles;fclose(fptraintest);}
+    if(fptraincontrol)  {--openfiles;fclose(fptraincontrol);}
+    if(fptrain)         {--openfiles;fclose(fptrain);}
     return ret;
     }
 
@@ -1173,9 +1246,13 @@ struct decision
 static void compare(const char * output,const char * control,int & same,int & different,ambty & ambiguous,const char * controlResult,const char * test,int & ambiguousRules,decision & Decision)
     {
     FILE * f1 = fopen(output,"r");
+    ++openfiles;
     FILE * f2 = fopen(control,"r");
+    ++openfiles;
     FILE * f3 = fopen(controlResult,"w");
+    ++openfiles;
     FILE * f4 = fopen(test,"r");
+    ++openfiles;
     if(f1 && f2 && f3 && f4)
         {
         char b1[256];
@@ -1340,13 +1417,25 @@ static void compare(const char * output,const char * control,int & same,int & di
             }
         }
     if(f1)
+        {
+        --openfiles;
         fclose(f1);
+        }
     if(f2)
+        {
+        --openfiles;
         fclose(f2);
+        }
     if(f3)
+        {
+        --openfiles;
         fclose(f3);
+        }
     if(f4)
+        {
+        --openfiles;
         fclose(f4);
+        }
     if(REMOVE)
         {
         remove(output);
@@ -1369,6 +1458,7 @@ static void doTheTest
     ,int & ambiguousRules
     ,decision & Decision)
     {
+    /*
     char command[1000];
 
     sprintf(command,"%s -L -l%c -q- -U- -H2 -m0 -t%c -c"
@@ -1389,8 +1479,11 @@ static void doTheTest
         ,output);
 
     printf("%s",command);
+    printf("\nOpen files:%d\n",::openfiles);
     // C:\utils\cstlemma -L -q- -U- -H2 -m0 -t- -c'$B\n' -B'$w' -f D:\projects\train\flex\el_parms0_154_1.txt0 -i D:\projects\train\test\el_parms0_154_1.txt -o D:\projects\train\sout\el_0_154_1.txt
     system(command);
+    */
+    lemmatiseFile(TRAINTEST ? traintest : test,flexrules,output);
     if(REMOVE)
         {
         remove(flexrules);
@@ -1555,8 +1648,9 @@ class counting
             {
             long nflexcount = 0;
             char textualRules[200];
-            sprintf(textualRules,"%s%snumberOfRules_%s.pass%d_%d.txt",Options->tempDir(),SLASH,LG,Options->redo() ? 2 : 1,cutoff);
+            sprintf(textualRules,"%snumberOfRules_%s.pass%d_%d.txt",Options->tempDir(),LGf(Options),Options->redo() ? 2 : 1,cutoff);
             FILE * ft = fopen(textualRules,"rb");
+            ++openfiles;
             if(ft)
                 {
                 char Line[100];
@@ -1565,6 +1659,7 @@ class counting
                     nflexcount = strtol(Line,NULL,10);
                     n.tflexcount += nflexcount;
                     }
+                --openfiles;
                 fclose(ft);
                 }
             else
@@ -1597,7 +1692,7 @@ class counting
                 n.tambiguous[j] += n.ambiguous[j];
                 }
             n.tambiguousRules += n.ambiguousRules;
-            fprintf(fptally,"cutoff:%d affix:",cutoff);
+            fprintf(fptally,"cutoff:%d ",cutoff);
             printResults(fptally,nflexcount,n.same,n.ambiguous,n.different,n.ambiguousRules);
             fflush(fptally);
             if(counts)
@@ -1691,8 +1786,6 @@ void trainAndTest
 #endif
         ,const char * XT
         ,const char * TT
-        ,const char * LG
-        ,const char * newStyleRules
         ,line * lines
 #if CLUMPSENSITIVE
         ,clump * clumps
@@ -1702,7 +1795,7 @@ void trainAndTest
     {
     lineab AffixLine[CUTOFFS];
     lineab SuffixLine[CUTOFFS];
-    char formatprefix[256]          ;sprintf(formatprefix,          BASEDIR "%%s" SLASH "%s_%s%s%s%s%s_%%s.txt",LG,XTR,(Options->suffixOnly() ? "_suffix" : "_affix"),XT,TT,(Options->redo() ? "redone" : "singleshot"));
+    char formatprefix[256]          ;sprintf(formatprefix,          BASEDIR "%%s" SLASH "%s_%s%s%s%s%s_%%s.txt",LGf(Options),XTRf(Options),(Options->suffixOnly() ? "_suffix" : "_affix"),XT,TT,(Options->redo() ? "redone" : "singleshot"));
 
     char formatTraining[256]        ;sprintf(formatTraining,        formatprefix,"training"     ,"%d_%d");        // the training words
     char formatTest[256]            ;sprintf(formatTest,            formatprefix,"test"         ,"%d_%d");        // the test words (<> training words)
@@ -1729,30 +1822,48 @@ void trainAndTest
     FILE * fptally;    
     FILE * fptab;    
     fptally = fopen(tally,"wb");
-    fptab = fopen(tab,"wb");
+    ++openfiles;
     if(fptally)
         {
         fprintf(fptally,"Lemmatiser training+test\n");
+        --openfiles;
         fclose(fptally);
         fptally = 0;
+        }
+    fptab = fopen(tab,"wb");
+    ++openfiles;
+    if(fptab)
+        {
+        fprintf(fptab,"Lemmatiser training+test\n");
+        --openfiles;
+        fclose(fptab);
+        fptab = 0;
         }
 
     int fraction = 1;// 0 <= fraction <= 10000
     for(fraction = FRACTION_LOW;fraction <= FRACTION_HIGH;)
         {
         if(!fptally)
+            {
             fptally = fopen(tally,"ab");
+            ++openfiles;
+            }
         if(fptally)
             {
             fprintf(fptally,"\nfraction:%d/10000\n",fraction);
+            --openfiles;
             fclose(fptally);
             fptally = 0;
             }
         if(!fptab)
+            {
             fptab = fopen(tab,"ab");
+            ++openfiles;
+            }
         if(fptab)
             {
-            fprintf(fptab,"cutoff  fraction  iterations    trainlines    suffixrules     affixrules        suffix%%         affix%%      s-same          s-ambiguous                                s-different     a-same        a-ambiguous                                 a-different    s-same-stddev%% s-amb-stddev%%                                 s-diff-stddev%% a-same-stddev%% a-amb-stddev%%                               a-diff-stddev%%   s-same%%      s-ambiguous%%                                    s-different%%    s-amb.rules%%  a-same%%       a-ambiguous%%                                a-different%%   a-amb.rules%%    s_false_amb  s_false_not_amb  s_true_amb  s_true_not_amb    s_precision       s_recall    a_false_amb a_false_not_amb    a_true_amb  a_true_not_amb    a_precision     a_recall\n");
+            fprintf(fptab,"cutoff  fraction  iterations    trainlines     affixrules         affix%%      a-same        a-ambiguous                                 a-different    a-same-stddev%% a-amb-stddev%%                               a-diff-stddev%%   a-same%%       a-ambiguous%%                                a-different%%   a-amb.rules%%    a_false_amb a_false_not_amb    a_true_amb  a_true_not_amb    a_precision     a_recall\n");
+            --openfiles;
             fclose(fptab);
             fptab = 0;
             }
@@ -1768,7 +1879,7 @@ void trainAndTest
             maxcount = 30;
 #endif
         char paramfile[100];
-        sprintf(paramfile,"%s%s%s%s%s.txt",LG,(Options->suffixOnly() ? "_suffix" : "_affix"),XTR,TT,(Options->redo() ? "redone" : "singleshot"));
+        sprintf(paramfile,"%s%s%s%s%s.txt",LGf(Options),(Options->suffixOnly() ? "_suffix" : "_affix"),XTRf(Options),TT,(Options->redo() ? "redone" : "singleshot"));
         globmaxcount = maxcount;
         counting c[CUTOFFS]; // indexed by cutoff
         int count = 1;
@@ -1789,10 +1900,14 @@ void trainAndTest
             sprintf(Lemmas,"%s",formatLemmas);
             sprintf(Weird,"%s",formatWeird);
             if(!fptally)
+                {
                 fptally = fopen(tally,"ab");
+                ++openfiles;
+                }
             if(fptally)
                 {
                 fprintf(fptally,"\ncount:%d/10000\n",count);
+                --openfiles;
                 fclose(fptally);
                 fptally = 0;
                 }
@@ -1825,22 +1940,14 @@ void trainAndTest
                 optionStruct testOptions(*Options);
                 testOptions.seti(Ttraining);
                 testOptions.setc(CUTOFF_HIGH);
-                testOptions.seto(newStyleRules);
-                testOptions.sete(LG);
+                testOptions.seto(newStyleRulesf(Options));
+                testOptions.sete(LGf(Options));
                 testOptions.setn("123");
-                testOptions.setf(XTR);
+                testOptions.setf(XTRf(Options));
                 testOptions.setP(paramfile);
 
                 testOptions.completeArgs();
                 trainRules("",&testOptions);
-/*
-                if(SUFFIX_NOT_AFFIX)
-                    sprintf(command,"%s -i %s -c %d -o %s -e %s -n %s -f %s -s -P %s -j %s -R%s",affixtrain,Ttraining,CUTOFF_HIGH,newStyleRules,LG,"123",XTR,paramfile,work,redo ? "" : "-");
-                else
-                    sprintf(command,"%s -i %s -c %d -o %s -e %s -n %s -f %s    -P %s -j %s -R%s",affixtrain,Ttraining,CUTOFF_HIGH,newStyleRules,LG,"123",XTR,paramfile,work,redo ? "" : "-");
-                printf("%s\n",command);
-                system(command);
-*/
                 if(REMOVE)
                     {
                     remove(Ttraining);
@@ -1856,25 +1963,27 @@ void trainAndTest
                     sprintf(controlResult,formatControlResult,fraction,count,cutoff);
                     sprintf(controlResultN,formatControlResultN,fraction,count,cutoff);
                     char Affixrules[250];
-                    const char * lastslash = strrchr(newStyleRules,*SLASH);
+                    const char * lastslash = strrchr(newStyleRulesf(Options),*SLASH);
                     const char * filename;
                     if(lastslash)
                         {
                         filename = lastslash + 1;
-                        sprintf(Affixrules,"%.*s%d%s%s",(int)(filename - newStyleRules),newStyleRules,cutoff,SLASH,filename);
+                        sprintf(Affixrules,"%.*s%d%s%s",(int)(filename - newStyleRulesf(Options)),newStyleRulesf(Options),cutoff,SLASH,filename);
                         }
                     else
-                        sprintf(Affixrules,"%s%d",newStyleRules,cutoff);
+                        sprintf(Affixrules,"%d%c%s",cutoff,DIRSEP,newStyleRulesf(Options));
 
                     sprintf(Soutput,formatSOutput,cutoff,fraction,count);
                     sprintf(output,formatOutput,cutoff,fraction,count);
-                    FILE * fptally = fopen(tally,"ab");
                     printf("Affixrules:%s\n",Affixrules);
                     const char executable[] = "cstlemma";
+                    FILE * fptally = fopen(tally,"ab");
+                    ++openfiles;
                     if(fptally)
                         {
                         c[cutoff].testing(cutoff,Affixrules,output,executable,traintest,
                             test,Ttraincontrol,controlResultN,Tcontrol,fptally,Options);
+                        --openfiles;
                         fclose(fptally);
                         }
                     else
@@ -1902,8 +2011,8 @@ void trainAndTest
             }
         if(ttrainlines > 0)
             {
-            fptally = fopen(tally,"ab");
             fptab = fopen(tab,"ab");
+            ++openfiles;
             if(fptab)
                 {
                 for(int cutoff = CUTOFF_LOW;cutoff <= CUTOFF_HIGH;++cutoff)
@@ -1919,11 +2028,6 @@ void trainAndTest
                         ,exp(AffixLine[cutoff].a())
                         ,AffixLine[cutoff].b()
                         );
-                    fprintf (fptab, "         Suffix a %14.6lf b %14.6lf: N(rules)=%14.6lf*N(trainpairs)^%lf\n"
-                        ,       SuffixLine[cutoff].a(),SuffixLine[cutoff].b()
-                        ,exp(SuffixLine[cutoff].a())
-                        ,SuffixLine[cutoff].b()
-                        );
                     }
                 fflush(fptab);
                 int lowestntdifferent = -1;
@@ -1938,19 +2042,17 @@ void trainAndTest
                     }
                 c[bestcutoff].printingNice(bestcutoff,fraction,maxcount,fptab,ttrainlines,Options);
                 FILE * fp = fopen(paramfile,"r");
+                ++openfiles;
                 if(fp)
                     {
                     fputc('\n',fptab);
                     int K;
                     while((K = fgetc(fp)) != EOF)
                         fputc(K,fptab);
+                    --openfiles;
                     fclose(fp);
                     }
-                }
-            if(fptally)
-                fclose(fptally);
-            if(fptab)
-                {
+                --openfiles;
                 fclose(fptab);
                 fptab = 0;
                 }
@@ -2005,6 +2107,7 @@ void trainAndTest
         break; // STOP after after first results
 #endif
         }
+    --openfiles;
     fclose(fptally);
     }
 
@@ -2016,26 +2119,28 @@ static int readFile
         ,int & clumpcnt
 #endif
         ,int sep
+        ,optionStruct * Options
         )
     {
     return readlines(1,2,3,lines,sep
 #if CLUMPSENSITIVE
         ,clumps,clumpcnt
 #endif
+        ,Options
         );
     }
 
 
-static int doit(bool TrainTest,optionStruct * Options)
+static int doit(optionStruct * Options)
     {
     const char * XT;
     const char * TT;
-    init(TrainTest,XT,TT);
+    init(Options->trainTest(),XT,TT);
     int sep = '\t';
 
-    if(XTR == NULL)
+    if(XTRf(Options) == NULL)
         {
-        printf("Rule comparison function (variable XTR) not specified for language %s\n",LG);
+        printf("Rule comparison function (variable XTRf(Options)) not specified for language %s\n",LGf(Options));
         exit(1);
         }
     
@@ -2053,6 +2158,7 @@ static int doit(bool TrainTest,optionStruct * Options)
         ,clumpcnt
 #endif
         ,sep
+        ,Options
         );
     if(linecnt)
         {
@@ -2063,8 +2169,6 @@ static int doit(bool TrainTest,optionStruct * Options)
 #endif
             ,XT
             ,TT
-            ,LG
-            ,newStyleRules
             ,lines
 #if CLUMPSENSITIVE
             ,clumps
@@ -2085,20 +2189,9 @@ static int doit(bool TrainTest,optionStruct * Options)
 
 int testrules(optionStruct * Options)
     {
-    bool traintest = false;
-
-    if(lemmaliste && LG)
+    if(lemmalistef(Options) && LGf(Options) && XTRf(Options))
         {
-        char * newStyleRulesL = new char[strlen(lemmaliste)+strlen(LG) + strlen(".newstyle")+2];
-        sprintf(newStyleRulesL,"%s.%s.newstyle",lemmaliste,LG);
-        newStyleRules = newStyleRulesL;
-        }        
-
-    XTR = NULL;
-
-    if(XTR && lemmaliste && LG && XTR)
-        {
-        doit(traintest,Options);
+        doit(Options);
         return 0;
         }
 

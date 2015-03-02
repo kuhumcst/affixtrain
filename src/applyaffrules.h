@@ -25,8 +25,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "settingsaffixtrain.h"
 
-bool readRules(const char * filename);
-const char * applyRules(const char * word);
-void deleteRules();
+//bool readRules(const char * filename);
+//const char * applyRules(const char * word);
+//void deleteRules();
+bool lemmatiseFile(const char * OneWordPerLineFile,const char * rulefile,const char * resultFile);
 
 #endif

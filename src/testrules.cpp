@@ -2107,8 +2107,6 @@ void trainAndTest
         break; // STOP after after first results
 #endif
         }
-    --openfiles;
-    fclose(fptally);
     }
 
 

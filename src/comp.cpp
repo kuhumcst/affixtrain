@@ -735,6 +735,7 @@ static int parms[NPARMS]    = {0};
 #endif
 
 #if FLOATINGPOINTPARMS
+/*
 static void printvector(const char * msg,double * row,int cols)
     {
     printf("%s\t: ",msg);
@@ -744,7 +745,7 @@ static void printvector(const char * msg,double * row,int cols)
         }
     putchar('\n');
     }
-
+*/
 static void normalise(double * ROW)
     {
     double modulus = 0.0;
@@ -4990,7 +4991,7 @@ void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,int
     options->setTrainingPairsLines(lines);
     options->setWeight(weight);
 
-    options->printArgFile();
+    options->printArgFile(0);
     printf("%d.%d %d  \tparms ",swath,iterations,Nnodes);
     int i = 0;
     for(;i < NPARMS;++i)
@@ -5735,6 +5736,11 @@ void setCompetitionFunction(optionStruct * options)
                 }
             return;
             }
+    if(options->numberOfParms() == 4 || options->numberOfParms() == 6)
+        {
+        comp = comp_parms0_off;
+        return;
+        }
     fprintf(stderr,"Error: Unknown competition function %s\n",options->compfunc());
     getchar();
     exit(2);

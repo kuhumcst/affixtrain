@@ -3306,8 +3306,10 @@ void trainRules(const char * tag, optionStruct * options)
 
     char numbersFormat[1024];
     char command[1024];
-    const char * FlexrulePassFormat = "%s.pass%d.cutoff%%d"; // flexrules.passN.cutoffM
-    const char * AccumulatedFlexrulePassFormat = "%s.pass%d.cutoff%%d.accumulated"; // flexrules.passN.cutoffM
+    char FlexrulePassFormat[1024];
+    char AccumulatedFlexrulePassFormat[1024];
+    sprintf(FlexrulePassFormat,"%s%%s.pass%%d.cutoff%%%%d",options->tempDir());// flexrules.passN.cutoffM
+    sprintf(AccumulatedFlexrulePassFormat,"%s%%s.pass%d.cutoff%%%%d.accumulated",options->tempDir());// flexrules.passN.cutoffM
     clock_t start = clock();
     int Nnodes = 0;
     double weight = 0.0;
@@ -3646,7 +3648,7 @@ int main(int argc, char **argv)
     if (options.verbose())
         {
         options.print(stdout);
-        options.printArgFile();
+        options.printArgFile(0);
         }
 
 
@@ -3683,7 +3685,13 @@ int main(int argc, char **argv)
                 initOutput(options.bestParms());
             computeParms(&options);
             }
-        else
+
+        if(options.test())
+            {
+            testrules(&options);
+            }
+
+        if(options.createFlexRules())
             {
             setCompetitionFunction(&options);
             tagClass * Tags = NULL;
@@ -3711,11 +3719,6 @@ int main(int argc, char **argv)
                     printf("NOT doing Tags\n");
                 trainRules("", &options);
                 }
-            }
-
-        if(options.test())
-            {
-            testrules(&options);
             }
 
         if (options.verbose())

@@ -232,7 +232,7 @@ struct fileBuffer
 				}
 			else
 				{
-				printf("Old version\n");
+				//printf("Old version\n");
 				rewind(flexrulefile);
 				}
 
@@ -266,7 +266,7 @@ struct fileBuffer
 
 
 
-
+/*
 static char * printlistBracmat
                 ( char * p
                 , char * e
@@ -298,7 +298,7 @@ static char * printlistBracmat
         }
     return e;
     }
-
+*/
 
 
 static char * printrules
@@ -486,7 +486,7 @@ static char * printChainBracmat
 , strng * L
 , strng * R
 , int & nr
-, char * msg
+//, char * msg
 )
     {
     int index = *(int *)p;
@@ -611,7 +611,7 @@ static char * printrulesBracmat
 					, end
 					, fmbra
 					, &nL, &nR, nr
-					, " ambiguous children"
+					//, " ambiguous children"
 					);
 			}
         }
@@ -646,7 +646,7 @@ static char * printrulesBracmat
 				, end
 				, fmbra
 				, L, R, nr
-				, " ambiguous tails of children"
+				//, " ambiguous tails of children"
 				);
         }
     else
@@ -728,7 +728,7 @@ class rule
             }
         printf("\n");
         }
-    int copy(char * arr, int ind)
+    int copy(char * arr/*, int ind*/)
         {
         int n = End - Start;
         int p[1];
@@ -937,7 +937,7 @@ int treenode::copy(char * arr,int ind)
         *(typetype*)arr = type;
         arr += sizeof(typetype);
         }
-    arr += Rule.copy(arr, ind);
+    arr += Rule.copy(arr/*, ind*/);
     if (Child.one)
         {
         arr += Child.one->copy(arr, ind + 2);
@@ -1166,13 +1166,13 @@ bool flexcombi(const char * bestflexrules, const char * nextbestflexrules, const
     treenode * TreeNode = treenodeFactory(FileBuffer.buf, FileBuffer.buf+FileBuffer.Length);
     if (TreeNode)
         {
-        printf("\nTree:\n");
+        //printf("\nTree:\n");
         //TreeNode->print(0);
         treenode * NextTreeNode = treenodeFactory(NextFileBuffer.buf, NextFileBuffer.buf + NextFileBuffer.Length);
-        printf("\nNext Tree:\n");
+        //printf("\nNext Tree:\n");
         //NextTreeNode->print(0);
         TreeNode->merge(NextTreeNode);
-        printf("\nCombined Tree:\n");
+        //printf("\nCombined Tree:\n");
         //TreeNode->print(0);
         int length = TreeNode->copy(arr, 0);
         *(int*)arr = 0;

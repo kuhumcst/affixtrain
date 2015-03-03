@@ -63,7 +63,8 @@ class optionStruct
         int q; // Percentage of training pairs to set aside for testing
         // set to positive value if you want to set PERC percent
         // of the avaliable data aside for testing.
-
+        bool F; // Create flexrules. Can be combined with computation (-p) and
+                // testing (-t, -T).
         /* End of options. */
 
         int Blobs; // Number of blobs found in word list
@@ -114,7 +115,7 @@ class optionStruct
         const int numberOfParms()const{return nD;}
         const double parm(int i)const{return (0<=i&&i<nD) ? D[i] : 0.0;}
         void setParm(int i,double v){if(0<=i&&i<nD)D[i]=v;}
-
+        const bool createFlexRules(){return F;}
         void setSwath(int S){Swath = S;}
         void setSwathIteration(int SI){SwathIteration = SI;}
         void setNumberOfNodes(int NoN){NumberOfNodes = NoN;}
@@ -130,7 +131,7 @@ class optionStruct
         void setc(int cutoff){c = cutoff;}
 
         void print(FILE * fp) const;
-        void printArgFile() const;
+        void printArgFile(char * evaluation) const;
         
         optionStruct();
         optionStruct(optionStruct & O);

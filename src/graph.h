@@ -564,9 +564,9 @@ class vertexPointer
                 node * n = this;
                 while(n)
                     {
-                    if(this->Right)
+                    if(n->Right)
                         {
-                        double rcount = (double)this->Right->count();
+                        double rcount = (double)n->Right->count();
                         assert(rcount >= 0.9);
                         /* 
                         ret += 5.0*(rcount-1.0)*exp(-0.9*rcount)+1; 
@@ -613,6 +613,7 @@ class vertexPointer
                     }
                 return ret;
                 }
+            /*
             int countWords()
                 {
                 int ret = 0;
@@ -627,6 +628,7 @@ class vertexPointer
                     }
                 return ret;
                 }
+            */
             int prune(int threshold)
                 {
                 int N = 0;

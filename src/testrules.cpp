@@ -21,7 +21,7 @@
 #define RESOURCEDIR ""
 #endif
 #define BINDIR ""
-#define SLASH "--"
+#define SLASH "\\"
 #define QUOTE "\"" 
 #else
 #define HOME ""
@@ -31,7 +31,7 @@
 #define SLASH "/" 
 #define QUOTE "\'" 
 #endif
-
+#define SEPARATOR "--"
 
 
 
@@ -485,11 +485,11 @@ static int fileRead(line * lines,
         {
         if(lines[i].ambiguous)
             {
-            printf("%s\n",lines[i].s);
+            //printf("%s\n",lines[i].s);
             ++ambi;
             }
         }
-    printf("%d/%d = %14.6f%%\n",ambi,linecnt,(100.0*ambi)/linecnt);
+    //printf("%d/%d = %14.6f%%\n",ambi,linecnt,(100.0*ambi)/linecnt);
     return linecnt;
     }
 
@@ -663,12 +663,12 @@ static void countLemmas()
         --openfiles;
         fclose(fplemma);
         qsort(lines2,linecnt,sizeof(line),mystrcmp);
-        printf("linecnt lemma %d\n",linecnt);
+        //printf("linecnt lemma %d\n",linecnt);
         int newlinecnt = removeDuplicateLines(linecnt,lines2);
         if(newlinecnt != linecnt)
             {
             linecnt = newlinecnt;
-            printf(" After removing duplicate lines linecnt = %d",linecnt);
+            //printf(" After removing duplicate lines linecnt = %d",linecnt);
             }
         fplemma = fopen(Lemmas,"wb");
         ++openfiles;
@@ -729,11 +729,13 @@ static int readlines(int columnfull,int columnbase,int columnPOS/*,bool TAGGED*/
         }
     assert(!lines);
     rewind(fpi);
+    /*
 #if CLUMPSENSITIVE
     printf("lines %d clumps %d\n",linecnt,clumpcnt);
 #else
     printf("lines %d\n",linecnt);
 #endif
+    */
     lines = new line[linecnt];
 #if CLUMPSENSITIVE
     if(clumpcnt)
@@ -744,7 +746,7 @@ static int readlines(int columnfull,int columnbase,int columnPOS/*,bool TAGGED*/
     else
         clumps = NULL;
 #endif
-    printf("fileRead. Open files:%d\n",::openfiles);
+    //printf("fileRead. Open files:%d\n",::openfiles);
 
     linecnt = fileRead(lines,
 #if CLUMPSENSITIVE
@@ -756,14 +758,15 @@ static int readlines(int columnfull,int columnbase,int columnPOS/*,bool TAGGED*/
         printf("Error in file \"%s\"\n",lemmalistef(Options));
         exit(-1);
         }
-    printf("fileRead DONE\n");
+    //printf("fileRead DONE\n");
     --openfiles;
     fclose(fpi);
 #if CLUMPSENSITIVE
     if(clumpcnt < 2)
 #endif
         {
-        printf("clumpcnt < 2\n");
+        //printf("clumpcnt < 2\n");
+        /*
         FILE * ff = fopen("liste.wri","wb");
         ++openfiles;
         if(ff)
@@ -777,14 +780,14 @@ static int readlines(int columnfull,int columnbase,int columnPOS/*,bool TAGGED*/
             }
         else
             printf("Cannot open %s for writing\n","liste.wri");
-
+        */
         qsort(lines,linecnt,sizeof(line),mystrcmp);
-        printf("linecnt %d\n",linecnt);
+        //printf("linecnt %d\n",linecnt);
         int newlinecnt = removeDuplicateLines(linecnt,lines);
         if(newlinecnt != linecnt)
             {
             linecnt = newlinecnt;
-            printf(" After removing duplicate lines linecnt = %d\n",linecnt);
+            //printf(" After removing duplicate lines linecnt = %d\n",linecnt);
             }
 
         newlinecnt = removeDuplicateLinesTrailingNumber(linecnt,lines);
@@ -792,7 +795,7 @@ static int readlines(int columnfull,int columnbase,int columnPOS/*,bool TAGGED*/
         if(newlinecnt != linecnt)
             {
             linecnt = newlinecnt;
-            printf(" After removing duplicate lines followed by number linecnt = %d\n",linecnt);
+            //printf(" After removing duplicate lines followed by number linecnt = %d\n",linecnt);
             }
         FILE * fplemma = NULL;
         if(COUNTLEMMAS)
@@ -1444,8 +1447,8 @@ static void compare(const char * output,const char * control,int & same,int & di
     }
 
 static void doTheTest
-    (const char * executable
-    ,const char * traintest
+    (/*const char * executable
+    ,*/const char * traintest
     ,const char * test
     ,const char * output
     ,const char * traincontrol
@@ -1636,7 +1639,7 @@ class counting
             ( int cutoff
             , const char * Affixrules
             , const char * output
-            , const char * executable
+            //, const char * executable
             , const char * traintest
             , const char * test
             , const char * traincontrol
@@ -1668,8 +1671,8 @@ class counting
                 }
 
             doTheTest
-                (executable
-                ,traintest
+                (/*executable
+                ,*/traintest
                 ,test
                 ,output
                 ,traincontrol
@@ -1683,8 +1686,8 @@ class counting
                 ,n.Decision
                 );
             this->StandardDev.datum(n.same,n.ambiguous,n.different);
-            printf("n.same %d + n.different %d + n.ambiguous %d %d %d = nsum %d\n"
-                ,n.same,n.different,n.ambiguous[0],n.ambiguous[1],n.ambiguous[2],n.same+n.different+n.ambiguous[0]+n.ambiguous[1]+n.ambiguous[2]);
+            /*printf("n.same %d + n.different %d + n.ambiguous %d %d %d = nsum %d\n"
+                ,n.same,n.different,n.ambiguous[0],n.ambiguous[1],n.ambiguous[2],n.same+n.different+n.ambiguous[0]+n.ambiguous[1]+n.ambiguous[2]);*/
             n.tsame += n.same;
             n.tdifferent += n.different;
             for(int j = 0;j < 3;++j)
@@ -1745,6 +1748,34 @@ class counting
                 );
             fflush(fptab);
             }
+        void validationcolumn(char ** cell,int cutoff,int maxcount,int ttrainlines)
+            {
+            double ntot = n.tsame + n.tambiguous[0] + n.tambiguous[1] + n.tambiguous[2] + n.tdifferent;
+            char * f1 = "%14d ";
+            char * f2 = "%14.6f ";
+            for(int i = 0;i < 20;++i)
+                cell[i] = new char[20];
+            sprintf(cell[0],f1,cutoff);
+            sprintf(cell[1],f2,(double)n.tflexcount/(double)maxcount);
+            sprintf(cell[2],f2,ttrainlines == 0 ? 100.0 : 100.0*(double)n.tflexcount/(double)ttrainlines);
+            sprintf(cell[3],f2,ntot > 0 ? 100.0*(double)n.tsame/ntot : 0.0);
+            sprintf(cell[4],f2,ntot > 0 ? 100.0*(double)n.tambiguous[0]/ntot : 0.0);
+            sprintf(cell[5],f2,ntot > 0 ? 100.0*(double)n.tambiguous[1]/ntot : 0.0);
+            sprintf(cell[6],f2,ntot > 0 ? 100.0*(double)n.tambiguous[2]/ntot : 0.0);
+            sprintf(cell[7],f2,ntot > 0 ? 100.0*(double)n.tdifferent/ntot : 0.0);
+            sprintf(cell[8],f2,ntot > 0 ? 100.0*this->StandardDev.calculate(esam) : 0.0);
+            sprintf(cell[9],f2,ntot > 0 ? 100.0*this->StandardDev.calculate(eamb0) : 0.0);
+            sprintf(cell[10],f2,ntot > 0 ? 100.0*this->StandardDev.calculate(eamb1) : 0.0);
+            sprintf(cell[11],f2,ntot > 0 ? 100.0*this->StandardDev.calculate(eamb2) : 0.0);
+            sprintf(cell[12],f2,ntot > 0 ? 100.0*this->StandardDev.calculate(edif) : 0.0);
+            sprintf(cell[13],f2,ntot > 0 ? 100.0*(double)n.tambiguousRules/ntot : 0.0);
+            sprintf(cell[14],f2,ntot > 0 ? 100.0*(double)this->n.Decision.false_amb/ntot : 0.0);
+            sprintf(cell[15],f2,ntot > 0 ? 100.0*(double)this->n.Decision.false_not_amb/ntot : 0.0);
+            sprintf(cell[16],f2,ntot > 0 ? 100.0*(double)this->n.Decision.true_amb/ntot : 0.0);
+            sprintf(cell[17],f2,ntot > 0 ? 100.0*(double)this->n.Decision.true_not_amb/ntot : 0.0);
+            sprintf(cell[18],f2,this->n.Decision.precision());
+            sprintf(cell[19],f2,this->n.Decision.recall());
+            }
         void printingNice(int cutoff,double fraction,int maxcount,FILE * fptab,int ttrainlines,optionStruct * Options)
             {
             double ntot = n.tsame + n.tambiguous[0] + n.tambiguous[1] + n.tambiguous[2] + n.tdifferent;
@@ -1795,7 +1826,7 @@ void trainAndTest
     {
     lineab AffixLine[CUTOFFS];
     lineab SuffixLine[CUTOFFS];
-    char formatprefix[256]          ;sprintf(formatprefix,          BASEDIR "%%s" SLASH "%s_%s%s%s%s%s_%%s.txt",LGf(Options),XTRf(Options),(Options->suffixOnly() ? "_suffix" : "_affix"),XT,TT,(Options->redo() ? "redone" : "singleshot"));
+    char formatprefix[256]          ;sprintf(formatprefix,          BASEDIR "%s%%s" SEPARATOR "%s_%s%s%s%s%s_%%s.txt",Options->tempDir(),LGf(Options),XTRf(Options),(Options->suffixOnly() ? "_suffix" : "_affix"),XT,TT,(Options->redo() ? "redone" : "singleshot"));
 
     char formatTraining[256]        ;sprintf(formatTraining,        formatprefix,"training"     ,"%d_%d");        // the training words
     char formatTest[256]            ;sprintf(formatTest,            formatprefix,"test"         ,"%d_%d");        // the test words (<> training words)
@@ -1951,7 +1982,7 @@ void trainAndTest
                 if(REMOVE)
                     {
                     remove(Ttraining);
-                    printf("removed training files %s\n",Ttraining);
+                    //printf("removed training files %s\n",Ttraining);
                     }
                 }
 
@@ -1959,7 +1990,7 @@ void trainAndTest
                 {
                 for(int cutoff = CUTOFF_LOW;cutoff <= CUTOFF_HIGH;++cutoff)
                     {
-                    printf("cutoff %d <= %d <= %d\n",CUTOFF_LOW,cutoff,CUTOFF_HIGH);
+                    //printf("cutoff %d <= %d <= %d\n",CUTOFF_LOW,cutoff,CUTOFF_HIGH);
                     sprintf(controlResult,formatControlResult,fraction,count,cutoff);
                     sprintf(controlResultN,formatControlResultN,fraction,count,cutoff);
                     char Affixrules[250];
@@ -1975,13 +2006,13 @@ void trainAndTest
 
                     sprintf(Soutput,formatSOutput,cutoff,fraction,count);
                     sprintf(output,formatOutput,cutoff,fraction,count);
-                    printf("Affixrules:%s\n",Affixrules);
-                    const char executable[] = "cstlemma";
+                    //printf("Affixrules:%s\n",Affixrules);
+                    //const char executable[] = "cstlemma";
                     FILE * fptally = fopen(tally,"ab");
                     ++openfiles;
                     if(fptally)
                         {
-                        c[cutoff].testing(cutoff,Affixrules,output,executable,traintest,
+                        c[cutoff].testing(cutoff,Affixrules,output/*,executable*/,traintest,
                             test,Ttraincontrol,controlResultN,Tcontrol,fptally,Options);
                         --openfiles;
                         fclose(fptally);
@@ -2038,6 +2069,62 @@ void trainAndTest
                         {
                         bestcutoff = cutoff;
                         lowestntdifferent = c[cutoff].n.tdifferent;
+                        }
+                    }
+                char * texts[] =    {
+                                    "cutoff         ",
+                                    "rules          ",
+                                    "rules%         ",
+                                    "same%          ",
+                                    "ambi1%         ",
+                                    "ambi2%         ",
+                                    "ambi3%         ",
+                                    "diff%          ",
+                                    "same%stdev     ",
+                                    "ambi1%stdev    ",
+                                    "ambi2%stdev    ",
+                                    "ambi3%stdev    ",
+                                    "diff%stdev     ",
+                                    "amb.rules%     ",
+                                    "false_amb%     ",
+                                    "false_not_amb% ",
+                                    "true_amb%      ",
+                                    "true_not_amb%  ",
+                                    "precision      ",
+                                    "recall         "
+                                    };
+                int nocol = 7;
+                int norow = sizeof(texts)/sizeof(texts[0]);
+                int nocell = norow*nocol;
+                char * cell[sizeof(texts)/sizeof(texts[0]) * 7];
+                for(int j = 0;j < norow;++j)
+                    cell[j] = texts[j];
+                for(int k = 0;k < nocol - 1;++k)
+                    {
+                    c[k].validationcolumn(cell+(k+1)*norow,k,maxcount,ttrainlines);
+                    }
+                int len = 0;
+                for(int m = 0;m < nocell;++m)
+                    len += strlen(cell[m]);
+                char * report = new char[len + 3*norow + 1];
+                report[0] = 0;
+                for(int row = 0;row < norow;++row)
+                    {
+                    strcat(report,"; ");
+                    for(int col = 0;col < 7;++col)
+                        {
+                        int ind = row + col*norow;
+                        strcat(report,cell[ind]);
+                        }
+                    strcat(report,"\n");
+                    }
+                Options->printArgFile(report);
+                delete [] report;
+                for(int row2 = 0;row2 < norow;++row2)
+                    {
+                    for(int col = 1;col < 7;++col)
+                        {
+                        delete [] cell[row2+col*norow];
                         }
                     }
                 c[bestcutoff].printingNice(bestcutoff,fraction,maxcount,fptab,ttrainlines,Options);

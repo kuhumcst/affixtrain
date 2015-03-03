@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 //        printf("usage: makeaffixrules -w <word list> -c <cutoff> -C <expected cutoff> -o <flexrules> -e <extra> -n <columns> -f <compfunc> [<word list> [<cutoff> [<flexrules> [<extra> [<columns> [<compfunc>]]]]]]\n");
 
-static char opts[] = "?@:B:b:c:C:D:e:f:hH:i:j:K:L:M:N:n:o:O:p:P:Q:q:R:s:T:t:v:W:" /* GNU: */ "wr";
+static char opts[] = "?@:B:b:c:C:D:e:F:f:hH:i:j:K:L:M:N:n:o:O:p:P:Q:q:R:s:T:t:v:W:" /* GNU: */ "wr";
 static char *** Ppoptions = NULL;
 static char ** Poptions = NULL;
 static int optionSets = 0;
@@ -76,6 +76,7 @@ optionStruct::optionStruct(optionStruct & O)
     Doweights = O.Doweights;
     Redo = O.Redo;
     Test = O.Test;
+    F = O.F;
     TrainTest = O.TrainTest;
     Q = O.Q;
     q = O.q;
@@ -116,6 +117,7 @@ optionStruct::optionStruct()
     Doweights = false;
     Redo = false;
     Test = false;
+    F = false;
     TrainTest = false;
     Q = 1;
     q = 1;
@@ -320,7 +322,9 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
             printf("-M: number of iterations of training with same fraction of training data when fraction is maximal\n");
             printf("-W: minimise weight, not count (sum of rules) (with -p or -f0)\n");
             printf("-P: write parameters to file (default parms.txt if -p or -f0, otherwise no parameter file)\n");
-            printf("-t: test the rules\n");
+            printf("-t: test the rules, not with the training data\n");
+            printf("-T: test the rules with the training data\n");
+            printf("-F; create flexrules. Can be combined with computation (-p) and testing (-t, -T)\n");
             printf("-n: columns (default 120):\n");
             printf("  1:Word\n");
             printf("  F:Word\n");
@@ -369,7 +373,7 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
             printf("  17:koud ()\n");
             printf("  18:parms0 (Use computed parameter settings.)\n");
             printf("  19:parmsoff (obsolete, same as -f18)\n");
-            printf("-b: compiled, raw rule file. Exits after pretty printing.\n");
+            printf("-b: Name of binary rule file. Pretty print rule file and then exit.\n");
             printf("-Q: Max recursion depth when attempting to create candidate rule\n");
             printf("-q: Percentage of training pairs to set aside for testing\n");
             return Leave;
@@ -392,6 +396,17 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
             ComputeParms = locoptarg && *locoptarg == '-' ? false : true;
             break;
             // GNU >>
+        case 'w':
+            printf("11. BECAUSE THE PROGRAM IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY\n");
+            printf("FOR THE PROGRAM, TO THE EXTENT PERMITTED BY APPLICABLE LAW.  EXCEPT WHEN\n");
+            printf("OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES\n");
+            printf("PROVIDE THE PROGRAM \"AS IS\" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED\n");
+            printf("OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF\n");
+            printf("MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.  THE ENTIRE RISK AS\n");
+            printf("TO THE QUALITY AND PERFORMANCE OF THE PROGRAM IS WITH YOU.  SHOULD THE\n");
+            printf("PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY SERVICING,\n");
+            printf("REPAIR OR CORRECTION.\n");
+            return Leave;
         case 'r':
             printf("12. IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING\n");
             printf("WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR\n");
@@ -425,19 +440,9 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
         case 't': // test (not with training data)
             Test = locoptarg && *locoptarg == '-' ? false : true;
             break;
-            // GNU >>
-        case 'w':
-            printf("11. BECAUSE THE PROGRAM IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY\n");
-            printf("FOR THE PROGRAM, TO THE EXTENT PERMITTED BY APPLICABLE LAW.  EXCEPT WHEN\n");
-            printf("OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES\n");
-            printf("PROVIDE THE PROGRAM \"AS IS\" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED\n");
-            printf("OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF\n");
-            printf("MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.  THE ENTIRE RISK AS\n");
-            printf("TO THE QUALITY AND PERFORMANCE OF THE PROGRAM IS WITH YOU.  SHOULD THE\n");
-            printf("PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY SERVICING,\n");
-            printf("REPAIR OR CORRECTION.\n");
-            return Leave;
-            // << GNU
+        case 'F': // create flexrules
+            F = locoptarg && *locoptarg == '-' ? false : true;
+            break;
         case 'W':
             Doweights = locoptarg && *locoptarg == '-' ? false : true;
             break;
@@ -675,6 +680,8 @@ OptReturnTp optionStruct::readOptsFromFile(char * locoptarg, char * progname)
 
 void optionStruct::completeArgs()
     {
+    if(b != 0)
+        return;
     if (SuffixOnly)
         {
         if (e)
@@ -936,14 +943,9 @@ void optionStruct::print(FILE * fp) const
             fprintf(fp, "               ; redo training after homographs for next round are removed (%s)\n-R %s\n", Redo ? "yew" : "no", Redo ? "" : "-");
             fprintf(fp, "               ; cutoff\n-c %d\n", c);
             }
-        if(this->TrainTest)
-            {
-            fprintf(fp, "               ; test without training data (%s)\n-T %s\n", TrainTest ? "yes" : "no", TrainTest ? "" : "-");
-            }
-        if(this->Test)
-            {
-            fprintf(fp, "               ; test (without training data) (%s)\n-t %s\n", Test ? "yes" : "no", Test ? "" : "-");
-            }
+        fprintf(fp, "               ; test without training data (%s)\n-T %s\n", TrainTest ? "yes" : "no", TrainTest ? "" : "-");
+        fprintf(fp, "               ; test (without training data) (%s)\n-t %s\n", Test ? "yes" : "no", Test ? "" : "-");
+        fprintf(fp, "               ; create flexrules (%s)\n-F %s\n", F ? "yes" : "no", F ? "" : "-");
         fprintf(fp, "               ; Number of blobs found in word list: %d whereof used for training %d\n", Blobs, FracBlobs == 0 ? Blobs : FracBlobs);
         fprintf(fp, "               ; Number of lines found in word list: %d whereof used for training %d\n", Lines, FracLines == 0 ? Lines : FracLines);
         fprintf(fp, "               ; Current training size step: %d\n", Swath);
@@ -995,7 +997,7 @@ void optionStruct::setP(const char * ParamFile)
     }
 
 
-void optionStruct::printArgFile() const
+void optionStruct::printArgFile(char * evaluation) const
     {
     int nameLength = strlen(i) + 1 + (e ? strlen(e) + 1 : 0) + (SuffixOnly ? strlen("suf_") : 0) + (C < 0 ? 0 : 2) + (Doweights ? 3 : 0) + 1;
     char * name = new char[nameLength];
@@ -1021,11 +1023,14 @@ void optionStruct::printArgFile() const
         {
         strcat(name, "_W_");
         }
-    int nl = strlen(name) + 1;
-    assert(nameLength == nl);
+    assert(nameLength == strlen(name) + 1);
     FILE * fp = fopen(name, "wb");
     ++openfiles;
     print(fp);
+    if(evaluation)
+        {
+        fprintf(fp,"\n; Evaluation:\n; -----------\n%s",evaluation);
+        }
     --openfiles;
     fclose(fp);
     }

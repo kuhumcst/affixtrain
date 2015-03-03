@@ -29,6 +29,7 @@ MAKEAFFIXRULESSRC=\
 	comp.cpp\
 	flexcombi.cpp\
 	graph.cpp\
+	testrules.cpp\
 	$(LETTERFUNCDIR)/isofunc.cpp\
 	$(LETTERFUNCDIR)/letter.cpp\
 	$(LETTERFUNCDIR)/letterfunc.cpp\
@@ -41,6 +42,8 @@ MAKEAFFIXRULESHEADERS=\
 	comp.h\
 	flexcombi.h\
 	graph.h\
+	affixtrain.h\
+	testrules.h\
 	$(LETTERFUNCDIR)/isofunc.h\
 	$(LETTERFUNCDIR)/letter.h\
 	$(LETTERFUNCDIR)/letterfunc.h\
@@ -60,6 +63,7 @@ MAKEAFFIXRULESOBJ=\
 	letterfunc.o\
 	optionaff.o\
 	affixtrain.o\
+	testrules.o\
 	utf8func.o
 				
 

@@ -768,6 +768,11 @@ void optionStruct::completeArgs()
 
 
     FILE * f = fopen(wordList(), "r");
+    if(!f)
+        {
+        fprintf(stderr,"Input %s could not be opened for reading (-i parameter)\n",wordList());
+        exit(-1);
+        }
     ++openfiles;
     Blobs = 0; // If there are no non-empty lines, there are no blobs either.
     Lines = 0;
@@ -999,7 +1004,7 @@ void optionStruct::setP(const char * ParamFile)
 
 void optionStruct::printArgFile(char * evaluation) const
     {
-    int nameLength = strlen(i) + 1 + (e ? strlen(e) + 1 : 0) + (SuffixOnly ? strlen("suf_") : 0) + (C < 0 ? 0 : 2) + (Doweights ? 3 : 0) + 1;
+    size_t nameLength = strlen(i) + 1 + (e ? strlen(e) + 1 : 0) + (SuffixOnly ? strlen("suf_") : 0) + (C < 0 ? 0 : 2) + (Doweights ? 3 : 0) + 1;
     char * name = new char[nameLength];
     strcpy(name, i);
     strcat(name, "_");

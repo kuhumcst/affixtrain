@@ -77,6 +77,7 @@ class optionStruct
         int NumberOfNodes;
         int TrainingPairsLines;
         double Weight;
+        char * Argstring;
         OptReturnTp doSwitch(int c, char * locoptarg, char * progname);
         OptReturnTp readOptsFromFile(char * locoptarg,char * progname);
         void detectFloatingPointNumbers(char * S);
@@ -130,6 +131,7 @@ class optionStruct
         void setP(const char * ParamFile);
         void setc(int cutoff){c = cutoff;}
 
+        const char * optionStruct::argstring() const;
         void print(FILE * fp) const;
         void printArgFile(char * evaluation) const;
         

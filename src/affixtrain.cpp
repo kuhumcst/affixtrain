@@ -2513,7 +2513,7 @@ static void rearrange
 
 //int Nnodes = 0;
 
-static bool writeAndTest(node * tree, const char * ext, int threshold, const char * nflexrules, int & Nnodes, double & weight, optionStruct * options)
+static bool writeAndTest(node * tree, const char * ext, int threshold, const char * nflexrules, countAndWeight * Count/*int & Nnodes, double & weight*/, optionStruct * options)
     {
     CHECK("gglobTempDir");
     char filename[1000];
@@ -2534,13 +2534,13 @@ static bool writeAndTest(node * tree, const char * ext, int threshold, const cha
         sprintf(filename,"rules_%d%s.txt",threshold,ext);
         foo = fopenOrExit(filename,"wb","rules");
 #else
-        Nnodes = 0;
-        Nnodes = tree->count();
-        weight = 0.0;
-        weight = tree->weightedcount();
+        Count->setNnodes(0);
+        Count->setNnodes(tree->count());
+        Count->setWeight(0.0);
+        Count->setWeight(tree->weightedcount());
 #endif
-        sprintf(filename, "numberOfRules_%s_%d.txt", ext, threshold);
-        FILE * fono = fopenOrExit(tempDir(filename, options), "wb", "writeAndTest");
+        //sprintf(filename, "numberOfRules_%s_%d.txt", ext, threshold);
+        //FILE * fono = fopenOrExit(tempDir(filename, options), "wb", "writeAndTest");
 #if BRACMATOUTPUT
         sprintf(filename, "rules_%d%s.bra", threshold, ext);
         FILE * fobra = fopenOrExit(tempDir(filename, options), "wb", "Bracmat output");
@@ -2556,14 +2556,13 @@ static bool writeAndTest(node * tree, const char * ext, int threshold, const cha
         FILE * foleltxt = fopenOrExit(filename,"wb","Text version");
         filename[strlen(filename)-1] -= 2; // change ".len" back to ".lel"
 #endif
-        if (fono
+        if (folel
 #if RULESASTEXTINDENTED
             && foo
 #endif
 #if BRACMATOUTPUT
             && fobra
 #endif
-            && folel
 #if RULESASTEXT
             && foleltxt
 #endif
@@ -2572,9 +2571,9 @@ static bool writeAndTest(node * tree, const char * ext, int threshold, const cha
 #if RULESASTEXTINDENTED
             fprintf(foo,"tree={%d %f}\n",Nnodes,weight); // "rules_%d%s.txt"
 #endif
-            fprintf(fono, "%d\n%f", Nnodes, weight); // "numberOfRules_%d.txt"
-            --openfiles;
-            fclose(fono);
+//            fprintf(fono, "%d\n%f", Count->getNnodes(), Count->getWeight()); // "numberOfRules_%d.txt"
+//            --openfiles;
+//            fclose(fono);
             int nr = 0;
             strng L("");
             strng R("");
@@ -2646,11 +2645,11 @@ static bool writeAndTest(node * tree, const char * ext, int threshold, const cha
             }
         else
             {
-            if(fono)
+/*            if(fono)
                 {
                 --openfiles;
                 fclose(fono);
-                }
+                }*/
 
 #if RULESASTEXTINDENTED
             if(foo)
@@ -2766,15 +2765,16 @@ static bool doTraining
 , char * allIngestedPairsName
 , char * wordsGroupedByRuleName
 , char * numbersName
-, int & Nnodes
-, double & weight
+, countAndWeight * Counts
+//, int & Nnodes
+//, double & weight
 , const char * tag
 , int * filelines
 , optionStruct * options
 )
     {
     bool moreToDo = false;
-    Nnodes = 0;
+//    Nnodes = 0;
     VertexPointerCount = 0;
 
     aFile afile(fname, options);
@@ -2864,7 +2864,7 @@ static bool doTraining
                 printf("doTraining: naam 2 small");
                 exit(-1);
                 }
-            writeAndTest(top, ext, 0, naam, Nnodes, weight, options);
+            writeAndTest(top, ext, 0, naam, Counts+0, options);
 #if DOTEST
             testf(top,test,ext,0,naam);
 #endif
@@ -2877,7 +2877,7 @@ static bool doTraining
                     printf("doTraining: naam 2 small");
                     exit(-1);
                     }
-                writeAndTest(top, ext, thresh, naam, Nnodes, weight, options);
+                writeAndTest(top, ext, thresh, naam, Counts+thresh, options);
 #if DOTEST
                 testf(top,test,ext,0,naam);
 #endif
@@ -2891,7 +2891,7 @@ static bool doTraining
                 printf("doTraining: naam 2 small");
                 exit(-1);
                 }
-            writeAndTest(top, ext, 0, naam, Nnodes, weight, options);
+            writeAndTest(top, ext, 0, naam, Counts+0, options);
 #if DOTEST
             testf(top,test,ext,0,naam);
 #endif
@@ -2901,7 +2901,7 @@ static bool doTraining
             for (int thresh = 1; thresh <= max; thresh++)
                 {
                 top->pruneAll(thresh);
-                writeAndTest(top, ext, thresh, naam, Nnodes, weight, options);
+                writeAndTest(top, ext, thresh, naam, Counts+thresh, options);
 #if DOTEST
                 testf(top,test,ext,thresh,naam);
 #endif
@@ -2910,7 +2910,7 @@ static bool doTraining
         }
     else
         {
-        writeAndTest(top, ext, 0, 0, Nnodes, weight, options);
+        writeAndTest(top, ext, 0, 0, Counts+0, options);
 #if DOTEST
         testf(top,test,ext,0,0);
 #endif
@@ -2920,7 +2920,7 @@ static bool doTraining
         for (int thresh = 1; thresh <= max; thresh++)
             {
             top->pruneAll(thresh);
-            writeAndTest(top, ext, thresh, 0, Nnodes, weight, options);
+            writeAndTest(top, ext, thresh, 0, Counts+thresh, options);
 #if DOTEST
             testf(top,test,ext,thresh,0);
 #endif
@@ -3113,8 +3113,9 @@ void computeParms(optionStruct * options)
         printf("computeParms: ext 2 small");
         exit(-1);
         }
-    int Nnodes = 0;
-    double weight = 0.0;
+//    int Nnodes = 0;
+//    double weight = 0.0;
+    countAndWeight Count;
     int br1 = 0, br2 = 0;
     for (int swath = 0; swath <= maxswath; ++swath)
         {
@@ -3163,8 +3164,9 @@ void computeParms(optionStruct * options)
                 ,/* char * allIngestedPairsName                 */  NULL
                 ,/* char *                                      */  wordsGroupedByRuleName
                 ,/* char *                                      */  numbersName
-                ,/* int &                                       */  Nnodes
-                ,/* double &                                    */  weight
+                ,/* countAndWeight *                                    */  &Count
+                //,/* int &                                       */  Nnodes
+                //,/* double &                                    */  weight
                 ,/* const char *                                */  tag
                 ,/* int * filelines                             */  &filelines
                 , options
@@ -3172,12 +3174,12 @@ void computeParms(optionStruct * options)
             if (lines == 0)
                 fraclines = lines = filelines;
 
-            brownNo = Nnodes;
+            brownNo = Count.getNnodes();
             currentNo = brownNo;
-            brownweight = weight;
+            brownweight = Count.getWeight();
             currentweight = brownweight;
             betterfound(currentNo, currentweight, swath, -1, blobs, lines, fraction, fraclines, false, options);
-            printparms(Nnodes, weight, options);
+            printparms(Count.getNnodes(),Count.getWeight(), options);
             }
         int looplimit = (int)(maxiterations*pow(iterationsfactor, -swath));
 #if FLOATINGPOINTPARMS
@@ -3233,8 +3235,9 @@ void computeParms(optionStruct * options)
                 ,/* char * allIngestedPairsName                 */  NULL
                 ,/* char *                                      */  wordsGroupedByRuleName
                 ,/* char *                                      */  numbersName
-                ,/* int &                                       */  Nnodes
-                ,/* double &                                    */  weight
+                ,/* countAndWeight *                                    */  &Count
+                //,/* int &                                       */  Nnodes
+                //,/* double &                                    */  weight
                 ,/* const char *                                */  tag
                 ,/* int * filelines                             */  &filelines
                 , options
@@ -3242,7 +3245,7 @@ void computeParms(optionStruct * options)
             if (lines == 0)
                 fraclines = lines = filelines;
 
-            printparms(Nnodes, weight, options);
+            printparms(Count.getNnodes(),Count.getWeight(), options);
             if (options->verbose())
                 {
                 printf("\r%d %d %f %d %f           \n", iterations, currentNo, currentweight, brownNo, brownweight);
@@ -3250,13 +3253,13 @@ void computeParms(optionStruct * options)
 
             if (currentNo == 0)
                 {
-                currentNo = Nnodes;
-                currentweight = weight;
+                currentNo = Count.getNnodes();
+                currentweight = Count.getWeight();
                 }
             else
                 {
-                brownNo = Nnodes;
-                brownweight = weight;
+                brownNo = Count.getNnodes();
+                brownweight = Count.getWeight();
                 if (options->verbose())
                     printf("swath %d brownNo %d currentNo %d\n", swath, brownNo, currentNo);
                 if ((!options->doweights() && brownNo <= currentNo) || (options->doweights() && brownweight <= currentweight))
@@ -3279,7 +3282,7 @@ void computeParms(optionStruct * options)
     delete[] fbuf;
     }
 
-void trainRules(const char * tag, optionStruct * options)
+void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts)
     {
     CHECK("jglobTempDir");
     assert(options->flexrules() != NULL); // 20130125
@@ -3311,8 +3314,8 @@ void trainRules(const char * tag, optionStruct * options)
     sprintf(FlexrulePassFormat,"%s%%s.pass%%d.cutoff%%%%d",options->tempDir());// flexrules.passN.cutoffM
     sprintf(AccumulatedFlexrulePassFormat,"%s%%s.pass%d.cutoff%%%%d.accumulated",options->tempDir());// flexrules.passN.cutoffM
     clock_t start = clock();
-    int Nnodes = 0;
-    double weight = 0.0;
+    //int Nnodes = 0;
+    //double weight = 0.0;
     sprintf(pairsToTrainInNextPassFormat, "pairsToTrainInNextPass.%s%s.pass%%d", options->extra(), tag);
     sprintf(ingestedFractionOfAmbiguousPairsFormat, "ingestedFractionOfAmbiguousPairs.%s%s.pass%%d", options->extra(), tag);
     sprintf(allPairsFormat, "allPairs.%s%s.pass%%d", options->extra(), tag);
@@ -3376,8 +3379,9 @@ void trainRules(const char * tag, optionStruct * options)
             ,/* char * allIngestedPairsName                 */  allIngestedPairsName
             ,/* char *                                      */  wordsGroupedByRuleName
             ,/* char *                                      */  numbersName
-            ,/* int &                                       */  Nnodes
-            ,/* double &                                    */  weight
+            ,/* countAndWeight *                                    */  Counts
+            //,/* int &                                       */  Nnodes
+            //,/* double &                                    */  weight
             ,/* const char *                                */  passes > 1 ? NULL : tag
             ,/* int * filelines                             */  NULL
             , options
@@ -3408,8 +3412,9 @@ void trainRules(const char * tag, optionStruct * options)
                 ,/* char * allIngestedPairsName                 */  NULL
                 ,/* char *                                      */  wordsGroupedByRuleName
                 ,/* char *                                      */  numbersName
-                ,/* int &                                       */  Nnodes
-                ,/* double &                                    */  weight
+                ,/* countAndWeight *                                    */  Counts
+                //,/* int &                                       */  Nnodes
+                //,/* double &                                    */  weight
                 ,/* const char *                                */  tag
                 ,/* int * filelines                             */  NULL
                 , options
@@ -3709,7 +3714,9 @@ int main(int argc, char **argv)
                         {
                         printf("Doing tag %s\n", theTag->name);
                         }
-                    trainRules(theTag->name, &options);
+                    countAndWeight * Counts = new countAndWeight[1+options.cutoff()];
+                    trainRules(theTag->name, &options,Counts);
+                    delete[]Counts;
                     theTag = theTag->next;
                     }
                 }
@@ -3717,7 +3724,9 @@ int main(int argc, char **argv)
                 {
                 if (options.verbose())
                     printf("NOT doing Tags\n");
-                trainRules("", &options);
+                countAndWeight * Counts = new countAndWeight[1+options.cutoff()];
+                trainRules("", &options,Counts);
+                delete[]Counts;
                 }
             }
 

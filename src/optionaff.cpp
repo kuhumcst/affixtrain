@@ -83,6 +83,7 @@ optionStruct::optionStruct(optionStruct & O)
     K = O.K;
     M = O.M;
     N = O.N;
+    Argstring = 0;
 
     Blobs = O.Blobs;
     Lines = O.Lines;
@@ -111,6 +112,7 @@ optionStruct::optionStruct()
     ComputeParms = false;// compute parms
     SuffixOnly = false;// suffix rules only
     SuffixOnlyParmSeen = false;
+    Argstring = 0;
     Verbose = false;// verbose
     Minfraction = 1.0; // L
     Maxfraction = 1.0; // H
@@ -154,6 +156,7 @@ optionStruct::~optionStruct()
     delete[] P;
     delete[] b;
     delete[] D;
+    delete[] Argstring;
     }
 
 void optionStruct::detectFloatingPointNumbers(char * S)
@@ -1001,34 +1004,48 @@ void optionStruct::setP(const char * ParamFile)
     P = dupl(ParamFile);
     }
 
-
-void optionStruct::printArgFile(char * evaluation) const
+const char * optionStruct::argstring() const
     {
-    size_t nameLength = strlen(i) + 1 + (e ? strlen(e) + 1 : 0) + (SuffixOnly ? strlen("suf_") : 0) + (C < 0 ? 0 : 2) + (Doweights ? 3 : 0) + 1;
+    if(Argstring)
+        delete[] Argstring;
+
+    size_t nameLength = strlen(i) + (e ? 1+ strlen(e) : 0) + (SuffixOnly ? strlen("_suf") : 0) + (C < 0 ? 0 : strlen("_C") + 1) + (Doweights ? strlen("_W") : 0) + (Redo ? strlen("_R") : 0) + 1;
+    
     char * name = new char[nameLength];
     strcpy(name, i);
-    strcat(name, "_");
     if (e)
         {
-        strcat(name, e);
         strcat(name, "_");
+        strcat(name, e);
         }
     if (SuffixOnly)
         {
-        strcat(name, "suf_");
+        strcat(name, "_suf");
         }
     if (C >= 0)
         {
-        strcat(name, "C");
+        strcat(name, "_C");
         int L = strlen(name);
         name[L] = (char)(C + '0');
         name[L + 1] = 0;
         }
     if (Doweights)
         {
-        strcat(name, "_W_");
+        strcat(name, "_W");
         }
-    assert(nameLength == strlen(name) + 1);
+    if (Redo)
+        {
+        strcat(name, "_R");
+        }
+    return name;
+    }
+
+void optionStruct::printArgFile(char * evaluation) const
+    {
+    const char * Args = argstring();
+    char * name = new char[strlen("parms.")+strlen(Args)+1];
+    strcpy(name, "parms.");
+    strcat(name, Args);
     FILE * fp = fopen(name, "wb");
     ++openfiles;
     print(fp);

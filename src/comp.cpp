@@ -4939,6 +4939,7 @@ static int best[NPARMS]    =
 
 //int D[NPARMS]        = {0};
 
+/*
 static double  R[] = // 64 elements
     {
     1, 0, 0, 0,
@@ -4958,7 +4959,7 @@ static double  R[] = // 64 elements
     0, 0, 1,-1,
     0, 0, 1, 1
     };
-
+*/
 
 static void plus(double * dest, double * term,int cols)
     {

@@ -117,7 +117,7 @@ static const char * newStyleRulesf(optionStruct * Options)
     return nsr;
     }
 
-static char tr_pathname[256];
+
 
 class lineab
     {
@@ -1706,8 +1706,8 @@ class counting
         void validationcolumn(char ** cell,int cutoff,int maxcount,int ttrainlines)
             {
             double ntot = n.tsame + n.tambiguous[0] + n.tambiguous[1] + n.tambiguous[2] + n.tdifferent;
-            char * f1 = "%14d ";
-            char * f2 = "%14.6f ";
+            const char * f1 = "%14d ";
+            const char * f2 = "%14.6f ";
             for(int i = 0;i < 20;++i)
                 cell[i] = new char[20];
             sprintf(cell[0],f1,cutoff);
@@ -1780,7 +1780,7 @@ void trainAndTest
         )
     {
     lineab AffixLine[CUTOFFS];
-    lineab SuffixLine[CUTOFFS];
+
     char formatprefix[256]          ;sprintf(formatprefix,          BASEDIR "%s%%s" SEPARATOR "%s_%s%s%s%s%s_%%s.txt",Options->tempDir(),LGf(Options),XTRf(Options),(Options->suffixOnly() ? "_suffix" : "_affix"),XT,TT,(Options->redo() ? "redone" : "singleshot"));
 
     char formatTraining[256]        ;sprintf(formatTraining,        formatprefix,"training"     ,"%d_%d");        // the training words
@@ -2007,7 +2007,7 @@ void trainAndTest
                 for(int cutoff = CUTOFF_LOW;cutoff <= CUTOFF_HIGH;++cutoff)
                     {
                     AffixLine [cutoff].add((double)c[cutoff].n.tflexcount/(double)maxcount,(double)ttrainlines/(double)maxcount);
-                    fprintf (fptab,"cutoff %d Affix  a %14.6lf b %14.6lf: N(rules)=%14.6lf*N(trainpairs)^%lf\n"
+                    fprintf (fptab,"cutoff %d Affix  a %14.6f b %14.6f: N(rules)=%14.6f*N(trainpairs)^%f\n"
                         ,cutoff,AffixLine [cutoff].a(),AffixLine [cutoff].b()
                         ,exp(AffixLine[cutoff].a())
                         ,AffixLine[cutoff].b()

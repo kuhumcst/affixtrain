@@ -317,7 +317,7 @@ static char * printChain
                 , char * start
                 , char * end
                 , FILE * fm
-				, char * msg
+				, const char * msg
                 )
     {
 	int index = *(int *)p;
@@ -761,8 +761,8 @@ class oneOrMore
 class treenode
     {
     public:
-        oneOrMore Sibling;
         rule Rule;
+        oneOrMore Sibling;
         oneOrMore Child;
         void print(int ind);
         int copy(char * arr, int ind);
@@ -848,7 +848,7 @@ class chain
                     return Alt->get(example);
                 }
             else
-                return false;
+                return 0;
             }
         void print(int ind);
         int copy(char * arr, int ind);

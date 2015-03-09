@@ -369,6 +369,11 @@ class vertex : public rulePair
         */
 #endif
     public:
+#if _NA
+        void adjustNotApplicableCountsByRecalculatingR_NA(trainingPair * NotApplicableRight,int total,optionStruct * options);
+        void adjustNotApplicableCountsByRecalculatingW_NA(trainingPair * NotApplicableWrong,int total,optionStruct * options);
+#endif
+
         double impedance; 
         /* Regard the part of the pattern that is enclosed in * as a series of condensors.
         The capacity of each condensor is equal to the length of the pattern string.
@@ -555,6 +560,26 @@ class vertexPointer
                     if(n->IfPatternSucceeds)
                         ret += n->IfPatternSucceeds->count();
                     n = n->IfPatternFails;
+                    }
+                return ret;
+                }
+            LONG countByDepth(int Depth)
+                {
+                LONG ret = 0;
+                for ( node * n = this
+                    ; n
+                    ; ++Depth, n = n->IfPatternFails
+                    )
+                    {
+                    if(n->Right)
+                        {
+                        LONG rcount = (LONG)n->Right->count();
+                        assert(rcount >= 0.9);
+                        ret += rcount*Depth;
+                        }
+                    
+                    if(n->IfPatternSucceeds)
+                        ret += n->IfPatternSucceeds->countByDepth(Depth+1);
                     }
                 return ret;
                 }

@@ -5218,18 +5218,19 @@ bool init(optionStruct * options)
     return true;
     }
 
-void printparms(int Nnodes,double weight,optionStruct * options)
+void printparms(int Nnodes,double weight,LONG countByDepth, optionStruct * options)
     {
     int i;
     FILE * f = fopen(options->currentParms(),"a");
     ++openfiles;
     assert(f);
     fprintf(f
-           ,"/*#nodes in tree: %d weight (%s used): %.*e suffix only: %s */\n"
+           ,"/*#nodes in tree: %d weight (%s used): %.*e countByDepth " LONGD " suffix only: %s */\n"
            ,Nnodes
            ,options->doweights() ? "" : "not "
            ,DBL_DIG+2
            ,weight
+           ,countByDepth
            ,options->suffixOnly() ? "yes" : "no"
            );
     fprintf(f,"        {\n        ");
@@ -5312,11 +5313,13 @@ static int comp_parms(const vertex * a,const vertex * b)
         {
         double A = parms.Matrix[RR]*a->R__R + parms.Matrix[WR]*a->W__R + parms.Matrix[RW]*a->R__W + parms.Matrix[WW]*a->W__W;
         double B = parms.Matrix[RR]*b->R__R + parms.Matrix[WR]*b->W__R + parms.Matrix[RW]*b->R__W + parms.Matrix[WW]*b->W__W;
+#if _NA
         if(parms.ROWPARMS == 6)
             {
             A += parms.Matrix[RN]*a->R__NA + parms.Matrix[WN]*a->W__NA;
             B += parms.Matrix[RN]*b->R__NA + parms.Matrix[WN]*b->W__NA;
             }
+#endif
         if(A != B)
             {
             return A > B ? -1 : 1;
@@ -5332,11 +5335,13 @@ static int comp_parms0_off(const vertex * a,const vertex * b)
     {   
     double A = parms.Matrix[RR]*a->R__R + parms.Matrix[WR]*a->W__R + parms.Matrix[RW]*a->R__W + parms.Matrix[WW]*a->W__W;
     double B = parms.Matrix[RR]*b->R__R + parms.Matrix[WR]*b->W__R + parms.Matrix[RW]*b->R__W + parms.Matrix[WW]*b->W__W;
+#if _NA
     if(parms.ROWPARMS == 6)
         {
         A += parms.Matrix[RN]*a->R__NA + parms.Matrix[WN]*a->W__NA;
         B += parms.Matrix[RN]*b->R__NA + parms.Matrix[WN]*b->W__NA;
         }
+#endif
     if(A != B)
         {
         return A > B ? -1 : 1;

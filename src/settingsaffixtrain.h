@@ -351,6 +351,7 @@ Allow weight functions (see comp.cpp) to use the numbers W__NA and N__NA,
 the number of wrongly (correctly) lemmatized words that a candidate rule 
 does not apply to. These numbers are not updated (=decremented) as siblings
 are added, in contrast to W__W, W__R, R__W and R__R.
+20150309: now they are updated!
 */
 
 #define LEMMACLASS 0
@@ -395,6 +396,31 @@ Read word class from file.
 #else
 #define ROWPARMS 4
 #define NPARMS 12
+#endif
+
+
+
+#if defined _WIN64 || defined _WIN32
+/*Microsoft*/
+#define LONG long long
+#define LONGU "%llu"
+#define LONGD "%lld"
+#define LONG0D "%0lld"
+#define LONGX "%llX"
+#define STRTOUL _strtoui64
+#define STRTOL _strtoi64
+#define FSEEK _fseeki64
+#define FTELL _ftelli64
+#else
+#define LONG long
+#define LONGU "%lu"
+#define LONGD "%ld"
+#define LONG0D "%0ld"
+#define LONGX "%lX"
+#define STRTOUL strtoul
+#define STRTOL strtol
+#define FSEEK fseek
+#define FTELL ftell
 #endif
 
 

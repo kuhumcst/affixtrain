@@ -57,7 +57,7 @@ void setCompetitionFunction(optionStruct * options);
 void copybest();
 bool init(optionStruct * options);
 void brown();
-void printparms(int Nnodes,double weight,optionStruct * options);
+void printparms(int Nnodes,double weight,LONG countByDepth, optionStruct * options);
 void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,int lines,double fraction,int fraclines,bool improvement,optionStruct * options);
 void worsefound();
 

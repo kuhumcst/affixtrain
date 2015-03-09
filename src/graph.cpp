@@ -1838,7 +1838,12 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
     assert(this->Right == NULL);
     //if(pvp){checkPV(pvp,Np);}
 
-    //int input = (*allRight ? (*allRight)->count() : 0) + (*allWrong ? (*allWrong)->count() : 0);
+    /*test:
+    int inputR = (*allRight ? (*allRight)->count() : 0);
+    int inputW = (*allWrong ? (*allWrong)->count() : 0);
+    int input = inputR + inputW;
+    //*:test*/
+
     this->splitTrainingPairList(*allRight,pNotApplicableRight,pWrong,pRight,options);
     this->splitTrainingPairList(*allWrong,pNotApplicableWrong,pWrong,pRight,options);
    // assert(pRight != &this->Right);
@@ -1851,16 +1856,21 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
     *pNotApplicableWrong = 0;
     *pWrong = 0;
     *pRight = 0; // Pattern succeeds and replacement is right.
-    /*
-    int output = (NotApplicableRight ? NotApplicableRight->count() : 0)
-        + (NotApplicableWrong ? NotApplicableWrong->count() : 0)
+    *allRight = NotApplicableRight;
+    *allWrong = NotApplicableWrong;
+
+    /*test
+    int outputR = (NotApplicableRight ? NotApplicableRight->count() : 0); 
+    int outputW = (NotApplicableWrong ? NotApplicableWrong->count() : 0);
+    int output = outputR
+        + outputW
         + (Wrong ? Wrong->count() : 0)
         + (this->Right ? this->Right->count() : 0);
     assert(input == output);
-    printf("input %d\n",input);
-*/
-    *allRight = NotApplicableRight;
-    *allWrong = NotApplicableWrong;
+    printf("%d R %d -> %d W %d -> %d\n",input,inputR,outputR,inputW,outputW);
+    getchar();
+    //**/
+
 
     //if(pvp){checkPV(pvp,Np);}
 
@@ -2156,11 +2166,21 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
             //printf("check %ld\n",checkPV(pv+first,lastN-first));
             *pnode = new node(*pvf++);
             //(*pnode)->printSep(stdout,level);
+#if _NA
+            int inputR = (this->Right ? this->Right->count() : 0); 
+            int inputW = (Wrong ? Wrong->count() : 0);
+#endif
 #if AMBIGUOUS
             (*pnode)->init(&this->Right,&Wrong,/* &this->Ambiguous,*/level+1,options);
 #else
             (*pnode)->init(&this->Right,&Wrong,level+1/*,pv+first,lastN-first*/,options);
 #endif
+#if _NA
+            int outputR = (this->Right ? this->Right->count() : 0); 
+            int outputW = (Wrong ? Wrong->count() : 0);
+#endif
+//            printf("R %d -> %d W %d -> %d\n",inputR,outputR,inputW,outputW);
+
             if(wpart < 0) // 20101207
                 {
                 //printf("check %ld\n",checkPV(pv+first,lastN-first));
@@ -2178,6 +2198,19 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
                         --pvN;
                         *pvi = *pvN;
                         }
+#if _NA
+                    else
+                        {
+                        if(outputR < outputW)
+                            {
+                            (*pvi)->adjustNotApplicableCountsByRecalculatingR_NA(this->Right,outputR+outputW,options);
+                            }
+                        else
+                            {
+                            (*pvi)->adjustNotApplicableCountsByRecalculatingW_NA(Wrong,outputR+outputW,options);
+                            }
+                        }
+#endif
                     }
                 if(pvf == pvN)
                     {
@@ -2264,3 +2297,47 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
         }
     }
 
+#if _NA
+void vertex::adjustNotApplicableCountsByRecalculatingR_NA(trainingPair * pair,int total,optionStruct * options)
+    {
+//    printf("Voor R_NA %d W_NA %d total %d\n",this->R__NA,this->W__NA,total);
+    this->R__NA = 0;
+    while(pair)
+        {
+        switch(this->lemmatise(pair,0,0,options))
+            {
+            case wrong:
+            case right:
+                break;
+            default:
+                ++this->R__NA;
+            }
+        pair = pair->next();
+        }
+    this->W__NA = total - (this->R__NA + this->R__R + this->R__W + /*this->W__NA +*/ this->W__R + this->W__W);
+//    printf("Erna R_NA %d W_NA %d total %d\n",this->R__NA,this->W__NA,total);
+//    getchar();
+    }
+
+void vertex::adjustNotApplicableCountsByRecalculatingW_NA(trainingPair * pair,int total,optionStruct * options)
+    {
+//    printf("Voor R_NA %d W_NA %d total %d\n",this->R__NA,this->W__NA,total);
+    this->W__NA = 0;
+    while(pair)
+        {
+        switch(this->lemmatise(pair,0,0,options))
+            {
+            case wrong:
+            case right:
+                break;
+            default:
+                ++this->W__NA;
+            }
+        pair = pair->next();
+        }
+    this->R__NA = total - (/*this->R__NA +*/ this->R__R + this->R__W + this->W__NA + this->W__R + this->W__W);
+//   printf("Erna R_NA %d W_NA %d total %d\n",this->R__NA,this->W__NA,total);
+//    getchar();
+    }
+
+#endif

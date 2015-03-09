@@ -973,6 +973,7 @@ bool rulePair::apply(trainingPair * trainingpair, size_t lemmalength, char * lem
                 //*d++ = *r++;
                 R = UTF8char(r, UTF8);
                 }
+
             do
                 {
                 *++m = unequal;
@@ -983,14 +984,15 @@ bool rulePair::apply(trainingPair * trainingpair, size_t lemmalength, char * lem
                 //++p;
                 //++w;
                 } while (P && P != ANY && P == W);
-                if (P != R)
+
+            if (P != R)
+                {
+                if (options->suffixOnly())
                     {
-                    if (options->suffixOnly())
-                        {
-                        suffix(mask);
-                        }
-                    return false;
+                    suffix(mask);
                     }
+                return false;
+                }
             }
         else if (R == ANY)
             {
@@ -2538,6 +2540,8 @@ static bool writeAndTest(node * tree, const char * ext, int threshold, const cha
         Count->setNnodes(tree->count());
         Count->setWeight(0.0);
         Count->setWeight(tree->weightedcount());
+        Count->setCountByDepth(0.0);
+        Count->setCountByDepth(tree->countByDepth(1));
 #endif
         //sprintf(filename, "numberOfRules_%s_%d.txt", ext, threshold);
         //FILE * fono = fopenOrExit(tempDir(filename, options), "wb", "writeAndTest");
@@ -3176,10 +3180,11 @@ void computeParms(optionStruct * options)
 
             brownNo = Count.getNnodes();
             currentNo = brownNo;
-            brownweight = Count.getWeight();
+            //brownweight = Count.getWeight();
+            brownweight = (double)Count.getCountByDepth();
             currentweight = brownweight;
             betterfound(currentNo, currentweight, swath, -1, blobs, lines, fraction, fraclines, false, options);
-            printparms(Count.getNnodes(),Count.getWeight(), options);
+            printparms(Count.getNnodes(),Count.getWeight(), Count.getCountByDepth(), options);
             }
         int looplimit = (int)(maxiterations*pow(iterationsfactor, -swath));
 #if FLOATINGPOINTPARMS
@@ -3245,7 +3250,7 @@ void computeParms(optionStruct * options)
             if (lines == 0)
                 fraclines = lines = filelines;
 
-            printparms(Count.getNnodes(),Count.getWeight(), options);
+            printparms(Count.getNnodes(),Count.getWeight(), Count.getCountByDepth(), options);
             if (options->verbose())
                 {
                 printf("\r%d %d %f %d %f           \n", iterations, currentNo, currentweight, brownNo, brownweight);
@@ -3254,12 +3259,14 @@ void computeParms(optionStruct * options)
             if (currentNo == 0)
                 {
                 currentNo = Count.getNnodes();
-                currentweight = Count.getWeight();
+                //currentweight = Count.getWeight();
+                currentweight = (double)Count.getCountByDepth();
                 }
             else
                 {
                 brownNo = Count.getNnodes();
-                brownweight = Count.getWeight();
+                //brownweight = Count.getWeight();
+                brownweight = (double)Count.getCountByDepth();
                 if (options->verbose())
                     printf("swath %d brownNo %d currentNo %d\n", swath, brownNo, currentNo);
                 if ((!options->doweights() && brownNo <= currentNo) || (options->doweights() && brownweight <= currentweight))

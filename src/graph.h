@@ -568,13 +568,13 @@ class vertexPointer
                 LONG ret = 0;
                 for ( node * n = this
                     ; n
-                    ; ++Depth, n = n->IfPatternFails
+                    ;/* ++Depth,*/ n = n->IfPatternFails
                     )
                     {
                     if(n->Right)
                         {
                         LONG rcount = (LONG)n->Right->count();
-                        assert(rcount >= 0.9);
+                        //assert(rcount >= 0.9);
                         ret += rcount*Depth;
                         }
                     

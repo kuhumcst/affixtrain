@@ -1628,6 +1628,7 @@ class counting
             {
             long nflexcount = 0;
             nflexcount = Counts[cutoff].getNnodes();
+            n.tflexcount += nflexcount;
             doTheTest
                 (traintest
                 ,test

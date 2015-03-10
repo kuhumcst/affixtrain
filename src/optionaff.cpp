@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 //        printf("usage: makeaffixrules -w <word list> -c <cutoff> -C <expected cutoff> -o <flexrules> -e <extra> -n <columns> -f <compfunc> [<word list> [<cutoff> [<flexrules> [<extra> [<columns> [<compfunc>]]]]]]\n");
 
-static char opts[] = "?@:B:b:c:C:D:e:F:f:hH:i:j:K:L:M:N:n:o:O:p:P:Q:q:R:s:T:t:v:W:" /* GNU: */ "wr";
+static char opts[] = "?@:B:b:c:C:D:d:e:F:f:hH:i:j:K:L:M:N:n:o:O:p:P:Q:q:R:s:T:t:v:W:" /* GNU: */ "wr";
 static char *** Ppoptions = NULL;
 static char ** Poptions = NULL;
 static int optionSets = 0;
@@ -74,6 +74,7 @@ optionStruct::optionStruct(optionStruct & O)
     Minfraction = O.Minfraction;
     Maxfraction = O.Maxfraction;
     Doweights = O.Doweights;
+    DoDepth = O.DoDepth;
     Redo = O.Redo;
     Test = O.Test;
     F = O.F;
@@ -117,6 +118,7 @@ optionStruct::optionStruct()
     Minfraction = 1.0; // L
     Maxfraction = 1.0; // H
     Doweights = false;
+    DoDepth = false;
     Redo = false;
     Test = false;
     F = false;
@@ -323,7 +325,8 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
             printf("-K: number of differently sized fractions of trainingdata\n");
             printf("-N: number of iterations of training with same fraction of training data when fraction is minimal\n");
             printf("-M: number of iterations of training with same fraction of training data when fraction is maximal\n");
-            printf("-W: minimise weight, not count (sum of rules) (with -p or -f0)\n");
+            printf("-W: minimise weight (lower (better) the more supporting examples at a node), not count (sum of rules) (with -p or -f0)\n");
+            printf("-d: minimise weight times rule depth, not count (sum of rules) (with -p or -f0)\n");
             printf("-P: write parameters to file (default parms.txt if -p or -f0, otherwise no parameter file)\n");
             printf("-t: test the rules, not with the training data\n");
             printf("-T: test the rules with the training data\n");
@@ -448,6 +451,9 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
             break;
         case 'W':
             Doweights = locoptarg && *locoptarg == '-' ? false : true;
+            break;
+        case 'd':
+            DoDepth = locoptarg && *locoptarg == '-' ? false : true;
             break;
         case 'R':
             Redo = locoptarg && *locoptarg == '-' ? false : true;
@@ -894,6 +900,7 @@ void optionStruct::print(FILE * fp) const
         fprintf(fp, "               ; (N/A) compute parms (%s)\n-p %s\n", ComputeParms ? "yes" : "no", ComputeParms ? "" : "-");
         fprintf(fp, "               ; (N/A) expected cutoff\n-C %d\n", C);
         fprintf(fp, "               ; (N/A) do weights (%s)\n-W %s\n", Doweights ? "yes" : "no", Doweights ? "" : "-");
+        fprintf(fp, "               ; (N/A) do depths weights (%s)\n-d %s\n", DoDepth ? "yes" : "no", DoDepth ? "" : "-");
         fprintf(fp, "               ; (N/A) current parameters\n-P %s\n", P ? P : "?");
         fprintf(fp, "               ; (N/A) best parameters\n-B %s\n", B ? B : "?");
         fprintf(fp, "               ; (N/A) start training with minimal fraction of training pairs\n-L %f\n", Minfraction);
@@ -924,6 +931,7 @@ void optionStruct::print(FILE * fp) const
             assert(B);
             fprintf(fp, "               ; expected cutoff\n-C %d\n", C);
             fprintf(fp, "               ; do weights (%s)\n-W %s\n", Doweights ? "yes" : "no", Doweights ? "" : "-");
+            fprintf(fp, "               ; do depth weights (%s)\n-d %s\n", DoDepth ? "yes" : "no", DoDepth ? "" : "-");
             fprintf(fp, "               ; current parameters\n-P %s\n", P);
             fprintf(fp, "               ; best parameters\n-B %s\n", B);
             fprintf(fp, "               ; start training with minimal fraction of training pairs\n-L %f\n", Minfraction);
@@ -940,6 +948,7 @@ void optionStruct::print(FILE * fp) const
             assert(f);
             fprintf(fp, "               ; (N/A) expected cutoff\n-C %d\n", C);
             fprintf(fp, "               ; (N/A) do weights (%s)\n-W %s\n", Doweights ? "yes" : "no", Doweights ? "" : "-");
+            fprintf(fp, "               ; (N/A) do depth weights (%s)\n-d %s\n", DoDepth ? "yes" : "no", DoDepth ? "" : "-");
             fprintf(fp, "               ; (N/A) current parameters\n-P %s\n", P ? P : "?");
             fprintf(fp, "               ; (N/A) best parameters\n-B %s\n", B ? B : "?");
             fprintf(fp, "               ; (N/A) start training with minimal fraction of training pairs\n-L %f\n", Minfraction);
@@ -965,6 +974,10 @@ void optionStruct::print(FILE * fp) const
             fprintf(fp, "               ; Current weight: %.*e\n", DBL_DIG+2,Weight);
         else
             fprintf(fp, "               ; Current weight: N/A\n");
+        if(DoDepth)
+            fprintf(fp, "               ; Current depth weight: %.*e\n", DBL_DIG+2,DepthWeight);
+        else
+            fprintf(fp, "               ; Current depth weight: N/A\n");
         }
     }
 
@@ -1009,7 +1022,7 @@ const char * optionStruct::argstring() const
     if(Argstring)
         delete[] Argstring;
 
-    size_t nameLength = strlen(i) + (e ? 1+ strlen(e) : 0) + (SuffixOnly ? strlen("_suf") : 0) + (C < 0 ? 0 : strlen("_C") + 1) + (Doweights ? strlen("_W") : 0) + (Redo ? strlen("_R") : 0) + 1;
+    size_t nameLength = strlen(i) + (e ? 1+ strlen(e) : 0) + (SuffixOnly ? strlen("_suf") : 0) + (C < 0 ? 0 : strlen("_C") + 1) + (Doweights ? strlen("_W") : 0) + (DoDepth ? strlen("_d") : 0) + (Redo ? strlen("_R") : 0) + 1;
     
     char * name = new char[nameLength];
     strcpy(name, i);
@@ -1032,6 +1045,10 @@ const char * optionStruct::argstring() const
     if (Doweights)
         {
         strcat(name, "_W");
+        }
+    if (DoDepth)
+        {
+        strcat(name, "_d");
         }
     if (Redo)
         {

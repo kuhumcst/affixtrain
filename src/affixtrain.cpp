@@ -3084,6 +3084,8 @@ void computeParms(optionStruct * options)
     int brownNo = 0;
     double currentweight = 0.0;
     double brownweight = 0.0;
+    double currentdepthweight = 0.0;
+    double depthweight = 0.0;
     double fraction = 0.0; // 0.0 <= fraction <= 1.0
     double factor = 0.0;
     double iterationsfactor = 1;
@@ -3180,10 +3182,11 @@ void computeParms(optionStruct * options)
 
             brownNo = Count.getNnodes();
             currentNo = brownNo;
-            //brownweight = Count.getWeight();
-            brownweight = (double)Count.getCountByDepth();
+            brownweight = Count.getWeight();
+            depthweight = (double)Count.getCountByDepth();
             currentweight = brownweight;
-            betterfound(currentNo, currentweight, swath, -1, blobs, lines, fraction, fraclines, false, options);
+            currentdepthweight = depthweight;
+            betterfound(currentNo, currentweight,currentdepthweight, swath, -1, blobs, lines, fraction, fraclines, false, options);
             printparms(Count.getNnodes(),Count.getWeight(), Count.getCountByDepth(), options);
             }
         int looplimit = (int)(maxiterations*pow(iterationsfactor, -swath));
@@ -3201,7 +3204,8 @@ void computeParms(optionStruct * options)
                 {
                 flog = fopenOrExit(options->currentParms(), "a", "log file");
                 CHECK("D2dglobTempDir");
-                fprintf(flog, "//iteration:%d.%d %s\n", swath, iterations, options->doweights() ? "weights" : "count");
+                fprintf(flog, "//iteration:%d.%d %s\n", swath, iterations
+                    , options->doweights() && !options->dodepth() ? "weights" : options->dodepth() ? "depth" :"count");
                 CHECK("D2eglobTempDir");
                 --openfiles;
                 fclose(flog);
@@ -3259,24 +3263,31 @@ void computeParms(optionStruct * options)
             if (currentNo == 0)
                 {
                 currentNo = Count.getNnodes();
-                //currentweight = Count.getWeight();
-                currentweight = (double)Count.getCountByDepth();
+                currentweight = Count.getWeight();
+                currentdepthweight = (double)Count.getCountByDepth();
                 }
             else
                 {
                 brownNo = Count.getNnodes();
-                //brownweight = Count.getWeight();
-                brownweight = (double)Count.getCountByDepth();
+                brownweight = Count.getWeight();
+                depthweight = (double)Count.getCountByDepth();
                 if (options->verbose())
                     printf("swath %d brownNo %d currentNo %d\n", swath, brownNo, currentNo);
-                if ((!options->doweights() && brownNo <= currentNo) || (options->doweights() && brownweight <= currentweight))
+                if (  (!options->doweights() && !options->dodepth() && brownNo <= currentNo) 
+                   || (options->doweights() && !options->dodepth() && brownweight <= currentweight) 
+                   || (options->dodepth() && depthweight <= currentdepthweight)
+                   )
                     {
-                    bool improvement = (!options->doweights() && (brownNo < currentNo)) || (options->doweights() && (brownweight < currentweight));
+                    bool improvement =  (  (!options->doweights() && !options->dodepth()  && (brownNo < currentNo)) 
+                                        || (options->doweights() && !options->dodepth()  && (brownweight < currentweight))
+                                        || (options->dodepth() && (depthweight < currentdepthweight))
+                                        );
                     if (options->verbose())
                         printf("%s\n", improvement ? "IMPROVEMENT" : "same");
                     currentNo = brownNo;
                     currentweight = brownweight;
-                    betterfound(currentNo, currentweight, swath, iterations, blobs, lines, fraction, fraclines, improvement, options);
+                    currentdepthweight = depthweight;
+                    betterfound(currentNo, currentweight,currentdepthweight, swath, iterations, blobs, lines, fraction, fraclines, improvement, options);
                     }
                 else
                     worsefound();

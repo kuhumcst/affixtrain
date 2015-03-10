@@ -56,6 +56,7 @@ class optionStruct
         double M; // # Iterations when training with Maxfraction of input
         double N; // # Iterations when training with Minfraction of input
         bool Doweights;
+        bool DoDepth;
         bool Redo; // option R. Set to true if training has to be done once more 
         // after the removal of the homographs that will be handled in
         // the next iteration.
@@ -77,6 +78,7 @@ class optionStruct
         int NumberOfNodes;
         int TrainingPairsLines;
         double Weight;
+        double DepthWeight;
         char * Argstring;
         OptReturnTp doSwitch(int c, char * locoptarg, char * progname);
         OptReturnTp readOptsFromFile(char * locoptarg,char * progname);
@@ -109,6 +111,7 @@ class optionStruct
         const double minfraction()const{return Minfraction;}
         const double maxfraction()const{return Maxfraction;}
         const bool doweights()const{return Doweights;}
+        const bool dodepth()const{return DoDepth;}
         const bool redo()const{return Redo;}
         const int swaths()const{return K;}
         const double minIterations()const{return M;}
@@ -122,6 +125,7 @@ class optionStruct
         void setNumberOfNodes(int NoN){NumberOfNodes = NoN;}
         void setTrainingPairsLines(int TPL){TrainingPairsLines = TPL;}
         void setWeight(double W){Weight = W;}
+        void setDepthWeight(double d){DepthWeight = d;}
 
         void seti(const char * WordList);
         void seto(const char * Result);

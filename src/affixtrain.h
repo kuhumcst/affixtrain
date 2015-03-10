@@ -13,7 +13,7 @@ class countAndWeight
     public:
         void setNnodes(int N){Nnodes = N;};
         void setWeight(double W){Weight = W;};
-        void setCountByDepth(double C){CountByDepth = C;};
+        void setCountByDepth(LONG C){CountByDepth = C;};
         int getNnodes()const{return Nnodes;}
         double getWeight()const{return Weight;}
         LONG getCountByDepth()const{return CountByDepth;}

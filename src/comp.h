@@ -58,7 +58,7 @@ void copybest();
 bool init(optionStruct * options);
 void brown();
 void printparms(int Nnodes,double weight,LONG countByDepth, optionStruct * options);
-void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,int lines,double fraction,int fraclines,bool improvement,optionStruct * options);
+void betterfound(int Nnodes,double weight,double depthweight,int swath,int iterations,int blobs,int lines,double fraction,int fraclines,bool improvement,optionStruct * options);
 void worsefound();
 
 extern int (*comp)(const vertex * a,const vertex * b);

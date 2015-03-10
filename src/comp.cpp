@@ -4972,7 +4972,7 @@ static int improvements = 0;
 #if FLOATINGPOINTPARMS
 //static int pcnt[(NPARMS >> 2)+1] = {0};//,0,0,0,0};
 
-void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,int lines,double fraction,int fraclines,bool improvement,optionStruct * options)
+void betterfound(int Nnodes,double weight,double depthweight,int swath,int iterations,int blobs,int lines,double fraction,int fraclines,bool improvement,optionStruct * options)
     {
     if(improvement)
         {
@@ -4991,6 +4991,7 @@ void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,int
     options->setNumberOfNodes(Nnodes);
     options->setTrainingPairsLines(lines);
     options->setWeight(weight);
+    options->setDepthWeight(weight);
 
     options->printArgFile(0);
     printf("%d.%d %d  \tparms ",swath,iterations,Nnodes);

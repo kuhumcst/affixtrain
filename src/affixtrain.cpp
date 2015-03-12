@@ -2540,7 +2540,7 @@ static bool writeAndTest(node * tree, const char * ext, int threshold, const cha
         Count->setNnodes(tree->count());
         Count->setWeight(0.0);
         Count->setWeight(tree->weightedcount());
-        Count->setCountByDepth(0.0);
+        Count->setCountByDepth(0);
         Count->setCountByDepth(tree->countByDepth(1));
 #endif
         //sprintf(filename, "numberOfRules_%s_%d.txt", ext, threshold);
@@ -3084,8 +3084,6 @@ void computeParms(optionStruct * options)
     int brownNo = 0;
     double currentweight = 0.0;
     double brownweight = 0.0;
-    double currentdepthweight = 0.0;
-    double depthweight = 0.0;
     double fraction = 0.0; // 0.0 <= fraction <= 1.0
     double factor = 0.0;
     double iterationsfactor = 1;
@@ -3182,12 +3180,20 @@ void computeParms(optionStruct * options)
 
             brownNo = Count.getNnodes();
             currentNo = brownNo;
-            brownweight = Count.getWeight();
-            depthweight = (double)Count.getCountByDepth();
+            switch(options->getWeightFunction())
+                {
+                case esupport:
+                    brownweight = Count.getWeight();
+                    break;
+                case edepth:
+                    brownweight = (double)Count.getCountByDepth();
+                    break;
+                default:
+                    brownweight = 0.0;
+                }
             currentweight = brownweight;
-            currentdepthweight = depthweight;
-            betterfound(currentNo, currentweight,currentdepthweight, swath, -1, blobs, lines, fraction, fraclines, false, options);
-            printparms(Count.getNnodes(),Count.getWeight(), Count.getCountByDepth(), options);
+            betterfound(currentNo, currentweight, swath, -1, blobs, lines, fraction, fraclines, false, options);
+            printparms(Count.getNnodes(),brownweight, options);
             }
         int looplimit = (int)(maxiterations*pow(iterationsfactor, -swath));
 #if FLOATINGPOINTPARMS
@@ -3205,7 +3211,7 @@ void computeParms(optionStruct * options)
                 flog = fopenOrExit(options->currentParms(), "a", "log file");
                 CHECK("D2dglobTempDir");
                 fprintf(flog, "//iteration:%d.%d %s\n", swath, iterations
-                    , options->doweights() && !options->dodepth() ? "weights" : options->dodepth() ? "depth" :"count");
+                    , options->getWeightFunction() == esupport ? "weights" : options->getWeightFunction() == edepth ? "depth" :"count");
                 CHECK("D2eglobTempDir");
                 --openfiles;
                 fclose(flog);
@@ -3254,7 +3260,6 @@ void computeParms(optionStruct * options)
             if (lines == 0)
                 fraclines = lines = filelines;
 
-            printparms(Count.getNnodes(),Count.getWeight(), Count.getCountByDepth(), options);
             if (options->verbose())
                 {
                 printf("\r%d %d %f %d %f           \n", iterations, currentNo, currentweight, brownNo, brownweight);
@@ -3263,31 +3268,51 @@ void computeParms(optionStruct * options)
             if (currentNo == 0)
                 {
                 currentNo = Count.getNnodes();
-                currentweight = Count.getWeight();
-                currentdepthweight = (double)Count.getCountByDepth();
+                switch(options->getWeightFunction())
+                    {
+                    case esupport:
+                        currentweight = Count.getWeight();
+                        break;
+                    case edepth:
+                        currentweight = (double)Count.getCountByDepth();
+                        break;
+                    default:
+                        ;
+                    }
+                printparms(currentNo,currentweight, options);
                 }
             else
                 {
                 brownNo = Count.getNnodes();
-                brownweight = Count.getWeight();
-                depthweight = (double)Count.getCountByDepth();
+                switch(options->getWeightFunction())
+                    {
+                    case esupport:
+                        brownweight = Count.getWeight();
+                        break;
+                    case edepth:
+                        brownweight = (double)Count.getCountByDepth();
+                        break;
+                    default:
+                        brownweight = 0.0;
+                    }
+                printparms(brownNo,brownweight, options);
+
                 if (options->verbose())
                     printf("swath %d brownNo %d currentNo %d\n", swath, brownNo, currentNo);
-                if (  (!options->doweights() && !options->dodepth() && brownNo <= currentNo) 
-                   || (options->doweights() && !options->dodepth() && brownweight <= currentweight) 
-                   || (options->dodepth() && depthweight <= currentdepthweight)
+                if (  (options->getWeightFunction() == econstant && brownNo <= currentNo) 
+                   || (options->getWeightFunction() == esupport && brownweight <= currentweight) 
+                   || (options->getWeightFunction() == edepth && brownweight <= currentweight)
                    )
                     {
-                    bool improvement =  (  (!options->doweights() && !options->dodepth()  && (brownNo < currentNo)) 
-                                        || (options->doweights() && !options->dodepth()  && (brownweight < currentweight))
-                                        || (options->dodepth() && (depthweight < currentdepthweight))
+                    bool improvement =  (  (options->getWeightFunction() == econstant  && (brownNo < currentNo)) 
+                                        || (options->getWeightFunction() == esupport   && (brownweight < currentweight))
+                                        || (options->getWeightFunction() == edepth     && (brownweight < currentweight))
                                         );
                     if (options->verbose())
                         printf("%s\n", improvement ? "IMPROVEMENT" : "same");
                     currentNo = brownNo;
                     currentweight = brownweight;
-                    currentdepthweight = depthweight;
-                    betterfound(currentNo, currentweight,currentdepthweight, swath, iterations, blobs, lines, fraction, fraclines, improvement, options);
+                    betterfound(currentNo, currentweight, swath, iterations, blobs, lines, fraction, fraclines, improvement, options);
                     }
                 else
                     worsefound();

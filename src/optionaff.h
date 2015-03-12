@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <stdio.h> // FILE
 
 typedef enum {GoOn = 0,Leave = 1,Error = 2} OptReturnTp;
+typedef enum {econstant = 0, edepth = 1, esupport = 2} OptWeightFunction;
 
 void cleanUpOptions();
 
@@ -45,6 +46,7 @@ class optionStruct
         const char * B; // Best parms
         const char * P; // Current parms
         const char * b; // raw rules
+        const char * X; // rule weight function, defaults to constant (1)
         bool ComputeParms;// compute parms
         bool SuffixOnly;// suffix only
         bool Verbose;         // verbose
@@ -55,8 +57,6 @@ class optionStruct
         int K;    // Number of differently sized fractions of trainingdata 
         double M; // # Iterations when training with Maxfraction of input
         double N; // # Iterations when training with Minfraction of input
-        bool Doweights;
-        bool DoDepth;
         bool Redo; // option R. Set to true if training has to be done once more 
         // after the removal of the homographs that will be handled in
         // the next iteration.
@@ -78,12 +78,14 @@ class optionStruct
         int NumberOfNodes;
         int TrainingPairsLines;
         double Weight;
-        double DepthWeight;
+//        double DepthWeight;
         char * Argstring;
+        OptWeightFunction WeightFunction;
         OptReturnTp doSwitch(int c, char * locoptarg, char * progname);
         OptReturnTp readOptsFromFile(char * locoptarg,char * progname);
         void detectFloatingPointNumbers(char * S);
     public:
+        const OptWeightFunction getWeightFunction(){return WeightFunction;}
         const int blobs() const { return Blobs; }
         const int lines() const { return Lines; }
         const int fracblobs() const { return FracBlobs; }
@@ -100,6 +102,7 @@ class optionStruct
         const char * flexrules() const{return o;}
         const char * bestParms() const{return B;}
         const char * currentParms() const{return P;}
+        const char * ruleWeightFunction() const{return X;}
         const char * rawRules() const{return b;}
         const int maxRecursionDepthRuleCreation()const{return Q;}
         const int percentageTestPairs()const{return q;}
@@ -110,8 +113,6 @@ class optionStruct
         const bool trainTest()const{return TrainTest;}        
         const double minfraction()const{return Minfraction;}
         const double maxfraction()const{return Maxfraction;}
-        const bool doweights()const{return Doweights;}
-        const bool dodepth()const{return DoDepth;}
         const bool redo()const{return Redo;}
         const int swaths()const{return K;}
         const double minIterations()const{return M;}
@@ -125,7 +126,6 @@ class optionStruct
         void setNumberOfNodes(int NoN){NumberOfNodes = NoN;}
         void setTrainingPairsLines(int TPL){TrainingPairsLines = TPL;}
         void setWeight(double W){Weight = W;}
-        void setDepthWeight(double d){DepthWeight = d;}
 
         void seti(const char * WordList);
         void seto(const char * Result);

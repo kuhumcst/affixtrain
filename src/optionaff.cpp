@@ -34,7 +34,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 //        printf("usage: makeaffixrules -w <word list> -c <cutoff> -C <expected cutoff> -o <flexrules> -e <extra> -n <columns> -f <compfunc> [<word list> [<cutoff> [<flexrules> [<extra> [<columns> [<compfunc>]]]]]]\n");
 
-static char opts[] = "?@:B:b:c:C:D:d:e:F:f:hH:i:j:K:L:M:N:n:o:O:p:P:Q:q:R:s:T:t:v:W:" /* GNU: */ "wr";
+//static char opts[] = "?@:B:b:c:C:D:d:e:F:f:hH:i:j:K:L:M:N:n:o:O:p:P:Q:q:R:s:T:t:v:W:" /* GNU: */ "wr";
+static char opts[] = "?@:B:b:c:C:D:e:F:f:hH:i:j:K:L:M:N:n:o:O:p:P:Q:q:R:s:T:t:v:X:W:d:" /* GNU: */ "wr";
 static char *** Ppoptions = NULL;
 static char ** Poptions = NULL;
 static int optionSets = 0;
@@ -61,6 +62,7 @@ optionStruct::optionStruct(optionStruct & O)
     o = dupl(O.o);
     B = dupl(O.B);
     P = dupl(O.P);
+    X = dupl(O.X);
     j = dupl(O.j);
     b = dupl(O.b);
     nD = O.nD;
@@ -73,8 +75,6 @@ optionStruct::optionStruct(optionStruct & O)
     Verbose = O.Verbose;
     Minfraction = O.Minfraction;
     Maxfraction = O.Maxfraction;
-    Doweights = O.Doweights;
-    DoDepth = O.DoDepth;
     Redo = O.Redo;
     Test = O.Test;
     F = O.F;
@@ -106,6 +106,7 @@ optionStruct::optionStruct()
     o = NULL; // flexrules
     B = NULL;
     P = NULL;
+    X = NULL;
     j = NULL; // temp dir
     b = NULL; // raw file (see t)
     D = NULL;
@@ -117,8 +118,6 @@ optionStruct::optionStruct()
     Verbose = false;// verbose
     Minfraction = 1.0; // L
     Maxfraction = 1.0; // H
-    Doweights = false;
-    DoDepth = false;
     Redo = false;
     Test = false;
     F = false;
@@ -156,6 +155,7 @@ optionStruct::~optionStruct()
     delete[] o;
     delete[] B;
     delete[] P;
+    delete[] X;
     delete[] b;
     delete[] D;
     delete[] Argstring;
@@ -221,6 +221,11 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
     {
     switch (optchar)
         {
+        case 'W':
+        case 'd':
+            printf("Obsolete option %c. Use option -X\n",optchar);
+            exit(1);
+            break;
         case '@':
             readOptsFromFile(locoptarg, progname);
             break;
@@ -229,6 +234,9 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
             break;
         case 'P': // current parms
             P = dupl(locoptarg);
+            break;
+        case 'X':
+            X = dupl(locoptarg);
             break;
         case 'c': // cutoff
             if (locoptarg && *locoptarg)
@@ -325,6 +333,10 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
             printf("-K: number of differently sized fractions of trainingdata\n");
             printf("-N: number of iterations of training with same fraction of training data when fraction is minimal\n");
             printf("-M: number of iterations of training with same fraction of training data when fraction is maximal\n");
+            printf("-X: Rule weight function\n");
+            printf("  C:All rules the same weight\n");
+            printf("  D:Rules weight = recursion depth (about proportional with number of non-wildcard characters in pattern)\n");
+            printf("  W:Lower (=better) weight for rules with more supporting examples at a node\n");
             printf("-W: minimise weight (lower (better) the more supporting examples at a node), not count (sum of rules) (with -p or -f0)\n");
             printf("-d: minimise weight times rule depth, not count (sum of rules) (with -p or -f0)\n");
             printf("-P: write parameters to file (default parms.txt if -p or -f0, otherwise no parameter file)\n");
@@ -448,12 +460,6 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
             break;
         case 'F': // create flexrules
             F = locoptarg && *locoptarg == '-' ? false : true;
-            break;
-        case 'W':
-            Doweights = locoptarg && *locoptarg == '-' ? false : true;
-            break;
-        case 'd':
-            DoDepth = locoptarg && *locoptarg == '-' ? false : true;
             break;
         case 'R':
             Redo = locoptarg && *locoptarg == '-' ? false : true;
@@ -737,6 +743,26 @@ void optionStruct::completeArgs()
             }
         }
 
+    if(!strcmp(X,"W"))
+        {
+        WeightFunction = esupport;
+        }
+    else if(!strcmp(X,"D"))
+        {
+        WeightFunction = edepth;
+        }
+    else if(!strcmp(X,"C"))
+        {
+        WeightFunction = econstant;
+        }
+    else
+        {
+        printf("Option -X can only have values C, D or W\n");
+        exit(1);
+        }
+
+
+
     if (o == NULL)
         o = dupl("rules"); //20130125
 
@@ -899,8 +925,7 @@ void optionStruct::print(FILE * fp) const
         fprintf(fp, "               ; (N/A) penalties to decide which rule survives\n"); if (nD > 0){ fprintf(fp, "-D "); for (int i = 0; i < nD; ++i)fprintf(fp, "%f;", D[i]); fprintf(fp, "\n"); } else fprintf(fp, ";-D not specified\n");
         fprintf(fp, "               ; (N/A) compute parms (%s)\n-p %s\n", ComputeParms ? "yes" : "no", ComputeParms ? "" : "-");
         fprintf(fp, "               ; (N/A) expected cutoff\n-C %d\n", C);
-        fprintf(fp, "               ; (N/A) do weights (%s)\n-W %s\n", Doweights ? "yes" : "no", Doweights ? "" : "-");
-        fprintf(fp, "               ; (N/A) do depths weights (%s)\n-d %s\n", DoDepth ? "yes" : "no", DoDepth ? "" : "-");
+        fprintf(fp, "               ; (N/A) rule weight (%s)\n-X %s\n", WeightFunction == econstant ? "constant" : WeightFunction == esupport ? "more support is better" : "Fewer pattern characters other than wildcards is better", X);
         fprintf(fp, "               ; (N/A) current parameters\n-P %s\n", P ? P : "?");
         fprintf(fp, "               ; (N/A) best parameters\n-B %s\n", B ? B : "?");
         fprintf(fp, "               ; (N/A) start training with minimal fraction of training pairs\n-L %f\n", Minfraction);
@@ -930,8 +955,7 @@ void optionStruct::print(FILE * fp) const
             assert(P);
             assert(B);
             fprintf(fp, "               ; expected cutoff\n-C %d\n", C);
-            fprintf(fp, "               ; do weights (%s)\n-W %s\n", Doweights ? "yes" : "no", Doweights ? "" : "-");
-            fprintf(fp, "               ; do depth weights (%s)\n-d %s\n", DoDepth ? "yes" : "no", DoDepth ? "" : "-");
+            fprintf(fp, "               ; rule weight (%s)\n-X %s\n", WeightFunction == econstant ? "constant" : WeightFunction == esupport ? "more support is better" : "Fewer pattern characters other than wildcards is better", X);
             fprintf(fp, "               ; current parameters\n-P %s\n", P);
             fprintf(fp, "               ; best parameters\n-B %s\n", B);
             fprintf(fp, "               ; start training with minimal fraction of training pairs\n-L %f\n", Minfraction);
@@ -947,8 +971,7 @@ void optionStruct::print(FILE * fp) const
             {
             assert(f);
             fprintf(fp, "               ; (N/A) expected cutoff\n-C %d\n", C);
-            fprintf(fp, "               ; (N/A) do weights (%s)\n-W %s\n", Doweights ? "yes" : "no", Doweights ? "" : "-");
-            fprintf(fp, "               ; (N/A) do depth weights (%s)\n-d %s\n", DoDepth ? "yes" : "no", DoDepth ? "" : "-");
+            fprintf(fp, "               ; (N/A) rule weight (%s)\n-X %s\n", WeightFunction == econstant ? "constant" : WeightFunction == esupport ? "more support is better" : "Fewer pattern characters other than wildcards is better", X);
             fprintf(fp, "               ; (N/A) current parameters\n-P %s\n", P ? P : "?");
             fprintf(fp, "               ; (N/A) best parameters\n-B %s\n", B ? B : "?");
             fprintf(fp, "               ; (N/A) start training with minimal fraction of training pairs\n-L %f\n", Minfraction);
@@ -970,14 +993,19 @@ void optionStruct::print(FILE * fp) const
         fprintf(fp, "               ; Current number of nodes: %d\n", NumberOfNodes);
         fprintf(fp, "               ; Current number of lines: %d\n", TrainingPairsLines);
         fprintf(fp, "               ; Nodes/line: %.*e\n", DBL_DIG+2,(double)NumberOfNodes/(double)TrainingPairsLines);
-        if(Doweights)
-            fprintf(fp, "               ; Current weight: %.*e\n", DBL_DIG+2,Weight);
-        else
-            fprintf(fp, "               ; Current weight: N/A\n");
-        if(DoDepth)
-            fprintf(fp, "               ; Current depth weight: %.*e\n", DBL_DIG+2,DepthWeight);
-        else
-            fprintf(fp, "               ; Current depth weight: N/A\n");
+        switch(WeightFunction)
+            {
+            case esupport:
+                fprintf(fp, "               ; Current weight-by-support: %.*e\n", DBL_DIG+2,Weight);
+                break;
+            case edepth:
+                fprintf(fp, "               ; Current weight-by-depth: %.*e\n", DBL_DIG+2,Weight);
+                break;
+            case econstant:
+                break;
+            default:
+                break;
+            }
         }
     }
 
@@ -1022,7 +1050,7 @@ const char * optionStruct::argstring() const
     if(Argstring)
         delete[] Argstring;
 
-    size_t nameLength = strlen(i) + (e ? 1+ strlen(e) : 0) + (SuffixOnly ? strlen("_suf") : 0) + (C < 0 ? 0 : strlen("_C") + 1) + (Doweights ? strlen("_W") : 0) + (DoDepth ? strlen("_d") : 0) + (Redo ? strlen("_R") : 0) + 1;
+    size_t nameLength = strlen(i) + (e ? 1+ strlen(e) : 0) + (SuffixOnly ? strlen("_suf") : 0) + (C < 0 ? 0 : strlen("_C") + 1) + (WeightFunction == esupport ? strlen("_XW") : 0) + (WeightFunction == edepth ? strlen("_XD") : 0) + (Redo ? strlen("_R") : 0) + 1;
     
     char * name = new char[nameLength];
     strcpy(name, i);
@@ -1042,13 +1070,16 @@ const char * optionStruct::argstring() const
         name[L] = (char)(C + '0');
         name[L + 1] = 0;
         }
-    if (Doweights)
+    switch(WeightFunction)
         {
-        strcat(name, "_W");
-        }
-    if (DoDepth)
-        {
-        strcat(name, "_d");
+        case esupport:
+            strcat(name, "_XW");
+            break;
+        case edepth:
+            strcat(name, "_XD");
+            break;
+        default:
+            break;
         }
     if (Redo)
         {

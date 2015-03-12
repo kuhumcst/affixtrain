@@ -71,12 +71,30 @@ static int globmaxcount = 0;
 static const char * XTRf(optionStruct * Options)
     {
     static char xtr[10];
-    sprintf(xtr,"C%d%s%s%s"
-        ,Options->expectedCutoff()
-        ,Options->redo() ? "R" : ""
-        ,Options->suffixOnly() ? "S" : ""
-        ,Options->doweights() ? "W" : ""
-        );
+    switch(Options->getWeightFunction())
+        {
+        case econstant:
+            sprintf(xtr,"%s%sXC"
+                ,Options->redo() ? "R" : ""
+                ,Options->suffixOnly() ? "S" : ""
+                );
+            break;
+        case esupport:
+            sprintf(xtr,"C%d%s%sXW"
+                ,Options->expectedCutoff()
+                ,Options->redo() ? "R" : ""
+                ,Options->suffixOnly() ? "S" : ""
+                );
+            break;
+        case edepth:
+            sprintf(xtr,"%s%sXD"
+                ,Options->redo() ? "R" : ""
+                ,Options->suffixOnly() ? "S" : ""
+                );
+            break;
+        default:
+            *xtr = 0;
+        }
     return xtr;
     }
 

@@ -4972,7 +4972,7 @@ static int improvements = 0;
 #if FLOATINGPOINTPARMS
 //static int pcnt[(NPARMS >> 2)+1] = {0};//,0,0,0,0};
 
-void betterfound(int Nnodes,double weight,double depthweight,int swath,int iterations,int blobs,int lines,double fraction,int fraclines,bool improvement,optionStruct * options)
+void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,int lines,double fraction,int fraclines,bool improvement,optionStruct * options)
     {
     if(improvement)
         {
@@ -4991,7 +4991,6 @@ void betterfound(int Nnodes,double weight,double depthweight,int swath,int itera
     options->setNumberOfNodes(Nnodes);
     options->setTrainingPairsLines(lines);
     options->setWeight(weight);
-    options->setDepthWeight(weight);
 
     options->printArgFile(0);
     printf("%d.%d %d  \tparms ",swath,iterations,Nnodes);
@@ -5017,7 +5016,7 @@ void betterfound(int Nnodes,double weight,double depthweight,int swath,int itera
         fprintf(f,"//iteration:%d.%d\n",swath,iterations);
         fprintf(f
                ,"/*weight (%s used): %.*e suffix only: %s */\n"
-               ,options->doweights() ? "" : "not "
+               ,options->getWeightFunction() == esupport ? "" : "not "
                ,DBL_DIG+2
                ,weight
                ,options->suffixOnly() ? "yes" : "no"
@@ -5027,7 +5026,7 @@ void betterfound(int Nnodes,double weight,double depthweight,int swath,int itera
                ,"/* number of nodes: %d, nodes/line: %.*e weight (%s used): %.*e blobs %d lines %d * fraction %.*e = %d lines*/\n"
                ,Nnodes
                ,DBL_DIG+2,(double)Nnodes/(double)fraclines
-               ,options->doweights() ? "" : "not "
+               ,options->getWeightFunction() == esupport ? "" : "not "
                ,DBL_DIG+2,weight
                ,blobs
                ,lines
@@ -5219,19 +5218,18 @@ bool init(optionStruct * options)
     return true;
     }
 
-void printparms(int Nnodes,double weight,LONG countByDepth, optionStruct * options)
+void printparms(int Nnodes,double weight,optionStruct * options)
     {
     int i;
     FILE * f = fopen(options->currentParms(),"a");
     ++openfiles;
     assert(f);
     fprintf(f
-           ,"/*#nodes in tree: %d weight (%s used): %.*e countByDepth " LONGD " suffix only: %s */\n"
+           ,"/*#nodes in tree: %d weight (%s used): %.*e , Suffix only: %s */\n"
            ,Nnodes
-           ,options->doweights() ? "" : "not "
+           ,options->getWeightFunction() == esupport ? "more support is better" : options->getWeightFunction() == edepth ? "fewer non-wildcard characters is better":"not used"
            ,DBL_DIG+2
            ,weight
-           ,countByDepth
            ,options->suffixOnly() ? "yes" : "no"
            );
     fprintf(f,"        {\n        ");

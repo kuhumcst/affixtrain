@@ -573,9 +573,9 @@ class vertexPointer
                     {
                     if(n->Right)
                         {
-                        LONG rcount = (LONG)n->Right->count();
+                        //LONG rcount = (LONG)n->Right->count();
                         //assert(rcount >= 0.9);
-                        ret += rcount*Depth;
+                        ret += /* rcount* */Depth;
                         }
                     
                     if(n->IfPatternSucceeds)

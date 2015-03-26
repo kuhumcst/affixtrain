@@ -638,6 +638,25 @@ class vertexPointer
                     }
                 return ret;
                 }
+            double entropy(double Nnodes)
+                {
+                double ret = 0.0;
+                node * n = this;
+                while (n)
+                    {
+                    if (n->Right)
+                        {
+                        double rcount = (double)n->Right->count();
+                        rcount /= Nnodes;
+                        assert(rcount >= 0.9);
+                        ret += rcount*log(rcount);
+                        }
+                    if (n->IfPatternSucceeds)
+                        ret += n->IfPatternSucceeds->entropy(Nnodes);
+                    n = n->IfPatternFails;
+                    }
+                return ret;
+                }
             /*
             int countWords()
                 {

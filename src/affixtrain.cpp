@@ -2515,7 +2515,7 @@ static void rearrange
 
 //int Nnodes = 0;
 
-static bool writeAndTest(node * tree, const char * ext, int threshold, const char * nflexrules, countAndWeight * Count/*int & Nnodes, double & weight*/, optionStruct * options)
+static bool writeAndTest(node * tree, const char * ext, int threshold, const char * nflexrules, countAndWeight * Count, optionStruct * options)
     {
     CHECK("gglobTempDir");
     char filename[1000];
@@ -2535,14 +2535,26 @@ static bool writeAndTest(node * tree, const char * ext, int threshold, const cha
         fclose(foo);
         sprintf(filename,"rules_%d%s.txt",threshold,ext);
         foo = fopenOrExit(filename,"wb","rules");
-#else
+#endif
         Count->setNnodes(0);
         Count->setNnodes(tree->count());
-        Count->setWeight(0.0);
-        Count->setWeight(tree->weightedcount());
-        Count->setCountByDepth(0);
-        Count->setCountByDepth(tree->countByDepth(1));
-#endif
+        switch (options->getWeightFunction())
+            {
+            case econstant:
+                break;
+            case edepth:
+                Count->setCountByDepth(0);
+                Count->setCountByDepth(tree->countByDepth(1));
+                break;
+            case esupport:
+                Count->setWeight(0.0);
+                Count->setWeight(tree->weightedcount());
+                break;
+            case eentropy:
+                Count->setWeight(0.0);
+                Count->setWeight(tree->entropy(Count->getNnodes()) / log((double)(Count->getNnodes())));
+                break;
+            }
         //sprintf(filename, "numberOfRules_%s_%d.txt", ext, threshold);
         //FILE * fono = fopenOrExit(tempDir(filename, options), "wb", "writeAndTest");
 #if BRACMATOUTPUT
@@ -3183,6 +3195,7 @@ void computeParms(optionStruct * options)
             switch(options->getWeightFunction())
                 {
                 case esupport:
+                case eentropy:
                     brownweight = Count.getWeight();
                     break;
                 case edepth:
@@ -3211,7 +3224,10 @@ void computeParms(optionStruct * options)
                 flog = fopenOrExit(options->currentParms(), "a", "log file");
                 CHECK("D2dglobTempDir");
                 fprintf(flog, "//iteration:%d.%d %s\n", swath, iterations
-                    , options->getWeightFunction() == esupport ? "weights" : options->getWeightFunction() == edepth ? "depth" :"count");
+                    , options->getWeightFunction() == esupport ? "weights" 
+                    : options->getWeightFunction() == eentropy ? "entropy"
+                    : options->getWeightFunction() == edepth ? "depth"
+                    : "count");
                 CHECK("D2eglobTempDir");
                 --openfiles;
                 fclose(flog);
@@ -3271,6 +3287,7 @@ void computeParms(optionStruct * options)
                 switch(options->getWeightFunction())
                     {
                     case esupport:
+                    case eentropy:
                         currentweight = Count.getWeight();
                         break;
                     case edepth:
@@ -3287,6 +3304,7 @@ void computeParms(optionStruct * options)
                 switch(options->getWeightFunction())
                     {
                     case esupport:
+                    case eentropy:
                         brownweight = Count.getWeight();
                         break;
                     case edepth:
@@ -3300,12 +3318,20 @@ void computeParms(optionStruct * options)
                 if (options->verbose())
                     printf("swath %d brownNo %d currentNo %d\n", swath, brownNo, currentNo);
                 if (  (options->getWeightFunction() == econstant && brownNo <= currentNo) 
-                   || (options->getWeightFunction() == esupport && brownweight <= currentweight) 
+                   || ( (  options->getWeightFunction() == esupport 
+                        || options->getWeightFunction() == eentropy
+                        )
+                      && brownweight <= currentweight
+                      )
                    || (options->getWeightFunction() == edepth && brownweight <= currentweight)
                    )
                     {
                     bool improvement =  (  (options->getWeightFunction() == econstant  && (brownNo < currentNo)) 
-                                        || (options->getWeightFunction() == esupport   && (brownweight < currentweight))
+                                         || ( (options->getWeightFunction() == esupport
+                                              || options->getWeightFunction() == eentropy
+                                              ) 
+                                            && (brownweight < currentweight)
+                                            )
                                         || (options->getWeightFunction() == edepth     && (brownweight < currentweight))
                                         );
                     if (options->verbose())

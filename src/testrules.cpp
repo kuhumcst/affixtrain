@@ -86,6 +86,12 @@ static const char * XTRf(optionStruct * Options)
                 ,Options->suffixOnly() ? "S" : ""
                 );
             break;
+        case eentropy:
+            sprintf(xtr, "%s%sXE"
+                    , Options->redo() ? "R" : ""
+                    , Options->suffixOnly() ? "S" : ""
+                    );
+            break;
         case edepth:
             sprintf(xtr,"%s%sXD"
                 ,Options->redo() ? "R" : ""

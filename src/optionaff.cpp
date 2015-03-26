@@ -755,6 +755,10 @@ void optionStruct::completeArgs()
         {
         WeightFunction = econstant;
         }
+    else if (!strcmp(X, "E"))
+        {
+        WeightFunction = eentropy;
+        }
     else
         {
         printf("Option -X can only have values C, D or W\n");
@@ -925,7 +929,11 @@ void optionStruct::print(FILE * fp) const
         fprintf(fp, "               ; (N/A) penalties to decide which rule survives\n"); if (nD > 0){ fprintf(fp, "-D "); for (int i = 0; i < nD; ++i)fprintf(fp, "%f;", D[i]); fprintf(fp, "\n"); } else fprintf(fp, ";-D not specified\n");
         fprintf(fp, "               ; (N/A) compute parms (%s)\n-p %s\n", ComputeParms ? "yes" : "no", ComputeParms ? "" : "-");
         fprintf(fp, "               ; (N/A) expected cutoff\n-C %d\n", C);
-        fprintf(fp, "               ; (N/A) rule weight (%s)\n-X %s\n", WeightFunction == econstant ? "constant" : WeightFunction == esupport ? "more support is better" : "Fewer pattern characters other than wildcards is better", X);
+        fprintf(fp, "               ; (N/A) rule weight (%s)\n-X %s\n"
+                , WeightFunction == econstant ? "constant" 
+                : WeightFunction == esupport ? "more support is better" 
+                : WeightFunction == eentropy ? "higher entropy is better"
+                : "Fewer pattern characters other than wildcards is better", X);
         fprintf(fp, "               ; (N/A) current parameters\n-P %s\n", P ? P : "?");
         fprintf(fp, "               ; (N/A) best parameters\n-B %s\n", B ? B : "?");
         fprintf(fp, "               ; (N/A) start training with minimal fraction of training pairs\n-L %f\n", Minfraction);
@@ -955,7 +963,11 @@ void optionStruct::print(FILE * fp) const
             assert(P);
             assert(B);
             fprintf(fp, "               ; expected cutoff\n-C %d\n", C);
-            fprintf(fp, "               ; rule weight (%s)\n-X %s\n", WeightFunction == econstant ? "constant" : WeightFunction == esupport ? "more support is better" : "Fewer pattern characters other than wildcards is better", X);
+            fprintf(fp, "               ; rule weight (%s)\n-X %s\n"
+                    , WeightFunction == econstant ? "constant" 
+                    : WeightFunction == esupport ? "more support is better" 
+                    : WeightFunction == eentropy ? "higher entropy is better"
+                    : "Fewer pattern characters other than wildcards is better", X);
             fprintf(fp, "               ; current parameters\n-P %s\n", P);
             fprintf(fp, "               ; best parameters\n-B %s\n", B);
             fprintf(fp, "               ; start training with minimal fraction of training pairs\n-L %f\n", Minfraction);
@@ -997,6 +1009,9 @@ void optionStruct::print(FILE * fp) const
             {
             case esupport:
                 fprintf(fp, "               ; Current weight-by-support: %.*e\n", DBL_DIG+2,Weight);
+                break;
+            case eentropy:
+                fprintf(fp, "               ; Current weight-by-entropy: %.*e\n", DBL_DIG + 2, Weight);
                 break;
             case edepth:
                 fprintf(fp, "               ; Current weight-by-depth: %.*e\n", DBL_DIG+2,Weight);
@@ -1050,7 +1065,7 @@ const char * optionStruct::argstring() const
     if(Argstring)
         delete[] Argstring;
 
-    size_t nameLength = strlen(i) + (e ? 1+ strlen(e) : 0) + (SuffixOnly ? strlen("_suf") : 0) + (C < 0 ? 0 : strlen("_C") + 1) + (WeightFunction == esupport ? strlen("_XW") : 0) + (WeightFunction == edepth ? strlen("_XD") : 0) + (Redo ? strlen("_R") : 0) + 1;
+    size_t nameLength = strlen(i) + (e ? 1 + strlen(e) : 0) + (SuffixOnly ? strlen("_suf") : 0) + (C < 0 ? 0 : strlen("_C") + 1) + (WeightFunction == esupport ? strlen("_XW") : 0) + (WeightFunction == eentropy ? strlen("_XE") : 0) + (WeightFunction == edepth ? strlen("_XD") : 0) + (Redo ? strlen("_R") : 0) + 1;
     
     char * name = new char[nameLength];
     strcpy(name, i);
@@ -1074,6 +1089,9 @@ const char * optionStruct::argstring() const
         {
         case esupport:
             strcat(name, "_XW");
+            break;
+        case eentropy:
+            strcat(name, "_XE");
             break;
         case edepth:
             strcat(name, "_XD");

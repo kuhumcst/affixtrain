@@ -19,11 +19,13 @@ You should have received a copy of the GNU General Public License
 along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
+#ifndef OPTIONAFF_H
+#define OPTIONAFF_H
 
 #include <stdio.h> // FILE
 
 typedef enum {GoOn = 0,Leave = 1,Error = 2} OptReturnTp;
-typedef enum {econstant = 0, edepth = 1, esupport = 2} OptWeightFunction;
+typedef enum {econstant = 0, edepth = 1, esupport = 2, eentropy = 3} OptWeightFunction;
 
 void cleanUpOptions();
 
@@ -145,3 +147,4 @@ class optionStruct
         void completeArgs();
         OptReturnTp readArgs(int argc, char * argv[]);
     };
+#endif

@@ -5016,7 +5016,7 @@ void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,int
         fprintf(f,"//iteration:%d.%d\n",swath,iterations);
         fprintf(f
                ,"/*weight (%s used): %.*e suffix only: %s */\n"
-               ,options->getWeightFunction() == esupport ? "" : "not "
+               , (options->getWeightFunction() == esupport || options->getWeightFunction() == eentropy) ? "" : "not "
                ,DBL_DIG+2
                ,weight
                ,options->suffixOnly() ? "yes" : "no"
@@ -5026,7 +5026,7 @@ void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,int
                ,"/* number of nodes: %d, nodes/line: %.*e weight (%s used): %.*e blobs %d lines %d * fraction %.*e = %d lines*/\n"
                ,Nnodes
                ,DBL_DIG+2,(double)Nnodes/(double)fraclines
-               ,options->getWeightFunction() == esupport ? "" : "not "
+               , (options->getWeightFunction() == esupport || options->getWeightFunction() == eentropy) ? "" : "not "
                ,DBL_DIG+2,weight
                ,blobs
                ,lines
@@ -5227,7 +5227,7 @@ void printparms(int Nnodes,double weight,optionStruct * options)
     fprintf(f
            ,"/*#nodes in tree: %d weight (%s used): %.*e , Suffix only: %s */\n"
            ,Nnodes
-           ,options->getWeightFunction() == esupport ? "more support is better" : options->getWeightFunction() == edepth ? "fewer non-wildcard characters is better":"not used"
+           , (options->getWeightFunction() == esupport || options->getWeightFunction() == eentropy) ? "more support is better" : options->getWeightFunction() == edepth ? "fewer non-wildcard characters is better" : "not used"
            ,DBL_DIG+2
            ,weight
            ,options->suffixOnly() ? "yes" : "no"

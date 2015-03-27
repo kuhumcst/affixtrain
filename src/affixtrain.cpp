@@ -3351,6 +3351,54 @@ void computeParms(optionStruct * options)
     delete[] fbuf;
     }
 
+bool canwriteindir(const char * name)
+    {
+    size_t L = strlen(name);
+    bool res = false;
+    char * testfile = new char[L + 20];
+    if (L > 0)
+        sprintf(testfile, "%s%cT1E2S3T4F5I6L7E8", name, DIRSEP);
+    else
+        sprintf(testfile, "T1E2S3T4F5I6L7E8");
+    FILE * fptest = fopen(testfile, "w");
+    if (fptest)
+        {
+        fclose(fptest);
+        remove(testfile);
+        res = true;
+        }
+    delete[] testfile;
+    return res;
+    }
+
+bool haswritabledir(const char * name)
+    {
+    size_t L = strlen(name);
+    if (L > 0)
+        {
+        bool res = false;
+        char * dirname = new char[L + 20];
+        strcpy(dirname, name);
+        if (dirname[L - 1] == '\\' || dirname[L - 1] == '/')
+            dirname[L - 1] = 0;
+
+        if (canwriteindir(dirname))
+            res = true;
+        else
+            {
+            char command[1024];
+            bool hasDir = false;
+            sprintf(command, "%s %s", MKDIR, dirname);
+            system(command);
+            res = canwriteindir(dirname);
+            }
+        delete[] dirname;
+        return res;
+        }
+    else
+        return canwriteindir("");
+    }
+
 void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts)
     {
     CHECK("jglobTempDir");
@@ -3733,20 +3781,17 @@ int main(int argc, char **argv)
         }
     else
         {
-        FILE * fptest = fopen(tempDir("testFile", &options), "wb");
-        ++openfiles;
-        if (fptest)
+        if (options.tempDir())
             {
-            --openfiles;
-            fclose(fptest);
-            remove(tempDir("testFile", &options));
-            }
-        else
-            {
-            if (options.tempDir())
+            if (!haswritabledir(options.tempDir()))
+                {
                 printf("Cannot create file %s. Did you specify an existing and writable temp directory? (option -j)\n", tempDir("testFile", &options));
-            else
-                printf("Cannot create file %s. Is the working directory writable?\n", "testFile");
+                exit(-1);
+                }
+            }
+        else if (!canwriteindir("."))
+            {
+            printf("Cannot write in the working directory.\n");
             exit(-1);
             }
 
@@ -3759,6 +3804,8 @@ int main(int argc, char **argv)
                 initOutput(options.bestParms());
             computeParms(&options);
             }
+
+        init(&options); // TODO Check that penalties are the best ones, not the last ones tried.
 
         if(options.test())
             {

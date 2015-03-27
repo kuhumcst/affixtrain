@@ -629,6 +629,7 @@ trainingPair::~trainingPair()
     --TrainingPairCount;
     }
 
+#if DOIMPEDANCE
 void vertex::computeImpedance()
     {
     /* Regard the part of the pattern that is enclosed in * as a series of condensors.
@@ -668,6 +669,7 @@ void vertex::computeImpedance()
         }
         
     }
+#endif
 
 void vertex::print1(FILE * f)
     {
@@ -2152,13 +2154,30 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
                                      parmsoff = 0;
 #endif
 #endif
-            for(vertex ** pvi = pvf+1;pvi < pvN;++pvi)
+            if (comp == comp_parms)
                 {
-                if(comp(*pvf,*pvi) > 0)
+                for (vertex ** pvi = pvf; pvi < pvN; ++pvi)
+                    computeWeight(*pvi);
+                for (vertex ** pvi = pvf + 1; pvi < pvN; ++pvi)
                     {
-                    vertex * tmp = *pvf;
-                    *pvf = *pvi;
-                    *pvi = tmp;
+                    if (comp_parms(*pvf, *pvi) > 0)
+                        {
+                        vertex * tmp = *pvf;
+                        *pvf = *pvi;
+                        *pvi = tmp;
+                        }
+                    }
+                }
+            else
+                {
+                for (vertex ** pvi = pvf + 1; pvi < pvN; ++pvi)
+                    {
+                    if (comp(*pvf, *pvi) > 0)
+                        {
+                        vertex * tmp = *pvf;
+                        *pvf = *pvi;
+                        *pvi = tmp;
+                        }
                     }
                 }
 //            printf("R__R %d W__R %d\n",(*pvf)->R__R,(*pvf)->W__R);

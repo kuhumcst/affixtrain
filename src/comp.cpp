@@ -680,7 +680,6 @@ static int comp_koud(const vertex * a,const vertex * b)
     return (A1>B1)?-1:(A1<B1)?1:(A2>B2)?-1:(A2<B2)?1:(A3>B3)?-1:(A3<B3)?1:0;
     }
 
-static int comp_parms(const vertex * a,const vertex * b);
 int (*comp)(const vertex * a,const vertex * b) = comp_parms;
 // returns b > a ? 1 : b < a ? -1 : 0
 // (Chosen like this to let qsort sort in descending order.)
@@ -5259,7 +5258,7 @@ void printparms(int Nnodes,double weight,optionStruct * options)
 #define WN 5
 
 #if 0
-static int comp_parms(const vertex * a,const vertex * b)
+int comp_parms(const vertex * a,const vertex * b)
     {
     //for(int o = 0;o < NPARMS;o += parms.ROWPARMS)
     if(  a->R__R != b->R__R
@@ -5302,8 +5301,24 @@ static int comp_parms(const vertex * a,const vertex * b)
     return 0;
     }
 #else
-static int comp_parms(const vertex * a,const vertex * b)
+void computeWeight(vertex * a)
     {
+    double A = parms.Matrix[RR] * a->R__R + parms.Matrix[WR] * a->W__R + parms.Matrix[RW] * a->R__W + parms.Matrix[WW] * a->W__W;
+#if _NA
+    if (parms.ROWPARMS == 6)
+        {
+        A += parms.Matrix[RN] * a->R__NA + parms.Matrix[WN] * a->W__NA;
+        }
+#endif
+    a->wght = A;
+    }
+
+int comp_parms(const vertex * a,const vertex * b)
+    {
+    if (a->wght != b->wght)
+        return a->wght > b->wght ? -1 : 1;
+    return 0;
+    /*
     if(  a->R__R != b->R__R
       || a->W__R != b->W__R
       || a->R__W != b->R__W
@@ -5325,6 +5340,7 @@ static int comp_parms(const vertex * a,const vertex * b)
             }
         }
     return 0;
+    */
     }
 #endif
 
@@ -5570,7 +5586,7 @@ void printparms(int Nnodes,double weight,const char * parmstxt,bool suffixonly,b
     fclose(f);
     }
 
-static int comp_parms(const vertex * a,const vertex * b)
+int comp_parms(const vertex * a,const vertex * b)
     {
     //for(int o = 0;o < NPARMS;o += parms.ROWPARMS)
     if(  a->R__R != b->R__R

@@ -368,12 +368,13 @@ class vertex : public rulePair
         long W(){return W__R+W__W+W__NA;}
         */
 #endif
+        double wght;
     public:
 #if _NA
         void adjustNotApplicableCountsByRecalculatingR_NA(trainingPair * NotApplicableRight,int total,optionStruct * options);
         void adjustNotApplicableCountsByRecalculatingW_NA(trainingPair * NotApplicableWrong,int total,optionStruct * options);
 #endif
-
+#if DOIMPEDANCE
         double impedance; 
         /* Regard the part of the pattern that is enclosed in * as a series of condensors.
         The capacity of each condensor is equal to the length of the pattern string.
@@ -385,6 +386,7 @@ class vertex : public rulePair
         Hypothesis: Rules with low impedance are better (less fluffy) than rules with high impedance.
         */
         void computeImpedance();
+#endif
         virtual char * itsPattern(){return Pattern->itsTxt();}
         virtual char * itsReplacement(){return Replacement->itsTxt();}
         virtual const strng * itsstrngPattern()const{return Pattern;}

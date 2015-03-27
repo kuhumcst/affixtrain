@@ -37,8 +37,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define DIRSEP '/'
 #endif
 
-//extern bool options->verbose();
-
+#define DOIMPEDANCE 0
 
 #define DOTEST 0
 // DOTEST 1

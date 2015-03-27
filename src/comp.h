@@ -52,6 +52,7 @@ extern int comp_parms(const vertex * a,const vertex * b);
 */
 
 class optionStruct;
+class vertex;
 
 void setCompetitionFunction(optionStruct * options);
 void copybest();
@@ -62,5 +63,7 @@ void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,int
 void worsefound();
 
 extern int (*comp)(const vertex * a,const vertex * b);
+extern void computeWeight(vertex * a);
+extern int comp_parms(const vertex * a, const vertex * b);
 
 #endif

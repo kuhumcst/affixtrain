@@ -190,7 +190,7 @@ class shortRulePair
             strcpy(replacementArray, Rule->replacementArray);
             }
         shortRulePair(trainingPair * trainingpair, ruleTemplate * Template);
-        bool checkRule(/*ruleTemplate * Template,*/trainingPair * trainingpair, rulePair * parentPat, optionStruct * options);
+        bool checkRule(trainingPair * trainingpair, rulePair * parentPat);
         ~shortRulePair(){ --ShortRulePairCount; }
     };
 
@@ -931,141 +931,6 @@ fullRulePair::fullRulePair(shortRulePair * Rule)
     ++FullRulePairCount;
     }
 
-#if 0
-//TODO rulePair::apply is the most expensive function. It can be made faster by refraining from too much UTF-8 nit-picking
-//Also, the mask parameter is not used by all callers. Thus it may be better to create two functions.
-//Related: pattern and replacement can be put in the same string. They can even replace the pointers that now point to
-//the pattern and replacement strings, especially if the platform is 64 bit. Two pointers == 16 bytes
-bool rulePair::apply(trainingPair * trainingpair, size_t lemmalength, char * lemma, char * mask, optionStruct * options)
-    {
-    CHECK("FglobTempDir");
-    char wrd[100];
-    if (100 <= sprintf(wrd, "%c%.*s%c", START, (int)(trainingpair->itsWordlength()), trainingpair->itsWord(), END))
-        {
-        printf("rulePair::apply too small buffer");
-        exit(1);
-        }
-    char * p = itsPattern();
-    char * r = itsReplacement();
-    if (!*p) // root
-        {
-        static char lStartAnyEnd[4] = { START, ANY, END, 0 };
-        p = lStartAnyEnd/*"^*$"*/;
-        r = p;
-        }
-    char * w = wrd;
-    char * d = lemma;
-    char * last = lemma + lemmalength - 7;
-    char * m = mask;
-    size_t inc;
-    int P = UTF8char(p, UTF8);
-    int W = UTF8char(w, UTF8);
-    int R = UTF8char(r, UTF8);
-    //    while(*p && *r)
-    while (P && R)
-        {
-        //if(*p == *w)
-        if (P == W)
-            {
-            *m = unequal;
-            while (R && R != ANY && d < last)
-                //while(*r && *r != ANY)
-                {
-                inc = copyUTF8char(r, d);
-                r += inc;
-                d += inc;
-                //*d++ = *r++;
-                R = UTF8char(r, UTF8);
-                }
-
-            do
-                {
-                *++m = unequal;
-                p += skipUTF8char(p);
-                w += skipUTF8char(w);
-                P = UTF8char(p, UTF8);
-                W = UTF8char(w, UTF8);
-                //++p;
-                //++w;
-                } while (P && P != ANY && P == W);
-
-            if (P != R)
-                {
-                if (options->suffixOnly())
-                    {
-                    suffix(mask);
-                    }
-                return false;
-                }
-            }
-        else if (R == ANY)
-            {
-            p += skipUTF8char(p);
-            r += skipUTF8char(r);
-            P = UTF8char(p, UTF8);
-            R = UTF8char(r, UTF8);
-            char * ep = strchr(p, ANY);
-            if (ep)
-                *ep = '\0';
-            char * sub = strstr(w, p);
-            if (sub)
-                {
-                while (w < sub && d < last)
-                    {
-                    *m++ = equal;
-                    //*d++ = *w++;
-                    inc = copyUTF8char(w, d);
-                    w += inc;
-                    d += inc;
-                    }
-                W = UTF8char(w, UTF8);
-                }
-            else
-                {
-                if (ep)
-                    *ep = ANY;
-                d = lemma;
-                break;
-                }
-            if (ep)
-                *ep = ANY;
-            }
-        else
-            {
-            d = lemma;
-            break;
-            }
-        }
-    if (P || R)
-        {
-        if (options->suffixOnly())
-            {
-            suffix(mask);
-            }
-        return false;
-        }
-    *--m = '\0';
-    for (m = mask; *m; ++m)
-        m[0] = m[1];
-    *d = '\0';
-    d = lemma;
-    char * oldd = d;
-    inc = skipUTF8char(d);
-    d += inc;
-    while (*d)
-        {
-        *oldd++ = *d++;
-        }
-    *oldd = '\0';
-    if (oldd > lemma + 1)
-        oldd[-1] = '\0';
-    if (options->suffixOnly())
-        {
-        suffix(mask);
-        }
-    return true;
-    }
-#else
 
 int utfchar(char * p, int & U) /* int is big enough for all UTF-8 bytes */
     {
@@ -1087,7 +952,135 @@ int utfchar(char * p, int & U) /* int is big enough for all UTF-8 bytes */
     return q - p;
     }
 
-bool rulePair::apply(trainingPair * trainingpair, size_t lemmalength, char * lemma, char * mask, optionStruct * options)
+bool rulePair::apply(trainingPair * trainingpair, size_t lemmalength, char * lemma)
+    {
+    CHECK("FglobTempDir");
+    char wrd[100];
+    size_t L1 = trainingpair->itsWordlength();
+    if (L1 + 3 > sizeof(wrd))
+        {
+        printf("rulePair::apply too small buffer");
+        exit(1);
+        }
+    wrd[0] = START;
+    strncpy(wrd + 1, trainingpair->itsWord(), L1);
+    wrd[L1 + 1] = END;
+    wrd[L1 + 2] = 0;
+    char * p = itsPattern();
+    char * r = itsReplacement();
+    if (!*p) // root
+        {
+        static char lStartAnyEnd[4] = { START, ANY, END, 0 };
+        p = lStartAnyEnd/*"^*$"*/;
+        r = p;
+        }
+    char * w = wrd;
+    char * d = lemma;
+    char * last = lemma + lemmalength - 7;
+    int P, W, R;
+    int pinc = utfchar(p, P);
+    int winc = utfchar(w, W);
+    int rinc = utfchar(r, R);
+    while (P && R)
+        {
+        if (P == W)
+            {
+            while (R && R != ANY && d < last)
+                {
+                strncpy(d, r, rinc);
+                r += rinc;
+                d += rinc;
+                rinc = utfchar(r, R);
+                }
+
+            do
+                {
+                p += pinc;
+                w += winc;
+                pinc = utfchar(p, P);
+                winc = utfchar(w, W);
+                } while (P && P != ANY && P == W);
+
+            if (P != R)
+                {
+                return false;
+                }
+            }
+        else if (R == ANY)
+            {
+            p += pinc;
+            r += rinc;
+            pinc = utfchar(p, P);
+            rinc = utfchar(r, R);
+            char * ep = strchr(p, ANY);
+            if (ep)
+                {
+                *ep = '\0';
+                char * sub = strstr(w, p);
+                if (sub)
+                    {
+                    while (w < sub && d < last)
+                        {
+                        *d++ = *w++;
+                        while ((*w & 0xC0) == 0x80)
+                            *d++ = *w++;
+                        }
+                    winc = utfchar(w, W);
+                    }
+                else
+                    {
+                    *ep = ANY;
+                    d = lemma;
+                    break;
+                    }
+                *ep = ANY;
+                }
+            else
+                {
+                char * sub = strstr(w, p);
+                if (sub)
+                    {
+                    while (w < sub && d < last)
+                        {
+                        *d++ = *w++;
+                        while ((*w & 0xC0) == 0x80)
+                            *d++ = *w++;
+                        }
+                    winc = utfchar(w, W);
+                    }
+                else
+                    {
+                    d = lemma;
+                    break;
+                    }
+                }
+            }
+        else
+            {
+            d = lemma;
+            break;
+            }
+        }
+    if (P || R)
+        {
+        return false;
+        }
+    *d = '\0';
+    d = lemma;
+    char * oldd = d;
+    while ((*++d & 0xC0) == 0x80)
+        ;
+    while (*d)
+        {
+        *oldd++ = *d++;
+        }
+    *oldd = '\0';
+    if (oldd > lemma + 1)
+        oldd[-1] = '\0';
+    return true;
+    }
+
+bool rulePair::applym(trainingPair * trainingpair, size_t lemmalength, char * lemma, char * mask, optionStruct * options)
     {
     CHECK("FglobTempDir");
     char wrd[100];
@@ -1117,10 +1110,8 @@ bool rulePair::apply(trainingPair * trainingpair, size_t lemmalength, char * lem
     int pinc = utfchar(p, P);
     int winc = utfchar(w, W);
     int rinc = utfchar(r, R);
-    //    while(*p && *r)
     while (P && R)
         {
-        //if(*p == *w)
         if (P == W)
             {
             *m = unequal;
@@ -1158,28 +1149,48 @@ bool rulePair::apply(trainingPair * trainingpair, size_t lemmalength, char * lem
             rinc = utfchar(r, R);
             char * ep = strchr(p, ANY);
             if (ep)
-                *ep = '\0';
-            char * sub = strstr(w, p);
-            if (sub)
                 {
-                while (w < sub && d < last)
+                *ep = '\0';
+                char * sub = strstr(w, p);
+                if (sub)
                     {
-                    *m++ = equal;
-                    *d++ = *w++;
-                    while ((*w & 0xC0) == 0x80)
+                    while (w < sub && d < last)
+                        {
+                        *m++ = equal;
                         *d++ = *w++;
+                        while ((*w & 0xC0) == 0x80)
+                            *d++ = *w++;
+                        }
+                    winc = utfchar(w, W);
                     }
-                winc = utfchar(w, W);
+                else
+                    {
+                    *ep = ANY;
+                    d = lemma;
+                    break;
+                    }
+                *ep = ANY;
                 }
             else
                 {
-                if (ep)
-                    *ep = ANY;
-                d = lemma;
-                break;
+                char * sub = strstr(w, p);
+                if (sub)
+                    {
+                    while (w < sub && d < last)
+                        {
+                        *m++ = equal;
+                        *d++ = *w++;
+                        while ((*w & 0xC0) == 0x80)
+                            *d++ = *w++;
+                        }
+                    winc = utfchar(w, W);
+                    }
+                else
+                    {
+                    d = lemma;
+                    break;
+                    }
                 }
-            if (ep)
-                *ep = ANY;
             }
         else
             {
@@ -1216,7 +1227,6 @@ bool rulePair::apply(trainingPair * trainingpair, size_t lemmalength, char * lem
         }
     return true;
     }
-#endif
 
 shortRulePair::shortRulePair(trainingPair * trainingpair, ruleTemplate * Template)
     {
@@ -1569,11 +1579,10 @@ bool ruleTemplate::makebigger(int countdown, int & anihilatedGuards, optionStruc
     }
 
 
-bool shortRulePair::checkRule(/*ruleTemplate * Template,*/trainingPair * trainingpair, rulePair * parentPat, optionStruct * options)
+bool shortRulePair::checkRule(/*ruleTemplate * Template,*/trainingPair * trainingpair, rulePair * parentPat)
     {
     CHECK("NglobTempDir");
     char Lemma[100] = "";
-    char Mask[100] = "";
     fullRulePair FullRule(this);
     bool ret;
     /*
@@ -1585,7 +1594,7 @@ bool shortRulePair::checkRule(/*ruleTemplate * Template,*/trainingPair * trainin
     fprintf(flog,"\n");
     */
     if ((!parentPat || FullRule.dif(parentPat) == dif_bigger)
-        && FullRule.apply(trainingpair, sizeof(Lemma), Lemma, Mask, options)
+        && FullRule.apply(trainingpair, sizeof(Lemma), Lemma)
         )
         {
         ret = trainingpair->isCorrect(Lemma);
@@ -1645,7 +1654,7 @@ int trainingPair::makeCorrectRules(hash * Hash, ruleTemplate * Template, const c
          )
         {
         shortRulePair Rule(this, &locTemplate);
-        if (Rule.checkRule(/*&locTemplate,*/this, parent, options))
+        if (Rule.checkRule(/*&locTemplate,*/this, parent))
             {
             different = false;
             vertex * e;
@@ -1675,34 +1684,16 @@ int trainingPair::makeCorrectRules(hash * Hash, ruleTemplate * Template, const c
 int trainingPair::makeRuleEx(hash * Hash, vertex * parent, bool alreadyRight, optionStruct * options)
     {
     CHECK("QglobTempDir");
-    /*
-    this->print(flog);
-    */
     char similarArray[1000];
     similData SimilData(similarArray);
     SimilData.match(this);
-    /*
-    SimilData.print(flog);
-    */
     const char * predef = getMask();
-    /*
-    fprintf(flog,"predef %s\n",predef);
-    */
     SimilData.mergeTemplates(predef, options);
-    /*
-    fprintf(flog,"mergeTemplates DONE:\n");
-    SimilData.print(flog);
-    */
     shortRulePair Rule(this, &SimilData);
-    if (Rule.checkRule(/*&SimilData,*/this, parent, options))
+    if (Rule.checkRule(this, parent))
         {
         vertex * e;
         int ret = storeRule(Hash, &Rule, e);
-        /** /
-        fprintf(flog,"makeRuleEx:");
-        e->print1(flog);
-        fprintf(flog,"\n");
-        */
         return ret;
         }
     int nr = makeCorrectRules(Hash, &SimilData, similarArray, parent, 1, options->maxRecursionDepthRuleCreation(), options);

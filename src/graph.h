@@ -325,7 +325,8 @@ class rulePair
             {
             return itsReplacement();
             }
-        bool apply(trainingPair * trainingpair,size_t lemmalength,char * lemma,char * mask,optionStruct * options);
+        bool apply(trainingPair * trainingpair,size_t lemmalength,char * lemma);
+        bool applym(trainingPair * trainingpair, size_t lemmalength, char * lemma, char * mask, optionStruct * options);
         edif dif(rulePair * other);
         rulePair(){++RulePairCount;}
         virtual ~rulePair(){--RulePairCount;}

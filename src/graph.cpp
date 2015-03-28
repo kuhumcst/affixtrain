@@ -854,7 +854,7 @@ matchResult vertex::lemmatise(trainingPair * pair,char ** pmask,char ** plemma,o
     pair->unset(b_ok);
     pair->unset(b_wrong);
 #endif
-    if(apply(pair,sizeof(lemma),lemma,mask,options))
+    if(applym(pair,sizeof(lemma),lemma,mask,options))
         {
         if(plemma)
             *plemma = lemma;

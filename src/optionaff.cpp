@@ -34,8 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 //        printf("usage: makeaffixrules -w <word list> -c <cutoff> -C <expected cutoff> -o <flexrules> -e <extra> -n <columns> -f <compfunc> [<word list> [<cutoff> [<flexrules> [<extra> [<columns> [<compfunc>]]]]]]\n");
 
-//static char opts[] = "?@:B:b:c:C:D:d:e:F:f:hH:i:j:K:L:M:N:n:o:O:p:P:Q:q:R:s:T:t:v:W:" /* GNU: */ "wr";
-static char opts[] = "?@:B:b:c:C:D:e:F:f:hH:i:j:K:L:M:N:n:o:O:p:P:Q:q:R:s:T:t:v:X:W:d:" /* GNU: */ "wr";
+static char opts[] = "?@:B:b:c:C:D:e:F:f:hH:i:j:K:L:M:N:n:o:O:p:P:Q:q:R:s:T:t:v:X:x:W:d:" /* GNU: */ "wr";
 static char *** Ppoptions = NULL;
 static char ** Poptions = NULL;
 static int optionSets = 0;
@@ -73,6 +72,7 @@ optionStruct::optionStruct(optionStruct & O)
     SuffixOnly = O.SuffixOnly;
     SuffixOnlyParmSeen = O.SuffixOnlyParmSeen;
     Verbose = O.Verbose;
+    Remove = O.Remove;
     Minfraction = O.Minfraction;
     Maxfraction = O.Maxfraction;
     Redo = O.Redo;
@@ -116,6 +116,7 @@ optionStruct::optionStruct()
     SuffixOnlyParmSeen = false;
     Argstring = 0;
     Verbose = false;// verbose
+    Remove = false;
     Minfraction = 1.0; // L
     Maxfraction = 1.0; // H
     Redo = false;
@@ -451,6 +452,9 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
             break;
         case 'v': // verbose
             Verbose = locoptarg && *locoptarg == '-' ? false : true;
+            break;
+        case 'x': // verbose
+            Remove = locoptarg && *locoptarg == '-' ? false : true;
             break;
         case 'T': // test with training data
             TrainTest = locoptarg && *locoptarg == '-' ? false : true;
@@ -914,6 +918,7 @@ OptReturnTp optionStruct::readArgs(int argc, char * argv[])
 void optionStruct::print(FILE * fp) const
     {
     fprintf(fp,"               ; verbose\n-v %s\n", Verbose ? "" : "-");
+    fprintf(fp, "               ; remove test files (%s)\n-x %s\n", Remove ? "yes" : "no", Remove ? "" : "-");
     if (b)
         {
         fprintf(fp, "               ; raw rules\n-b %s\n", b); if (b) fprintf(fp, "-b %s\n", b); else fprintf(fp, ";-b not specified\n");

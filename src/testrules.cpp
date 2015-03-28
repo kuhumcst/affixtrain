@@ -49,7 +49,6 @@
 #define N_ 10
 #endif
 
-static bool REMOVE;
 static bool TAGGED;
 static bool COUNTLEMMAS;
 static bool WRITEWEIRD;
@@ -159,8 +158,8 @@ class lineab
             {
             double drules = log(rules);
             double dtrainsize = log(trainsize);
-            if(dtrainsize == 0.0)
-                fprintf(stderr,"add(rules %f,trainsize %f); dtrainsize %f\n",rules,trainsize,dtrainsize);
+           // if(dtrainsize == 0.0)
+               // fprintf(stderr,"add(rules %f,trainsize %f); dtrainsize %f\n",rules,trainsize,dtrainsize);
             Sx += dtrainsize;
             Sx2 += dtrainsize*dtrainsize;
             Sy += drules;
@@ -174,7 +173,7 @@ class lineab
                 return ((double)N*Sxy-Sy*Sx)/((double)N*Sx2-Sx*Sx);
             else
                 {
-                fprintf(stderr,"N %d Sx2 %f Sx %f N*Sx2 - Sx*Sx %f\n",N,Sx2,Sx,(double)N*Sx2-Sx*Sx);
+                //fprintf(stderr,"N %d Sx2 %f Sx %f N*Sx2 - Sx*Sx %f\n",N,Sx2,Sx,(double)N*Sx2-Sx*Sx);
                 return 0;
                 }
             }
@@ -198,7 +197,6 @@ static char Weird[256];
 
 static void init(bool TrainTest,const char *& XT,const char *& TT)
     {
-    REMOVE = false;
     TAGGED = false;
     COUNTLEMMAS = true;
     WRITEWEIRD = true;
@@ -1273,7 +1271,7 @@ struct decision
         }
     };
 
-static void compare(const char * output,const char * control,int & same,int & different,ambty & ambiguous,const char * controlResult,const char * test,int & ambiguousRules,decision & Decision)
+static void compare(const char * output, const char * control, int & same, int & different, ambty & ambiguous, const char * controlResult, const char * test, int & ambiguousRules, decision & Decision, optionStruct * options)
     {
     FILE * f1 = fopen(output,"r");
     ++openfiles;
@@ -1466,7 +1464,7 @@ static void compare(const char * output,const char * control,int & same,int & di
         --openfiles;
         fclose(f4);
         }
-    if(REMOVE)
+    if(options->remove())
         {
         remove(output);
         remove(controlResult);
@@ -1485,10 +1483,12 @@ static void doTheTest
     ,int & different
     ,ambty & ambiguous
     ,int & ambiguousRules
-    ,decision & Decision)
+    ,decision & Decision
+    ,optionStruct * options
+    )
     {
     lemmatiseFile(TRAINTEST ? traintest : test,flexrules,output);
-    if(REMOVE)
+    if (options->remove())
         {
         remove(flexrules);
         }
@@ -1498,11 +1498,11 @@ static void doTheTest
     ambiguousRules = 0;
     if(TRAINTEST)
         {
-        compare(output,traincontrol,same,different,ambiguous,controlResult,traintest,ambiguousRules,Decision);
+        compare(output,traincontrol,same,different,ambiguous,controlResult,traintest,ambiguousRules,Decision,options);
         }
     else
         {
-        compare(output,control,same,different,ambiguous,controlResult,test,ambiguousRules,Decision);
+        compare(output,control,same,different,ambiguous,controlResult,test,ambiguousRules,Decision,options);
         }
     }
 
@@ -1666,6 +1666,7 @@ class counting
                 ,n.ambiguous
                 ,n.ambiguousRules
                 ,n.Decision
+                ,Options
                 );
             this->StandardDev.datum(n.same,n.ambiguous,n.different);
             n.tsame += n.same;
@@ -1728,13 +1729,13 @@ class counting
                 );
             fflush(fptab);
             }
-        void validationcolumn(char ** cell,int cutoff,int maxcount,int ttrainlines)
+        void validationcolumn(char ** cell, int cutoff, int maxcount, int ttrainlines, lineab * AffixLine, int norow)
             {
             double ntot = n.tsame + n.tambiguous[0] + n.tambiguous[1] + n.tambiguous[2] + n.tdifferent;
             const char * f1 = "%14d ";
             const char * f2 = "%14.6f ";
-            for(int i = 0;i < 20;++i)
-                cell[i] = new char[20];
+            for(int i = 0;i < norow;++i)
+                cell[i] = new char[22];
             sprintf(cell[0],f1,cutoff);
             sprintf(cell[1],f2,(double)n.tflexcount/(double)maxcount);
             sprintf(cell[2],f2,ttrainlines == 0 ? 100.0 : 100.0*(double)n.tflexcount/(double)ttrainlines);
@@ -1755,6 +1756,7 @@ class counting
             sprintf(cell[17],f2,ntot > 0 ? 100.0*(double)this->n.Decision.true_not_amb/ntot : 0.0);
             sprintf(cell[18],f2,this->n.Decision.precision());
             sprintf(cell[19],f2,this->n.Decision.recall());
+            sprintf(cell[20],"%6.3f*N^%4.3f ", exp(AffixLine->a()), AffixLine->b());//0.056414*N^0.799693
             }
         void printingNice(int cutoff,double fraction,int maxcount,FILE * fptab,int ttrainlines,optionStruct * Options)
             {
@@ -1960,11 +1962,10 @@ void trainAndTest
 
                 testOptions.completeArgs();
                 trainRules("",&testOptions,Counts);
-                if(REMOVE)
-                    {
-                    remove(Ttraining);
-                    //printf("removed training files %s\n",Ttraining);
-                    }
+                }
+            if (Options->remove())
+                {
+                remove(Ttraining);
                 }
 
             if(ttrainlines > 0)
@@ -2004,7 +2005,7 @@ void trainAndTest
 #endif
                     }
                 }
-            if(REMOVE)
+            if (Options->remove())
                 {
                 remove(test);
                 if(TRAINTEST)
@@ -2069,7 +2070,8 @@ void trainAndTest
                                     "true_amb%      ",
                                     "true_not_amb%  ",
                                     "precision      ",
-                                    "recall         "
+                                    "recall         ",
+                                    "#rules =       "
                                     };
                 int nocol = 7;
                 int norow = sizeof(texts)/sizeof(texts[0]);
@@ -2079,7 +2081,7 @@ void trainAndTest
                     cell[j] = texts[j];
                 for(int k = 0;k < nocol - 1;++k)
                     {
-                    c[k].validationcolumn(cell+(k+1)*norow,k,maxcount,ttrainlines);
+                    c[k].validationcolumn(cell + (k + 1)*norow, k, maxcount, ttrainlines, AffixLine + k, norow);
                     }
                 int len = 0;
                 for(int m = 0;m < nocell;++m)

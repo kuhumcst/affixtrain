@@ -51,9 +51,10 @@ class optionStruct
         const char * X; // rule weight function, defaults to constant (1)
         bool ComputeParms;// compute parms
         bool SuffixOnly;// suffix only
-        bool Verbose;         // verbose
+        bool Verbose;   // verbose
         bool Test;
         bool TrainTest;
+        bool Remove;    // remove test files after use (default false)
         double Minfraction;
         double Maxfraction;
         int K;    // Number of differently sized fractions of trainingdata 
@@ -111,6 +112,7 @@ class optionStruct
         const bool computeParms()const{return ComputeParms;}
         const bool suffixOnly()const{return SuffixOnly;}
         const bool verbose()const{return Verbose;}
+        const bool remove()const{ return Remove; }
         const bool test()const{return Test;}
         const bool trainTest()const{return TrainTest;}        
         const double minfraction()const{return Minfraction;}

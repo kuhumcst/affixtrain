@@ -931,7 +931,11 @@ fullRulePair::fullRulePair(shortRulePair * Rule)
     ++FullRulePairCount;
     }
 
-
+#if 0
+//TODO rulePair::apply is the most expensive function. It can be made faster by refraining from too much UTF-8 nit-picking
+//Also, the mask parameter is not used by all callers. Thus it may be better to create two functions.
+//Related: pattern and replacement can be put in the same string. They can even replace the pointers that now point to
+//the pattern and replacement strings, especially if the platform is 64 bit. Two pointers == 16 bytes
 bool rulePair::apply(trainingPair * trainingpair, size_t lemmalength, char * lemma, char * mask, optionStruct * options)
     {
     CHECK("FglobTempDir");
@@ -1061,6 +1065,153 @@ bool rulePair::apply(trainingPair * trainingpair, size_t lemmalength, char * lem
         }
     return true;
     }
+#else
+
+int utfchar(char * p, int & U) /* int is big enough for all UTF-8 bytes */
+    {
+    char * q = p;
+    U = *q++;
+    while ((*q & 0xC0) == 0x80) /* Assuming valid UTF-8, such bytes can only
+                                occur after an initial byte with highest two
+                                bits set, so we don't need to check for the
+                                existence of that initial byte. */
+        {
+        U <<= 8;
+        U += *q++;
+        } 
+    return q - p;
+    }
+
+bool rulePair::apply(trainingPair * trainingpair, size_t lemmalength, char * lemma, char * mask, optionStruct * options)
+    {
+    CHECK("FglobTempDir");
+    char wrd[100];
+    size_t L1 = trainingpair->itsWordlength();
+    if (L1 + 3 > sizeof(wrd))
+        {
+        printf("rulePair::apply too small buffer");
+        exit(1);
+        }
+    wrd[0] = START;
+    strncpy(wrd + 1, trainingpair->itsWord(), L1);
+    wrd[L1 + 1] = END;
+    wrd[L1 + 2] = 0;
+    char * p = itsPattern();
+    char * r = itsReplacement();
+    if (!*p) // root
+        {
+        static char lStartAnyEnd[4] = { START, ANY, END, 0 };
+        p = lStartAnyEnd/*"^*$"*/;
+        r = p;
+        }
+    char * w = wrd;
+    char * d = lemma;
+    char * last = lemma + lemmalength - 7;
+    char * m = mask;
+    int P,W,R;
+    int pinc = utfchar(p, P);
+    int winc = utfchar(w, W);
+    int rinc = utfchar(r, R);
+    //    while(*p && *r)
+    while (P && R)
+        {
+        //if(*p == *w)
+        if (P == W)
+            {
+            *m = unequal;
+            while (R && R != ANY && d < last)
+                {
+                strncpy(d, r, rinc);
+                r += rinc;
+                d += rinc;
+                rinc = utfchar(r, R);
+                }
+
+            do
+                {
+                *++m = unequal;
+                p += pinc;
+                w += winc;
+                pinc = utfchar(p, P);
+                winc = utfchar(w, W);
+                } while (P && P != ANY && P == W);
+
+            if (P != R)
+                {
+                if (options->suffixOnly())
+                    {
+                    suffix(mask);
+                    }
+                return false;
+                }
+            }
+        else if (R == ANY)
+            {
+            p += pinc;
+            r += rinc;
+            pinc = utfchar(p, P);
+            rinc = utfchar(r, R);
+            char * ep = strchr(p, ANY);
+            if (ep)
+                *ep = '\0';
+            char * sub = strstr(w, p);
+            if (sub)
+                {
+                while (w < sub && d < last)
+                    {
+                    *m++ = equal;
+                    *d++ = *w++;
+                    while ((*w & 0xC0) == 0x80)
+                        *d++ = *w++;
+                    }
+                winc = utfchar(w, W);
+                }
+            else
+                {
+                if (ep)
+                    *ep = ANY;
+                d = lemma;
+                break;
+                }
+            if (ep)
+                *ep = ANY;
+            }
+        else
+            {
+            d = lemma;
+            break;
+            }
+        }
+    if (P || R)
+        {
+        if (options->suffixOnly())
+            {
+            suffix(mask);
+            }
+        return false;
+        }
+    *--m = '\0';
+    for (m = mask; *m; ++m)
+        m[0] = m[1];
+    *d = '\0';
+    d = lemma;
+    char * oldd = d;
+    while ((*++d & 0xC0) == 0x80)
+        ;
+    while (*d)
+        {
+        *oldd++ = *d++;
+        }
+    *oldd = '\0';
+    if (oldd > lemma + 1)
+        oldd[-1] = '\0';
+    if (options->suffixOnly())
+        {
+        suffix(mask);
+        }
+    return true;
+    }
+#endif
 
 shortRulePair::shortRulePair(trainingPair * trainingpair, ruleTemplate * Template)
     {

@@ -31,9 +31,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define NPARMS parms.ROWPARMS
 #else
 #define NUMBER_OF_ROWS_IN_R (sizeof(R)/(parms.ROWPARMS*sizeof(R[0])))
-#if NPARMS % parms.ROWPARMS != 0
-#error NPARMS must be a multiple of parms.ROWPARMS
-#endif
 #endif
 
 /*

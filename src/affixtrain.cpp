@@ -977,41 +977,30 @@ bool rulePair::apply(trainingPair * trainingpair, size_t lemmalength, char * lem
     char * w = wrd;
     char * d = lemma;
     char * last = lemma + lemmalength - 7;
-    int P, W, R;
-    int pinc = utfchar(p, P);
-    int winc = utfchar(w, W);
-    int rinc = utfchar(r, R);
-    while (P && R)
+    while (*p && *r)
         {
-        if (P == W)
+        if (*p == *w)
             {
-            while (R && R != ANY && d < last)
+            while (*r && *r != ANY && d < last)
                 {
-                strncpy(d, r, rinc);
-                r += rinc;
-                d += rinc;
-                rinc = utfchar(r, R);
+                *d++ = *r++;
                 }
 
             do
                 {
-                p += pinc;
-                w += winc;
-                pinc = utfchar(p, P);
-                winc = utfchar(w, W);
-                } while (P && P != ANY && P == W);
+                ++p;
+                ++w;
+                } while (*p && *p != ANY && *p == *w);
 
-            if (P != R)
+            if (*p != *r)
                 {
                 return false;
                 }
             }
-        else if (R == ANY)
+        else if (*r == ANY)
             {
-            p += pinc;
-            r += rinc;
-            pinc = utfchar(p, P);
-            rinc = utfchar(r, R);
+            ++p;
+            ++r;
             char * ep = strchr(p, ANY);
             if (ep)
                 {
@@ -1022,10 +1011,7 @@ bool rulePair::apply(trainingPair * trainingpair, size_t lemmalength, char * lem
                     while (w < sub && d < last)
                         {
                         *d++ = *w++;
-                        while ((*w & 0xC0) == 0x80)
-                            *d++ = *w++;
                         }
-                    winc = utfchar(w, W);
                     }
                 else
                     {
@@ -1043,10 +1029,7 @@ bool rulePair::apply(trainingPair * trainingpair, size_t lemmalength, char * lem
                     while (w < sub && d < last)
                         {
                         *d++ = *w++;
-                        while ((*w & 0xC0) == 0x80)
-                            *d++ = *w++;
                         }
-                    winc = utfchar(w, W);
                     }
                 else
                     {
@@ -1061,18 +1044,16 @@ bool rulePair::apply(trainingPair * trainingpair, size_t lemmalength, char * lem
             break;
             }
         }
-    if (P || R)
+    if (*p || *r)
         {
         return false;
         }
     *d = '\0';
     d = lemma;
     char * oldd = d;
-    while ((*++d & 0xC0) == 0x80)
-        ;
-    while (*d)
+    while (*++d)
         {
-        *oldd++ = *d++;
+        *oldd++ = *d;
         }
     *oldd = '\0';
     if (oldd > lemma + 1)

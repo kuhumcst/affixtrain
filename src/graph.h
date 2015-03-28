@@ -372,8 +372,8 @@ class vertex : public rulePair
         double wght;
     public:
 #if _NA
-        void adjustNotApplicableCountsByRecalculatingR_NA(trainingPair * NotApplicableRight,int total,optionStruct * options);
-        void adjustNotApplicableCountsByRecalculatingW_NA(trainingPair * NotApplicableWrong,int total,optionStruct * options);
+        void adjustNotApplicableCountsByRecalculatingR_NA(trainingPair * NotApplicableRight,int total);
+        void adjustNotApplicableCountsByRecalculatingW_NA(trainingPair * NotApplicableWrong,int total);
 #endif
 #if DOIMPEDANCE
         double impedance; 
@@ -441,10 +441,11 @@ class vertex : public rulePair
         ~vertex();
         void deleteThis();
         vertex(rulePair * Rule,hash * Hash);
-        matchResult lemmatise(trainingPair * pair,char ** mask,char ** plemma,optionStruct * options);
-        int goodness(trainingPair * pairs,topScore * Top/*,bool maycut*/);
+        matchResult lemmatise(trainingPair * pair,char ** plemma);
+        matchResult lemmatisem(trainingPair * pair, char ** mask, char ** plemma, optionStruct * options);
+        int goodness(trainingPair * pairs, topScore * Top/*,bool maycut*/);
         void nlemmatiseStart();
-        int nlemmatise(trainingPair * pairs,int n,bool InputRight,optionStruct * options);
+        int nlemmatise(trainingPair * pairs,int n,bool InputRight);
     };
 
 extern bool building;
@@ -552,7 +553,7 @@ class vertexPointer
 #endif
 
             matchResult lemmatise(trainingPair * pair,optionStruct * options);
-            node * cleanup(node * parent,optionStruct * options);
+            node * cleanup(node * parent);
             int count()
                 {
                 int ret = 0;

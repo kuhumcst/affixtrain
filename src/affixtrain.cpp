@@ -2518,7 +2518,7 @@ static void doTheRules(hash * Hash, trainingPair * TrainingPair, node ** top, op
     *top = new node(best);
     trainingPair * Right = NULL;
     (*top)->init(&Right, &TrainingPair, 0/*,0,0*/, options);
-    (*top) = (*top)->cleanup(NULL, options);
+    (*top) = (*top)->cleanup(NULL);
     }
 
 
@@ -3034,7 +3034,7 @@ static bool doTraining
             for (int thresh = 1; thresh <= cutoff; thresh++)
                 {
                 top->pruneAll(thresh);
-                top = top->cleanup(NULL, options);
+                top = top->cleanup(NULL);
                 if (sizeof(naam) <= (size_t)sprintf(naam, nflexrulesFormat, thresh))
                     {
                     printf("doTraining: naam 2 small");
@@ -3356,11 +3356,7 @@ void computeParms(optionStruct * options)
             printparms(Count.getNnodes(),brownweight, options);
             }
         int looplimit = (int)(maxiterations*pow(iterationsfactor, -swath));
-#if FLOATINGPOINTPARMS
         for (int iterations = 0; iterations < looplimit; ++iterations)
-#else
-        for(int iterations = 0;iterations < 64;++iterations)
-#endif
             {
             CHECK("D2aglobTempDir");
             brown();
@@ -3898,7 +3894,6 @@ int main(int argc, char **argv)
     if (argc < 2)
         {
         printf("affixtrain - supervised learning of affix rules for AFFIXTRAIN, version " VERSION "\n");
-        printf("%ssing floating point parameters.\n", FLOATINGPOINTPARMS ? "U" : "Not u");
         printf("%s -h for usage\n", argv[0]);
         exit(0);
         }

@@ -1069,6 +1069,11 @@ bool rulePair::apply(trainingPair * trainingpair, size_t lemmalength, char * lem
 
 int utfchar(char * p, int & U) /* int is big enough for all UTF-8 bytes */
     {
+    if (!*p)
+        {
+        U = 0;
+        return 0;
+        }
     char * q = p;
     U = *q++;
     while ((*q & 0xC0) == 0x80) /* Assuming valid UTF-8, such bytes can only

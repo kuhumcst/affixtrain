@@ -367,7 +367,7 @@ class vertex : public rulePair
         void adjustNotApplicableCountsByRecalculatingR_NA(trainingPair * NotApplicableRight,int total);
         void adjustNotApplicableCountsByRecalculatingW_NA(trainingPair * NotApplicableWrong,int total);
 #endif
-        void vertex::adjustWeight();
+        void adjustWeight();
 #if DOIMPEDANCE
         double impedance; 
         /* Regard the part of the pattern that is enclosed in * as a series of condensors.

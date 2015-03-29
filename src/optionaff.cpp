@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 //        printf("usage: makeaffixrules -w <word list> -c <cutoff> -C <expected cutoff> -o <flexrules> -e <extra> -n <columns> -f <compfunc> [<word list> [<cutoff> [<flexrules> [<extra> [<columns> [<compfunc>]]]]]]\n");
 
-static char opts[] = "?@:B:b:c:C:D:e:F:f:hH:i:j:K:L:M:N:n:o:O:p:P:Q:q:R:s:T:t:v:X:x:W:d:" /* GNU: */ "wr";
+static char opts[] = "?@:A:B:b:c:C:D:d:e:F:f:hH:i:j:K:L:M:N:n:o:O:p:P:Q:q:R:s:T:t:v:X:x:W:" /* GNU: */ "wr";
 static char *** Ppoptions = NULL;
 static char ** Poptions = NULL;
 static int optionSets = 0;
@@ -70,6 +70,7 @@ optionStruct::optionStruct(optionStruct & O)
         D[ii] = O.D[ii];
     ComputeParms = O.ComputeParms;
     SuffixOnly = O.SuffixOnly;
+    ExpensiveInfix = O.ExpensiveInfix;
     SuffixOnlyParmSeen = O.SuffixOnlyParmSeen;
     Verbose = O.Verbose;
     Remove = O.Remove;
@@ -113,6 +114,7 @@ optionStruct::optionStruct()
     nD = 0;
     ComputeParms = false;// compute parms
     SuffixOnly = false;// suffix rules only
+    ExpensiveInfix = false;
     SuffixOnlyParmSeen = false;
     Argstring = 0;
     Verbose = false;// verbose
@@ -450,6 +452,9 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
             SuffixOnly = locoptarg && *locoptarg == '-' ? false : true;
             SuffixOnlyParmSeen = true;
             break;
+        case 'A':
+            ExpensiveInfix = locoptarg && *locoptarg == '-' ? false : true;
+            break;
         case 'v': // verbose
             Verbose = locoptarg && *locoptarg == '-' ? false : true;
             break;
@@ -718,6 +723,23 @@ void optionStruct::completeArgs()
             e = dupl("xx_suffix");
             }
         }
+    else if (ExpensiveInfix)
+        {
+        if (e)
+            {
+            if (!strstr(e, "_fewinfix"))
+                {
+                static char * ext = new char[strlen(e) + strlen("_fewinfix") + 1];
+                sprintf(ext, "%s_fewinfix", e);
+                delete[] e;
+                e = ext;
+                }
+            }
+        else
+            {
+            e = dupl("xx_fewinfix");
+            }
+        }
 
     if (P == 0)
         {
@@ -926,6 +948,7 @@ void optionStruct::print(FILE * fp) const
         fprintf(fp, "               ; (N/A) word list\n-i %s\n", i ? i : "?");
         fprintf(fp, "               ; (N/A) extra name suffix\n"); if (e) fprintf(fp, "-e %s\n", e); else fprintf(fp, ";-e not specified\n");
         fprintf(fp, "               ; (N/A) suffix only (%s)\n-s %s\n", SuffixOnly ? "yes" : "no", SuffixOnly ? "" : "-");
+        fprintf(fp, "               ; (N/A) make rules with infixes less prevalent(%s)\n-A %s\n", ExpensiveInfix ? "yes" : "no", ExpensiveInfix ? "" : "-");
         fprintf(fp, "               ; (N/A) columns (1=word,2=lemma,3=tags,0=other)\n-n %s\n", n ? n : "?");
         fprintf(fp, "               ; (N/A) max recursion depth when attempting to create candidate rule\n-Q %d\n", Q);
         fprintf(fp, "               ; (N/A) flex rules\n-o %s\n", o ? o : "?");
@@ -956,6 +979,7 @@ void optionStruct::print(FILE * fp) const
         fprintf(fp, "               ; word list\n-i %s\n", i);
         fprintf(fp, "               ; extra name suffix\n"); if (e) fprintf(fp, "-e %s\n", e); else fprintf(fp, ";-e not specified\n");
         fprintf(fp, "               ; suffix only (%s)\n-s %s\n", SuffixOnly ? "yes" : "no", SuffixOnly ? "" : "-");
+        fprintf(fp, "               ; make rules with infixes less prevalent(%s)\n-A %s\n", ExpensiveInfix ? "yes" : "no", ExpensiveInfix ? "" : "-");
         fprintf(fp, "               ; columns (1=word,2=lemma,3=tags,0=other)\n-n %s\n", n);
         fprintf(fp, "               ; max recursion depth when attempting to create candidate rule\n-Q %d\n", Q);
         fprintf(fp, "               ; flex rules\n-o %s\n", o);
@@ -1070,7 +1094,7 @@ const char * optionStruct::argstring() const
     if(Argstring)
         delete[] Argstring;
 
-    size_t nameLength = strlen(i) + (e ? 1 + strlen(e) : 0) + (SuffixOnly ? strlen("_suf") : 0) + (C < 0 ? 0 : strlen("_C") + 1) + (WeightFunction == esupport ? strlen("_XW") : 0) + (WeightFunction == eentropy ? strlen("_XE") : 0) + (WeightFunction == edepth ? strlen("_XD") : 0) + (Redo ? strlen("_R") : 0) + 1;
+    size_t nameLength = strlen(i) + (e ? 1 + strlen(e) : 0) + (SuffixOnly ? strlen("_suf") : 0) + (ExpensiveInfix ? strlen("_inf") : 0) + (C < 0 ? 0 : strlen("_C") + 1) + (WeightFunction == esupport ? strlen("_XW") : 0) + (WeightFunction == eentropy ? strlen("_XE") : 0) + (WeightFunction == edepth ? strlen("_XD") : 0) + (Redo ? strlen("_R") : 0) + 1;
     
     char * name = new char[nameLength];
     strcpy(name, i);
@@ -1082,6 +1106,10 @@ const char * optionStruct::argstring() const
     if (SuffixOnly)
         {
         strcat(name, "_suf");
+        }
+    if (ExpensiveInfix)
+        {
+        strcat(name, "_inf");
         }
     if (C >= 0)
         {

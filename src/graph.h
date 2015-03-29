@@ -78,9 +78,6 @@ extern int RulePairCount;
 extern int RuleTemplateCount;
 extern int ShortRulePairCount;
 extern int FullRulePairCount;
-//extern int XX;
-
-
 
 edif dif(char * Txt, char * s_Txt);
 
@@ -147,7 +144,6 @@ class trainingPair
         trainingPair * AltLemma; // forms closed loop of inflected forms (of same lemma)
 #endif
 #if AMBIGUOUS
-//        void makeLoop(trainingPair ** first,trainingPair ** ceiling);
         void makeWrongAmbiguousIfRightPresent(trainingPair *& Wrong,trainingPair *& Ambiguous);
 #endif
         void addRule(vertex * V,bool InputRight,bool Right);
@@ -364,10 +360,6 @@ class vertex : public rulePair
 #if _NA
         long R__NA;
         long W__NA;
-        /* checkPV
-        long R(){return R__R+R__W+R__NA;}
-        long W(){return W__R+W__W+W__NA;}
-        */
 #endif
         double wght;
     public:
@@ -375,6 +367,7 @@ class vertex : public rulePair
         void adjustNotApplicableCountsByRecalculatingR_NA(trainingPair * NotApplicableRight,int total);
         void adjustNotApplicableCountsByRecalculatingW_NA(trainingPair * NotApplicableWrong,int total);
 #endif
+        void vertex::adjustWeight();
 #if DOIMPEDANCE
         double impedance; 
         /* Regard the part of the pattern that is enclosed in * as a series of condensors.
@@ -443,7 +436,7 @@ class vertex : public rulePair
         vertex(rulePair * Rule,hash * Hash);
         matchResult lemmatise(trainingPair * pair,char ** plemma);
         matchResult lemmatisem(trainingPair * pair, char ** mask, char ** plemma, optionStruct * options);
-        int goodness(trainingPair * pairs, topScore * Top/*,bool maycut*/);
+        int goodness(trainingPair * pairs, topScore * Top);
         void nlemmatiseStart();
         int nlemmatise(trainingPair * pairs,int n,bool InputRight);
     };
@@ -532,7 +525,6 @@ class vertexPointer
                 pairs += Pairs;
                 }
             vertex * V;
-           // vertex ** pv; // array of candidates of the IfPatternFails list, more or less sorted in descending goodness order
             int Ncandidates;
             int IDXcandidates;
             node * IfPatternSucceeds; 
@@ -548,9 +540,6 @@ class vertexPointer
                 if(this->IfPatternFails)
                     this->IfPatternFails->printSep(f,level);
                 }
-#if AMBIGUOUS
-            //trainingPair * Ambiguous; // Pattern succeeds, but replacement is wrong. However, the same word has more lemmas, one of which was produced by the rule.
-#endif
 
             matchResult lemmatise(trainingPair * pair,optionStruct * options);
             node * cleanup(node * parent);
@@ -572,14 +561,12 @@ class vertexPointer
                 LONG ret = 0;
                 for ( node * n = this
                     ; n
-                    ;/* ++Depth,*/ n = n->IfPatternFails
+                    ; n = n->IfPatternFails
                     )
                     {
                     if(n->Right)
                         {
-                        //LONG rcount = (LONG)n->Right->count();
-                        //assert(rcount >= 0.9);
-                        ret += /* rcount* */Depth;
+                        ret += Depth;
                         }
                     
                     if(n->IfPatternSucceeds)
@@ -611,7 +598,6 @@ class vertexPointer
                         disadvantageous to split the heaviest penalized rules
                         in even lower grade rules.
                         */
-                        //ret += rcount*exp(-rcount/3.0); 
                         /*
                         Purpose: for rule sets that have rules with support
                         from fewer than 3 word/lemma examples removed.
@@ -624,8 +610,6 @@ class vertexPointer
                         Weight goes to zero for large rcount.
                         rcount == 30 (0.00136)
                         */
-                        //ret += rcount*exp(-rcount/mostPenalized);
-                        // So cutoff == 0 --> max penalty at 
                         ret += rcount*rcount*exp(-2.0*rcount/mostPenalized);
                         /* Squared version of previous function. Gives more 
                            pronounced penalty at cutoff+1, while penalties
@@ -661,22 +645,6 @@ class vertexPointer
                     }
                 return ret;
                 }
-            /*
-            int countWords()
-                {
-                int ret = 0;
-                node * n = this;
-                while(n)
-                    {
-                    if(n->Right)
-                        ret += n->Right->count();
-                    if(n->IfPatternSucceeds)
-                        ret += n->IfPatternSucceeds->countWords();
-                    n = n->IfPatternFails;
-                    }
-                return ret;
-                }
-            */
             int prune(int threshold)
                 {
                 int N = 0;
@@ -715,9 +683,7 @@ class vertexPointer
 
             int pruneAll(int threshold)
                 {
-                //printf("prune\n");
                 int n = prune(threshold);
-                //printf("prune DONE\n");
                 return n;
                 }
 
@@ -758,8 +724,6 @@ class vertexPointer
                 --NodeCount;
                 delete IfPatternSucceeds;
                 delete IfPatternFails;
-//                delete [] pv;
-               // V->decRefCnt();
                 V->destroy();
                 }
         };

@@ -691,7 +691,6 @@ void vertex::destroy()
     {
     decRefCnt();
     int rc = refCount();
-//    printf("destroy vertex %p %s %s %d %d\n",this,Pattern->itsTxt(),Replacement->itsTxt(),refCount(),this->Relations);
     if(rc == 0)
         {
         deleteThis();
@@ -700,10 +699,6 @@ void vertex::destroy()
 
 vertex::~vertex()
     {
-    //printf("|%s\t%s\n",Pattern->itsTxt(),Replacement->itsTxt());
-
-    //this->print2(0);
-//    printf("~vertex %p %s %s\n",this,Pattern->itsTxt(),Replacement->itsTxt());
     delete Pattern;
     delete Replacement;
     --VertexCount;
@@ -725,7 +720,6 @@ vertex::vertex(rulePair * Rule,hash * Hash):
         Pattern = new strng(Rule->pattern());
         Replacement = new strng(Rule->replacement());
         ++VertexCount;
-//        printf("vertex %p %s %s\n",this,Pattern->itsTxt(),Replacement->itsTxt());
         }
 
 bool trainingPair::isCorrect(const char * lemma) const
@@ -1014,7 +1008,6 @@ long casesensitivehash(const char * cp)
 
 void hash::rehash(int loadFactor/*1-100*/)
     {
-//    printf("rehashing %ld ...",hash_size);
     long oldsize = hash_size;
     hash_size = nextprime((100 * record_count)/loadFactor);
     vertex ** new_hash_table = new vertex * [hash_size];
@@ -1040,12 +1033,10 @@ void hash::rehash(int loadFactor/*1-100*/)
         }
     delete [] hash_table;
     hash_table = new_hash_table;
-//    printf("      \r");
     }
 
 hash::hash(long size):record_count(0),next(0)
     {
-    //            LOG("               %p hash",this);
     hash_size = nextprime(size);
     hash_table = new vertex * [hash_size];
     long i;
@@ -1056,8 +1047,6 @@ hash::hash(long size):record_count(0),next(0)
 
 hash::~hash()
     {
-    //            LOG("               %p ~hash",this);
-//    printf("~hash\n");
     int i;
     int n = 0;
     for(i = 0;i < hash_size;++i)
@@ -1074,7 +1063,6 @@ hash::~hash()
     // do we want to delete the strngs as well?
     delete next;
     --HashCount;
-//    printf("~hash DONE\n");
     }
 
 long hash::key(const char * ckey)
@@ -1248,7 +1236,6 @@ void trainingPair::fprint(FILE * famb)
             V->print1(famb);
             }
         }
-//    fprintf(famb,"%.*s\t%d\n",this->lemmaclasslength,this->LemmaClass,this->Inl);
 #if WORDCLASS
     fprintf(famb,"\t%.*s",this->wordclasslength,this->WordClass);
 #endif
@@ -1314,22 +1301,10 @@ void trainingPair::fprintTraining(FILE * fp
     {
     if(UTF8 
       ? isUpper(UTF8char(this->Word,UTF8)) && !isUpper(UTF8char(this->LemmaHead,UTF8)) 
-//      : isUpper(*(const unsigned char *)this->Word) && !isUpper(*(const unsigned char *)this->LemmaHead)
       : isUpperISO(this->Word) && !isUpperISO(this->LemmaHead)
       )
         {
-        char * lemma;/* = new char[this->lemmalength+1];
-        strncpy(lemma,this->LemmaHead,this->lemmalength);
-        lemma[this->lemmalength] = '\0';*/
-#if 0
-        if( UTF8 
-          ? isAllUpper(this->Word,this->wordlength) && (AllToUpper(lemma),true)
-          : isAllUpperISO(this->Word,this->wordlength) && (AllToUpperISO(lemma),true)
-//          : isAllUpperISO(this->Word,this->wordlength) && (AllToUpperISO(lemma),true)
-          )
-            {
-            }
-#else
+        char * lemma;
         if(isAllUpper(this->Word,this->wordlength))
             {
             size_t length = this->lemmalength;
@@ -1337,7 +1312,6 @@ void trainingPair::fprintTraining(FILE * fp
             lemma = new char[length+1];
             strcpy(lemma,upper);
             }
-#endif
         else
             {
             lemma = new char[this->lemmalength+1];
@@ -1445,8 +1419,6 @@ void trainingPair::fprintAll(FILE * famb)
     if(this->isset(b_skip))
         fprintf(famb," skip");
     fprintf(famb,"\n");
-
-    //fprintf(famb,"%.*s\n",this->lemmaclasslength,this->LemmaClass);
     }
 
 void trainingPair::makeCandidateRules(hash * Hash,vertex * parent,bool alreadyRight /*20101206 used to calm makeRuleEx*/,optionStruct * options)
@@ -1454,15 +1426,7 @@ void trainingPair::makeCandidateRules(hash * Hash,vertex * parent,bool alreadyRi
     trainingPair * tp = this;
     while(tp)
         {
-        /*
-        fprintf(flog,"tp:");
-        tp->print(flog);
-        fprintf(flog,"\n");
-        */
         tp->makeRuleEx(Hash,parent,alreadyRight,options);
-        /*
-        fprintf(flog,"\n");
-        */
         tp = tp->next();
         }
     }
@@ -1558,14 +1522,12 @@ int printRules(node * nd
 #endif
 #if BRACMATOUTPUT
         fprintf(fobra,"%s\n",snode->itsTxt());
-        //printf("%s\n",snode->itsTxt());
         delete snode;
 #endif
         if(nd->IfPatternSucceeds)
             {
 #if BRACMATOUTPUT
             fprintf(fobra,",");
-            //printf(",");
 #endif
             strng nL(L);
             strng nR(nRR);
@@ -1588,22 +1550,14 @@ int printRules(node * nd
                 );
 #if BRACMATOUTPUT
             fprintf(fobra,")\n");
-            //printf(")\n");
 #endif
             }
         delete nLL;
         delete nRR;
         nd = nd->IfPatternFails;
-/*
-        if(nd->IfPatternFails)
-            {
-            n += nd->IfPatternFails->printRules(nd,fo,fobra,folem,ind,L,R,nr);
-            }
-*/
         }
     return n;
     }
-
 
 void node::splitTrainingPairList(trainingPair * all,trainingPair **& pNotApplicable,trainingPair **& pWrong,trainingPair **& pRight,optionStruct * options)
     {
@@ -1640,7 +1594,6 @@ void node::splitTrainingPairList(trainingPair * all,trainingPair **& pNotApplica
         }
     }
 
-
 bool node::compatibleSibling(node * sib)
     {
     if(this->V->dif(sib->V) != dif_incompatible)
@@ -1650,7 +1603,6 @@ bool node::compatibleSibling(node * sib)
     else
         return false;
     }
-
 
 node * node::cleanup(node * parent)
     {
@@ -1934,10 +1886,19 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
             if (comp == comp_parms)
                 {
                 for (vertex ** pvi = pvf; pvi < pvN; ++pvi)
+                    {
                     computeWeight(*pvi);
+                    }
+                if (options->expensiveInfix())
+                    {
+                    for (vertex ** pvi = pvf; pvi < pvN; ++pvi)
+                        {
+                        (*pvi)->adjustWeight();
+                        }
+                    }
                 for (vertex ** pvi = pvf + 1; pvi < pvN; ++pvi)
                     {
-                    if (comp_parms(*pvf, *pvi) > 0)
+                    if (comp_parms(*pvf, *pvi) < 0)
                         {
                         vertex * tmp = *pvf;
                         *pvf = *pvi;
@@ -1949,7 +1910,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
                 {
                 for (vertex ** pvi = pvf + 1; pvi < pvN; ++pvi)
                     {
-                    if (comp(*pvf, *pvi) > 0)
+                    if (comp(*pvf, *pvi) < 0)
                         {
                         vertex * tmp = *pvf;
                         *pvf = *pvi;
@@ -2069,6 +2030,15 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
     else
         {
         }
+    }
+
+void vertex::adjustWeight()
+    {    
+    double i = 1.0;
+    for (const char * p = this->Pattern->itsTxt(); *p; ++p)
+        if (*p == ANY)
+            i += 1.0;
+    this->wght *= i;
     }
 
 #if _NA

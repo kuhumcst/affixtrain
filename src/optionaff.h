@@ -51,6 +51,9 @@ class optionStruct
         const char * X; // rule weight function, defaults to constant (1)
         bool ComputeParms;// compute parms
         bool SuffixOnly;// suffix only
+        bool ExpensiveInfix;/*to create intermediate between full affix
+                            and suffix only (which is better than affix,
+                            sometimes, for unclear reasons.)*/
         bool Verbose;   // verbose
         bool Test;
         bool TrainTest;
@@ -60,13 +63,13 @@ class optionStruct
         int K;    // Number of differently sized fractions of trainingdata 
         double M; // # Iterations when training with Maxfraction of input
         double N; // # Iterations when training with Minfraction of input
-        bool Redo; // option R. Set to true if training has to be done once more 
-        // after the removal of the homographs that will be handled in
-        // the next iteration.
+        bool Redo; /* option R. Set to true if training has to be done once
+                   more after the removal of the homographs that will be
+                   handled in the next iteration.*/
         int Q; // Max recursion depth when attempting to create candidate rule
-        int q; // Percentage of training pairs to set aside for testing
-        // set to positive value if you want to set PERC percent
-        // of the avaliable data aside for testing.
+        int q; /* Percentage of training pairs to set aside for testing set to
+               positive value if you want to set PERC percent of the avaliable
+               data aside for testing.*/
         bool F; // Create flexrules. Can be combined with computation (-p) and
                 // testing (-t, -T).
         /* End of options. */
@@ -111,6 +114,7 @@ class optionStruct
         const int percentageTestPairs()const{return q;}
         const bool computeParms()const{return ComputeParms;}
         const bool suffixOnly()const{return SuffixOnly;}
+        const bool expensiveInfix(){ return ExpensiveInfix; }
         const bool verbose()const{return Verbose;}
         const bool remove()const{ return Remove; }
         const bool test()const{return Test;}

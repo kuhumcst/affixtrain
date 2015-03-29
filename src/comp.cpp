@@ -3008,50 +3008,6 @@ void printparms(int Nnodes,double weight,optionStruct * options)
 #define RN 4
 #define WN 5
 
-#if 0
-int comp_parms(const vertex * a,const vertex * b)
-    {
-    //for(int o = 0;o < NPARMS;o += parms.ROWPARMS)
-    if(  a->R__R != b->R__R
-      || a->W__R != b->W__R
-      || a->R__W != b->R__W
-      || a->W__W != b->W__W
-      )
-        {
-        /*
-        int off = minparmsoff;
-        if(off < parmsoff)
-            off = parmsoff;
-        */
-        double A = 0.0;
-        double B = 0.0;
-        double N = a->R__R + a->W__R + a->R__W + a->W__W;
-        //double N = sqrt((double)(a->R__R*a->R__R + a->W__R*a->W__R + a->R__W*a->R__W + a->W__W*a->W__W));
-        double D = 20.0/N;
-        double e = 4.0;
-        for(int o = 0;o < NPARMS;o += parms.ROWPARMS)
-            {
-            double x = parms.Matrix[o+RR]*a->R__R + parms.Matrix[o+WR]*a->W__R + parms.Matrix[o+RW]*a->R__W + parms.Matrix[o+WW]*a->W__W;
-            double y = parms.Matrix[o+RR]*b->R__R + parms.Matrix[o+WR]*b->W__R + parms.Matrix[o+RW]*b->R__W + parms.Matrix[o+WW]*b->W__W;
-
-            if(x < 0.0)
-                A -= pow(D*-x,e);
-            else
-                A += pow(D*x,e);
-
-            if(y < 0.0)
-                B -= pow(D*-y,e);
-            else
-                B += pow(D*y,e);
-
-            e -= 1.0;
-            }
-//        ++pcnt[NPARMS >> 2];
-        return A > B ? -1 : 1;
-        }
-    return 0;
-    }
-#else
 void computeWeight(vertex * a)
     {
     double A = parms.Matrix[RR] * a->R__R + parms.Matrix[WR] * a->W__R + parms.Matrix[RW] * a->R__W + parms.Matrix[WW] * a->W__W;
@@ -3064,36 +3020,13 @@ void computeWeight(vertex * a)
     a->wght = A;
     }
 
+// Notice that we want to sort from high to low, therefore sgn(b - a)
 int comp_parms(const vertex * a,const vertex * b)
     {
     if (a->wght != b->wght)
         return a->wght > b->wght ? -1 : 1;
     return 0;
-    /*
-    if(  a->R__R != b->R__R
-      || a->W__R != b->W__R
-      || a->R__W != b->R__W
-      || a->W__W != b->W__W
-      )
-        {
-        double A = parms.Matrix[RR]*a->R__R + parms.Matrix[WR]*a->W__R + parms.Matrix[RW]*a->R__W + parms.Matrix[WW]*a->W__W;
-        double B = parms.Matrix[RR]*b->R__R + parms.Matrix[WR]*b->W__R + parms.Matrix[RW]*b->R__W + parms.Matrix[WW]*b->W__W;
-#if _NA
-        if(parms.ROWPARMS == 6)
-            {
-            A += parms.Matrix[RN]*a->R__NA + parms.Matrix[WN]*a->W__NA;
-            B += parms.Matrix[RN]*b->R__NA + parms.Matrix[WN]*b->W__NA;
-            }
-#endif
-        if(A != B)
-            {
-            return A > B ? -1 : 1;
-            }
-        }
-    return 0;
-    */
     }
-#endif
 
 static int nparms = 0;
 

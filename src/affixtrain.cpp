@@ -224,9 +224,6 @@ void suffix(char * mask)
         *m = unequal;
     }
 
-
-
-
 class similData : public ruleTemplate
     {
     private:
@@ -300,12 +297,12 @@ class similData : public ruleTemplate
                         if (*++r == equal)
                             ++reqs;
                         } while (reqs < eqs);
-                        if (*p == unequal)
-                            {
-                            *n = unequal;
-                            *r = unequal;
-                            changed = true;
-                            }
+                    if (*p == unequal)
+                        {
+                        *n = unequal;
+                        *r = unequal;
+                        changed = true;
+                        }
                     }
                 ++n;
                 ++p;
@@ -325,11 +322,10 @@ class similData : public ruleTemplate
     };
 
 
-const char * find
-(const char * string
-, int c
-, const char * end
-)
+const char * find   ( const char * string
+                    , int c
+                    , const char * end
+                    )
     {
     while (string < end && *string != c)
         {
@@ -631,7 +627,7 @@ ptrdiff_t similData::simil(
         }
     else
         {
-        /*The strings s1 and s2 are completely different*/
+        /* The strings s1 and s2 are completely different */
         if (*start)
             {
             if (s1 < n1)
@@ -2065,15 +2061,14 @@ static void writeAvailableTrainingData(int allPairs, trainingPair * TrainingPair
         printf("writeAvailableTrainingData DONE\n");
     }
 
-int trainingPair::makeNextTrainingSet
-(int allPairs
-, trainingPair * TrainingPair
-, FILE * train
-, FILE * done
-, FILE * combined
-, FILE * disamb
-, optionStruct * options
-)
+int trainingPair::makeNextTrainingSet   ( int allPairs
+                                        , trainingPair * TrainingPair
+                                        , FILE * train
+                                        , FILE * done
+                                        , FILE * combined
+                                        , FILE * disamb
+                                        , optionStruct * options
+                                        )
     {
     if (options->verbose())
         printf("makeNextTrainingSet\n");
@@ -2789,12 +2784,6 @@ static bool writeAndTest(node * tree, const char * ext, int threshold, const cha
             }
         else
             {
-/*            if(fono)
-                {
-                --openfiles;
-                fclose(fono);
-                }*/
-
 #if RULESASTEXTINDENTED
             if(foo)
                 {
@@ -2910,15 +2899,12 @@ static bool doTraining
 , char * wordsGroupedByRuleName
 , char * numbersName
 , countAndWeight * Counts
-//, int & Nnodes
-//, double & weight
 , const char * tag
 , int * filelines
 , optionStruct * options
 )
     {
     bool moreToDo = false;
-//    Nnodes = 0;
     VertexPointerCount = 0;
 
     aFile afile(fname, options);
@@ -3257,8 +3243,6 @@ void computeParms(optionStruct * options)
         printf("computeParms: ext 2 small");
         exit(-1);
         }
-//    int Nnodes = 0;
-//    double weight = 0.0;
     countAndWeight Count;
     int br1 = 0, br2 = 0;
     for (int swath = 0; swath <= maxswath; ++swath)
@@ -3308,9 +3292,7 @@ void computeParms(optionStruct * options)
                 ,/* char * allIngestedPairsName                 */  NULL
                 ,/* char *                                      */  wordsGroupedByRuleName
                 ,/* char *                                      */  numbersName
-                ,/* countAndWeight *                                    */  &Count
-                //,/* int &                                       */  Nnodes
-                //,/* double &                                    */  weight
+                ,/* countAndWeight *                            */  &Count
                 ,/* const char *                                */  tag
                 ,/* int * filelines                             */  &filelines
                 , options
@@ -3390,9 +3372,7 @@ void computeParms(optionStruct * options)
                 ,/* char * allIngestedPairsName                 */  NULL
                 ,/* char *                                      */  wordsGroupedByRuleName
                 ,/* char *                                      */  numbersName
-                ,/* countAndWeight *                                    */  &Count
-                //,/* int &                                       */  Nnodes
-                //,/* double &                                    */  weight
+                ,/* countAndWeight *                            */  &Count
                 ,/* const char *                                */  tag
                 ,/* int * filelines                             */  &filelines
                 , options
@@ -3552,11 +3532,9 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
     char command[1024];
     char FlexrulePassFormat[1024];
     char AccumulatedFlexrulePassFormat[1024];
-    sprintf(FlexrulePassFormat,"%s%%s.pass%%d.cutoff%%%%d",options->tempDir());// flexrules.passN.cutoffM
-    sprintf(AccumulatedFlexrulePassFormat,"%s%%s.pass%d.cutoff%%%%d.accumulated",options->tempDir());// flexrules.passN.cutoffM
+    sprintf(FlexrulePassFormat,"%s%%s.pass%%d.cutoff%%%%d",options->tempDir());
+    sprintf(AccumulatedFlexrulePassFormat,"%s%%s.pass%d.cutoff%%%%d.accumulated",options->tempDir());
     clock_t start = clock();
-    //int Nnodes = 0;
-    //double weight = 0.0;
     sprintf(pairsToTrainInNextPassFormat, "pairsToTrainInNextPass.%s%s.pass%%d", options->extra(), tag);
     sprintf(ingestedFractionOfAmbiguousPairsFormat, "ingestedFractionOfAmbiguousPairs.%s%s.pass%%d", options->extra(), tag);
     sprintf(allPairsFormat, "allPairs.%s%s.pass%%d", options->extra(), tag);
@@ -3620,9 +3598,7 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
             ,/* char * allIngestedPairsName                 */  allIngestedPairsName
             ,/* char *                                      */  wordsGroupedByRuleName
             ,/* char *                                      */  numbersName
-            ,/* countAndWeight *                                    */  Counts
-            //,/* int &                                       */  Nnodes
-            //,/* double &                                    */  weight
+            ,/* countAndWeight *                            */  Counts
             ,/* const char *                                */  passes > 1 ? NULL : tag
             ,/* int * filelines                             */  NULL
             , options
@@ -3653,9 +3629,7 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
                 ,/* char * allIngestedPairsName                 */  NULL
                 ,/* char *                                      */  wordsGroupedByRuleName
                 ,/* char *                                      */  numbersName
-                ,/* countAndWeight *                                    */  Counts
-                //,/* int &                                       */  Nnodes
-                //,/* double &                                    */  weight
+                ,/* countAndWeight *                            */  Counts
                 ,/* const char *                                */  tag
                 ,/* int * filelines                             */  NULL
                 , options

@@ -1054,7 +1054,16 @@ matchResult vertex::apply(trainingPair * trainingpair)
     *oldd = '\0';
     if (oldd > lemma + 1)
         oldd[-1] = '\0';
-    return trainingpair->isCorrect(lemma) ? right : wrong;
+    return strncmp(lemma, trainingpair->itsLemmaHead(), trainingpair->itsLemmalength()) ? wrong : right;
+/*    const char * a = lemma;
+    const char * b = trainingpair->itsLemmaHead();
+    const char * e = b + trainingpair->itsLemmalength();
+    while (b < e && *a == *b)
+        {
+        ++a;
+        ++b;
+        }
+    return (!*a && b == e) ? right : wrong;*/
     }
 
 bool vertex::applym(trainingPair * trainingpair, size_t lemmalength, char * lemma, char * mask, optionStruct * options)

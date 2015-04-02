@@ -985,7 +985,7 @@ bool vertex::apply(trainingPair * trainingpair, size_t lemmalength, char * lemma
                 {
                 ++p;
                 ++w;
-                } while (*p && /* *p != ANY &&*/ *p == *w);
+                } while (*p && *p != ANY && *p == *w);
 
             if (*p != *r)
                 {

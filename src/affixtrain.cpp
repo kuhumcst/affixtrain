@@ -949,19 +949,30 @@ int utfchar(char * p, int & U) /* int is big enough for all UTF-8 bytes */
 
 bool vertex::apply(trainingPair * trainingpair, size_t lemmalength, char * lemma)
     {
+    const char * trainword = trainingpair->itsWord();
+    char * p = Pattern.itsTxt();
+    size_t L1 = trainingpair->itsWordlength();
+    if (*p)
+        {
+        char lastp = p[strlen(p) - 2];
+        if (lastp != ANY)
+            {
+            char lastw = trainword[L1-1];
+            if (lastp != lastw)
+                return false;
+            }
+        }
     CHECK("FglobTempDir");
     char wrd[100];
-    size_t L1 = trainingpair->itsWordlength();
     if (L1 + 3 > sizeof(wrd))
         {
         printf("vertex::apply too small buffer");
         exit(1);
         }
     wrd[0] = START;
-    strncpy(wrd + 1, trainingpair->itsWord(), L1);
+    strncpy(wrd + 1, trainword, L1);
     wrd[L1 + 1] = END;
     wrd[L1 + 2] = 0;
-    char * p = Pattern.itsTxt();
     char * r = Replacement.itsTxt();
     if (!*p) // root
         {

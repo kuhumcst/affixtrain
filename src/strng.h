@@ -76,7 +76,15 @@ class strng
             delete [] Txt;
             --StrngCount;
             }
-        bool eq(const char * s);
+        bool eq(const char * s)// returns Txt - s
+            {
+            return !strcmp(Txt, s);
+            }
+        bool eq(strng & s)// returns Txt - s
+            {
+            return !strcmp(Txt, s.Txt);
+            }
+
         edif dif(strng * s); // returns this->Txt - s (1, 0 or -1)
         void checkIntegrity();
         bool hasWildCard();

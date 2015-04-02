@@ -544,7 +544,7 @@ edif dif(char * Txt, char * s_Txt)
 
 edif vertex::dif(vertex * other)
     {
-    return ::dif(this->itsPattern(),other->itsPattern());
+    return ::dif(Pattern.itsTxt(),other->Pattern.itsTxt());
     }
 
 
@@ -575,10 +575,6 @@ strng::strng(const char * buf,size_t length)
     ++StrngCount;
     }
 
-bool strng::eq(const char * s) // returns Txt - s
-    {
-    return !strcmp(Txt,s);
-    }
 
 
 
@@ -718,8 +714,8 @@ vertex::vertex(vertex * Rule,hash * Hash):
         assert(Hash);
 //        Pattern = new strng(Rule->cpattern());
 //        Replacement = new strng(Rule->replacement());
-        Pattern.dup(Rule->cpattern());
-        Replacement.dup(Rule->creplacement());
+        Pattern.dup(Rule->Pattern.itsTxt());
+        Replacement.dup(Rule->Replacement.itsTxt());
         ++VertexCount;
         }
 
@@ -1157,7 +1153,7 @@ vertex * hash::getVertex(vertex * Rule,bool & New)
             {
             rehash(60);
             }
-        vertex * p = find(Rule->cpattern(),head);
+        vertex * p = find(Rule->Pattern.itsTxt(),head);
         if(p)
             p = p->findReplacement(Rule);
         if(p)
@@ -1460,9 +1456,9 @@ int printRules(node * nd
 		// pat starts with '^' and ends with '$'.
 		// Wildcards are the character in the constant ANY (currently ':')
         if(options->verbose())
-		    printf("pat [%s] rep [%s]\n",nd->V->itsPattern(),nd->V->itsReplacement());
-        strng * pat = nd->V->itsstrngPattern().substr(1,strlen(nd->V->itsPattern()) - 2);
-        strng * rep = nd->V->itsstrngReplacement().substr(1,strlen(nd->V->itsReplacement()) - 2);
+		    printf("pat [%s] rep [%s]\n",nd->V->Pattern.itsTxt(),nd->V->Replacement.itsTxt());
+        strng * pat = nd->V->Pattern.substr(1,strlen(nd->V->Pattern.itsTxt()) - 2);
+        strng * rep = nd->V->Replacement.substr(1,strlen(nd->V->Replacement.itsTxt()) - 2);
         strng * patreps[100];
         unsigned int i;
         for(i = 0;i < sizeof(patreps)/sizeof(patreps[0]);++i)

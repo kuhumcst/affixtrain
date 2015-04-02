@@ -323,14 +323,14 @@ class vertex
     {
     private:
         friend class hash;
-        strng Pattern;
-        strng Replacement;
         vertex * Next; // vertices with the same hash key.
         vertex ** Head;
         int RefCount;
         int Relations;
         hash * Hash;
     public:
+        strng Pattern;
+        strng Replacement;
         long R__R;
         long R__W;
         long W__R;
@@ -341,8 +341,6 @@ class vertex
 #endif
         double wght;
     public:
-        const char * cpattern(){return itsPattern();}
-        const char * creplacement(){return itsReplacement();}
         bool apply(trainingPair * trainingpair,size_t lemmalength,char * lemma);
         bool applym(trainingPair * trainingpair, size_t lemmalength, char * lemma, char * mask, optionStruct * options);
         edif dif(vertex * other);
@@ -364,10 +362,6 @@ class vertex
         */
         void computeImpedance();
 #endif
-        char * itsPattern(){return Pattern.itsTxt();}
-        char * itsReplacement(){return Replacement.itsTxt();}
-        const strng & itsstrngPattern()const{return Pattern;}
-        const strng & itsstrngReplacement()const{return Replacement;}
         void incRelations(){++Relations;}
         void decRelations(){--Relations;}
         int relations(){return Relations;}
@@ -381,7 +375,7 @@ class vertex
         vertex * findReplacement(vertex * Rule)
             {
             vertex * p = this;
-            while(p && (!p->Replacement.eq(Rule->creplacement()) || !p->Pattern.eq(Rule->cpattern())))
+            while (p && (!p->Replacement.eq(Rule->Replacement) || !p->Pattern.eq(Rule->Pattern)))
                 p = p->Next;
             return p;
             }

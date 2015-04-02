@@ -961,8 +961,8 @@ bool vertex::apply(trainingPair * trainingpair, size_t lemmalength, char * lemma
     strncpy(wrd + 1, trainingpair->itsWord(), L1);
     wrd[L1 + 1] = END;
     wrd[L1 + 2] = 0;
-    char * p = itsPattern();
-    char * r = itsReplacement();
+    char * p = Pattern.itsTxt();
+    char * r = Replacement.itsTxt();
     if (!*p) // root
         {
         static char lStartAnyEnd[4] = { START, ANY, END, 0 };
@@ -1070,8 +1070,8 @@ bool vertex::applym(trainingPair * trainingpair, size_t lemmalength, char * lemm
     strncpy(wrd + 1, trainingpair->itsWord(), L1);
     wrd[L1 + 1] = END;
     wrd[L1 + 2] = 0;
-    char * p = itsPattern();
-    char * r = itsReplacement();
+    char * p = Pattern.itsTxt();
+    char * r = Replacement.itsTxt();
     if (!*p) // root
         {
         static char lStartAnyEnd[4] = { START, ANY, END, 0 };

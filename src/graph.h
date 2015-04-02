@@ -306,27 +306,6 @@ class trainingPair
             }
     };
 
-class rulePair
-    {
-    protected:
-        virtual char * itsPattern() = 0;
-        virtual char * itsReplacement() = 0;
-    public:
-        const char * pattern()
-            {
-            return itsPattern();
-            }
-        const char * replacement()
-            {
-            return itsReplacement();
-            }
-        bool apply(trainingPair * trainingpair,size_t lemmalength,char * lemma);
-        bool applym(trainingPair * trainingpair, size_t lemmalength, char * lemma, char * mask, optionStruct * options);
-        edif dif(rulePair * other);
-        rulePair(){++RulePairCount;}
-        virtual ~rulePair(){--RulePairCount;}
-    };
-
 class trainingPairPointer;
 class shortRulePair;
 
@@ -335,13 +314,12 @@ typedef enum {failure,wrong,right} matchResult;
 struct topScore
     {
     vertex * best;
-    //bool cut;
     long MaxR;
     long MaxW;
     long MaxN;
     };
 
-class vertex : public rulePair
+class vertex
     {
     private:
         friend class hash;
@@ -363,6 +341,17 @@ class vertex : public rulePair
 #endif
         double wght;
     public:
+        const char * cpattern()
+            {
+            return itsPattern();
+            }
+        const char * creplacement()
+            {
+            return itsReplacement();
+            }
+        bool apply(trainingPair * trainingpair,size_t lemmalength,char * lemma);
+        bool applym(trainingPair * trainingpair, size_t lemmalength, char * lemma, char * mask, optionStruct * options);
+        edif dif(vertex * other);
 #if _NA
         void adjustNotApplicableCountsByRecalculatingR_NA(trainingPair * NotApplicableRight,int total);
         void adjustNotApplicableCountsByRecalculatingW_NA(trainingPair * NotApplicableWrong,int total);
@@ -411,10 +400,10 @@ class vertex : public rulePair
             {
             return Replacement;
             }
-        vertex * findReplacement(rulePair * Rule)
+        vertex * findReplacement(vertex * Rule)
             {
             vertex * p = this;
-            while(p && (!p->Replacement->eq(Rule->replacement()) || !p->Pattern->eq(Rule->pattern())))
+            while(p && (!p->Replacement->eq(Rule->creplacement()) || !p->Pattern->eq(Rule->cpattern())))
                 p = p->Next;
             return p;
             }
@@ -434,7 +423,7 @@ class vertex : public rulePair
         ~vertex();
         void deleteThis();
         void construct(const char * pat, const char * rep);
-        vertex(rulePair * Rule,hash * Hash);
+        vertex(vertex * Rule,hash * Hash);
         vertex(shortRulePair * Rule);
         vertex(const char * pat, const char * rep);
         matchResult lemmatise(trainingPair * pair, char ** plemma);
@@ -771,8 +760,8 @@ class hash
         long key(const char * ckey);
         vertex * find(const char * ckey,vertex **& head);
         int forall(forallfunc fnc);
-        vertex * getVertex(rulePair * Rule,bool & New);
-        bool deleteVertex(rulePair * Rule);
+        vertex * getVertex(vertex * Rule,bool & New);
+        bool deleteVertex(vertex * Rule);
     };
 
 

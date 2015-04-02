@@ -154,7 +154,7 @@ class shortRulePair
             strcpy(replacementArray, Rule->replacementArray);
             }
         shortRulePair(trainingPair * trainingpair, ruleTemplate * Template);
-        bool checkRule(trainingPair * trainingpair, rulePair * parentPat);
+        bool checkRule(trainingPair * trainingpair, vertex * parentPat);
         ~shortRulePair(){ --ShortRulePairCount; }
     };
 
@@ -945,14 +945,14 @@ int utfchar(char * p, int & U) /* int is big enough for all UTF-8 bytes */
     return q - p;
     }
 
-bool rulePair::apply(trainingPair * trainingpair, size_t lemmalength, char * lemma)
+bool vertex::apply(trainingPair * trainingpair, size_t lemmalength, char * lemma)
     {
     CHECK("FglobTempDir");
     char wrd[100];
     size_t L1 = trainingpair->itsWordlength();
     if (L1 + 3 > sizeof(wrd))
         {
-        printf("rulePair::apply too small buffer");
+        printf("vertex::apply too small buffer");
         exit(1);
         }
     wrd[0] = START;
@@ -1054,14 +1054,14 @@ bool rulePair::apply(trainingPair * trainingpair, size_t lemmalength, char * lem
     return true;
     }
 
-bool rulePair::applym(trainingPair * trainingpair, size_t lemmalength, char * lemma, char * mask, optionStruct * options)
+bool vertex::applym(trainingPair * trainingpair, size_t lemmalength, char * lemma, char * mask, optionStruct * options)
     {
     CHECK("FglobTempDir");
     char wrd[100];
     size_t L1 = trainingpair->itsWordlength();
     if (L1 + 3 > sizeof(wrd))
         {
-        printf("rulePair::apply too small buffer");
+        printf("vertex::apply too small buffer");
         exit(1);
         }
     wrd[0] = START;
@@ -1553,7 +1553,7 @@ bool ruleTemplate::makebigger(int countdown, int & anihilatedGuards, optionStruc
     }
 
 
-bool shortRulePair::checkRule(trainingPair * trainingpair, rulePair * parentPat)
+bool shortRulePair::checkRule(trainingPair * trainingpair, vertex * parentPat)
     {
     CHECK("NglobTempDir");
     char Lemma[100] = "";

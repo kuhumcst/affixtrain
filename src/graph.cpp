@@ -542,7 +542,7 @@ edif dif(char * Txt, char * s_Txt)
     }
 
 
-edif rulePair::dif(rulePair * other)
+edif vertex::dif(vertex * other)
     {
     return ::dif(this->itsPattern(),other->itsPattern());
     }
@@ -703,7 +703,7 @@ vertex::~vertex()
     --VertexCount;
     }
 
-vertex::vertex(rulePair * Rule,hash * Hash):
+vertex::vertex(vertex * Rule,hash * Hash):
         Head(0),RefCount(0),Relations(0),Hash(Hash)
         ,R__R(0)
         ,R__W(0)
@@ -716,7 +716,7 @@ vertex::vertex(rulePair * Rule,hash * Hash):
 
         {
         assert(Hash);
-        Pattern = new strng(Rule->pattern());
+        Pattern = new strng(Rule->cpattern());
         Replacement = new strng(Rule->replacement());
         ++VertexCount;
         }
@@ -1143,7 +1143,7 @@ void vertex::deleteThis()
         delete this;
     }
 
-vertex * hash::getVertex(rulePair * Rule,bool & New)
+vertex * hash::getVertex(vertex * Rule,bool & New)
     {
     vertex * ret = 0;
     New = false;
@@ -1155,7 +1155,7 @@ vertex * hash::getVertex(rulePair * Rule,bool & New)
             {
             rehash(60);
             }
-        vertex * p = find(Rule->pattern(),head);
+        vertex * p = find(Rule->cpattern(),head);
         if(p)
             p = p->findReplacement(Rule);
         if(p)

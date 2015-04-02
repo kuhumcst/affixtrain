@@ -39,10 +39,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define DOIMPEDANCE 0
 
-#define DOTEST 0
-// DOTEST 1
-// do automatic (with some percentage of data set aside for test) or manual (interactive) testing
-
 #define MAXPAIRS 8000000 //1000000 //500000 //100000 //500000 
 // Set this number as high as possible. A high value entails very heavy use 
 // of memory!

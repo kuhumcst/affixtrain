@@ -796,42 +796,6 @@ void trainingPair::printSep(FILE * f)
     while(tp);
     }
 
-
-// Testing only. (Not called during training!)
-matchResult node::lemmatise(trainingPair * pair,optionStruct * options)
-    {
-    char * lemma;
-    matchResult r = V->lemmatise(pair,&lemma);
-    if(r == failure)
-        {
-        if(IfPatternFails)
-            return IfPatternFails->lemmatise(pair,options);
-        }
-    else 
-        {
-        pair->setLemma(lemma);
-        if(IfPatternSucceeds)
-            {
-            matchResult rr = IfPatternSucceeds->lemmatise(pair,options);
-            if(rr != failure)
-                {
-                return rr;
-                }
-            }
-        }
-    if(r == right /*|| r == rightBut*/)
-        {
-        pair->setVertex(V);
-        pair->set(b_ok);
-        }
-    else if(r == wrong)
-        {
-        pair->setVertex(V);
-        pair->set(b_wrong);
-        }
-    return r;
-    }
-
 matchResult vertex::lemmatisem(trainingPair * pair, char ** pmask, char ** plemma, optionStruct * options)
     {
     static char lemma[100];
@@ -867,36 +831,26 @@ matchResult vertex::lemmatisem(trainingPair * pair, char ** pmask, char ** plemm
         }
     }
 
-matchResult vertex::lemmatise(trainingPair * pair,char ** plemma)
+matchResult vertex::lemmatise(trainingPair * pair)
     {
-    static char lemma[100];
+    matchResult ret = apply(pair);
 #if AMBIGUOUS
-    pair->unset(b_ok);
-    pair->unset(b_wrong);
-#endif
-    if(apply(pair,sizeof(lemma),lemma))
+    switch (ret)
         {
-        if(plemma)
-            *plemma = lemma;
-        if(pair->isCorrect(lemma))
-            {
-#if AMBIGUOUS
-            pair->set(b_ok);
-#endif
-            return right;
-            }
-        else
-            {
-#if AMBIGUOUS
-            pair->set(b_wrong);
-#endif
-            return wrong;
-            }
+            case right:
+                pair->unset(b_wrong);
+                pair->set(b_ok);
+                break;
+            case wrong:
+                pair->unset(b_ok);
+                pair->set(b_wrong);
+                break;
+            default:
+                pair->unset(b_ok);
+                pair->unset(b_wrong);
         }
-    else
-        {
-        return failure;
-        }
+#endif
+    return ret;
     }
 
 void vertex::nlemmatiseStart()
@@ -925,7 +879,7 @@ int vertex::nlemmatise(trainingPair * pair,int n,bool InputRight)
     while(pair && n != 0)
         {
         ++ret;
-        switch(lemmatise(pair,0))
+        switch(lemmatise(pair))
             {
             case wrong:
                 if(!pair->isset(b_oksibling))
@@ -1631,7 +1585,7 @@ node * node::cleanup(node * parent)
             trainingPair * R = this->Right;
             for(;;)
                 {
-                matchResult res = parent->V->lemmatise(R,0);
+                matchResult res = parent->V->lemmatise(R);
 
                 if(res != right)
                     {
@@ -2040,7 +1994,7 @@ void vertex::adjustNotApplicableCountsByRecalculatingR_NA(trainingPair * pair,in
     R__NA = 0;
     while(pair)
         {
-        switch(lemmatise(pair,0))
+        switch(lemmatise(pair))
             {
             case wrong:
             case right:
@@ -2058,7 +2012,7 @@ void vertex::adjustNotApplicableCountsByRecalculatingW_NA(trainingPair * pair,in
     W__NA = 0;
     while(pair)
         {
-        switch(lemmatise(pair,0))
+        switch(lemmatise(pair))
             {
             case wrong:
             case right:

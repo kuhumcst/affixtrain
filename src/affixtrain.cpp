@@ -947,8 +947,9 @@ int utfchar(char * p, int & U) /* int is big enough for all UTF-8 bytes */
     return q - p;
     }
 
-bool vertex::apply(trainingPair * trainingpair, size_t lemmalength, char * lemma)
+matchResult vertex::apply(trainingPair * trainingpair)
     {
+    static char lemma[100];
     CHECK("FglobTempDir");
     char wrd[100];
     size_t L1 = trainingpair->itsWordlength();
@@ -971,7 +972,7 @@ bool vertex::apply(trainingPair * trainingpair, size_t lemmalength, char * lemma
         }
     char * w = wrd;
     char * d = lemma;
-    char * last = lemma + lemmalength - 7;
+    char * last = lemma + 100 - 7;
     while (*p && *r)
         {
         if (*p == *w)
@@ -989,7 +990,7 @@ bool vertex::apply(trainingPair * trainingpair, size_t lemmalength, char * lemma
 
             if (*p != *r)
                 {
-                return false;
+                return failure;
                 }
             }
         else if (*r == ANY)
@@ -1041,7 +1042,7 @@ bool vertex::apply(trainingPair * trainingpair, size_t lemmalength, char * lemma
         }
     if (*p || *r)
         {
-        return false;
+        return failure;
         }
     *d = '\0';
     d = lemma;
@@ -1053,7 +1054,7 @@ bool vertex::apply(trainingPair * trainingpair, size_t lemmalength, char * lemma
     *oldd = '\0';
     if (oldd > lemma + 1)
         oldd[-1] = '\0';
-    return true;
+    return trainingpair->isCorrect(lemma) ? right : wrong;
     }
 
 bool vertex::applym(trainingPair * trainingpair, size_t lemmalength, char * lemma, char * mask, optionStruct * options)
@@ -1558,20 +1559,17 @@ bool ruleTemplate::makebigger(int countdown, int & anihilatedGuards, optionStruc
 bool shortRulePair::checkRule(trainingPair * trainingpair, vertex * parentPat)
     {
     CHECK("NglobTempDir");
-    char Lemma[100] = "";
     vertex FullRule(this);
-    bool ret;
     if ((!parentPat || FullRule.dif(parentPat) == dif_bigger)
-        && FullRule.apply(trainingpair, sizeof(Lemma), Lemma)
+        && FullRule.apply(trainingpair) == right
         )
         {
-        ret = trainingpair->isCorrect(Lemma);
+        return true;
         }
     else
         {
-        ret = false;
+        return false;
         }
-    return ret;
     }
 
 static int storeRule(hash * Hash, shortRulePair * Rule, vertex *& V)
@@ -2124,73 +2122,6 @@ void trainingPair::makeChains(int allPairs, trainingPair * TrainingPair, trainin
     if (options->verbose())
         printf("makeChains DONE\n");
     }
-
-#if DOTEST
-// Testing. (Not called during training!)
-static void showResults(trainingPair * TrainingPair,int & wrong,int & right,int & both,FILE * fr)
-    {
-    for(trainingPair * tp = TrainingPair;tp;tp = tp->next())
-        {
-        if(!tp->isset(b_ambiguous|b_doublet|b_skip)) // b_ambiguous is ok if AMBIGUOUS == 1, or what?
-            {
-                    {
-                    if(tp->isset(b_wrong))
-                        {
-                        if(tp->isset(b_ok))
-                            {
-                            if(fr)
-                                {
-                                fprintf(fr,"/ ");
-                                tp->fprint(fr);
-                                }
-                            both++;
-                            }
-                        else
-                            {
-                            if(fr)
-                                {
-                                fprintf(fr,"- ");
-                                tp->fprint(fr);
-                                }
-                            wrong++;
-                            }
-                        }
-                    else if(tp->isset(b_ok))
-                        {
-                        if(fr)
-                            {
-                            fprintf(fr,"+ ");
-                            tp->fprint(fr);
-                            }
-                        right++;
-                        }
-                    tp->unset(b_ok|b_wrong);
-                    }
-            }
-        }
-    }
-
-// Testing. (Not called during training!)
-static void lemmatise(node * tree,trainingPair * TrainingPair)
-    {
-    /*
-    printf("lemmatise\n");
-    */
-    for(trainingPair * tp = TrainingPair;tp;tp = tp->next())
-        {
-        if(!tp->isset(b_ambiguous|b_doublet|b_skip)) // Skip all homographs, even if AMBIGUOUS == 1 !
-            {
-            //tp->print(stdout);printf("\n");
-            tree->lemmatise(tp);
-            }
-        }
-    /*
-    printf("lemmatise DONE\n");
-    */
-    }
-static FILE * fresults = NULL;
-static double maxCorrectness = 0.0;
-#endif
 
 static trainingPair * globTrainingPair;
 //static int globlines;
@@ -2788,76 +2719,6 @@ static bool writeAndTest(node * tree, const char * ext, int threshold, const cha
     return false;
     }
 
-#if DOTEST
-static void testf(node * tree,trainingPair * TestPair,const char * ext,int threshold,char * nflexrules)
-    {
-    char filename[256];
-    int wrong = 0;
-    int right = 0;
-    int both = 0;
-    if(TestPair) // requires PERC > 0
-        {
-        lemmatise(tree,TestPair);
-        sprintf(filename,"test_%d%s.txt",threshold,ext);
-        FILE * ftest = fopen(filename,"ab+");
-        ++openfiles;
-        if(!ftest)
-            fprintf(stderr,"Error (testf): Cannot open \"%s\" for appending\n",filename);
-        showResults(TestPair,wrong,right,both,ftest);
-        int tot = right+wrong+both;
-        if(ftest)
-            fprintf(ftest,"test pairs %d threshold %d vertices %d right %d (%f) wrong %d (%f) both %d (%f)\n\n",tot,threshold,tree->count(),right,(right*100.0)/tot,wrong,(wrong*100.0)/tot,both,(both*100.0)/tot);
-        fresults = fopen("results.txt","ab+");
-        ++openfiles;
-        if(!fresults)
-            fprintf(stderr,"Error (testf): Cannot open \"%s\" for appending\n","results.txt");
-        if(fresults)
-            {
-            fprintf(fresults,"tot %d\tthreshold %d\ttree->count() %d\tright %d\t%% %f\twrong %d\t%% %f\n",tot,threshold,tree->count(),right,(right*100.0)/tot,wrong,(wrong*100.0)/tot);
-            }
-        if(maxCorrectness < (right*100.0)/tot)
-            {
-            maxCorrectness = (right*100.0)/tot;
-            if(fresults)
-                {
-                fprintf(fresults,"\nhighest correctness %f\n",maxCorrectness);
-                }
-            }
-        if(fresults)
-            {
-            --openfiles;
-            fclose(fresults);
-            }
-        if(ftest)
-            {
-            --openfiles;
-            fclose(ftest);
-            }
-        }
-    else // requires PERC <= 0
-        {
-        if(options->verbose())
-            {
-            sprintf(filename,"rules_%d%s.lem",threshold,ext);
-            printf("readRules %d\n",threshold);
-            if(readRules(filename) || readRules(nflexrules))
-                {
-                printf("readRules done %d\n",threshold);
-                char word[100];
-                printf("\nType first word:\n");
-                while(gets(word)[0])
-                    {
-                    const char * result = applyRules(word);
-                    printf("%s\n",result);
-                    printf("\nType word:\n");
-                    }
-                deleteRules();
-                }
-            }
-        }
-    }
-#endif
-
 static bool doTraining
 (const char * fname
 , const char * ext
@@ -2967,9 +2828,6 @@ static bool doTraining
                 exit(-1);
                 }
             writeAndTest(top, ext, 0, naam, Counts+0, options);
-#if DOTEST
-            testf(top,test,ext,0,naam);
-#endif
             for (int thresh = 1; thresh <= cutoff; thresh++)
                 {
                 top->pruneAll(thresh);
@@ -2980,9 +2838,6 @@ static bool doTraining
                     exit(-1);
                     }
                 writeAndTest(top, ext, thresh, naam, Counts+thresh, options);
-#if DOTEST
-                testf(top,test,ext,0,naam);
-#endif
                 }
             }
         else
@@ -2994,9 +2849,6 @@ static bool doTraining
                 exit(-1);
                 }
             writeAndTest(top, ext, 0, naam, Counts+0, options);
-#if DOTEST
-            testf(top,test,ext,0,naam);
-#endif
             int max = 3;
             if (cutoff >= 0)
                 max = cutoff;
@@ -3004,18 +2856,12 @@ static bool doTraining
                 {
                 top->pruneAll(thresh);
                 writeAndTest(top, ext, thresh, naam, Counts+thresh, options);
-#if DOTEST
-                testf(top,test,ext,thresh,naam);
-#endif
                 }
             }
         }
     else
         {
         writeAndTest(top, ext, 0, 0, Counts+0, options);
-#if DOTEST
-        testf(top,test,ext,0,0);
-#endif
         int max = 3;
         if (cutoff >= 0)
             max = cutoff;
@@ -3023,9 +2869,6 @@ static bool doTraining
             {
             top->pruneAll(thresh);
             writeAndTest(top, ext, thresh, 0, Counts+thresh, options);
-#if DOTEST
-            testf(top,test,ext,thresh,0);
-#endif
             }
         }
     delete top;

@@ -341,7 +341,7 @@ class vertex
 #endif
         double wght;
     public:
-        bool apply(trainingPair * trainingpair,size_t lemmalength,char * lemma);
+        matchResult apply(trainingPair * trainingpair);
         bool applym(trainingPair * trainingpair, size_t lemmalength, char * lemma, char * mask, optionStruct * options);
         edif dif(vertex * other);
 #if _NA
@@ -389,7 +389,7 @@ class vertex
         vertex(vertex * Rule,hash * Hash);
         vertex(shortRulePair * Rule);
         vertex(const char * pat, const char * rep);
-        matchResult lemmatise(trainingPair * pair, char ** plemma);
+        matchResult lemmatise(trainingPair * pair);
         matchResult lemmatisem(trainingPair * pair, char ** mask, char ** plemma, optionStruct * options);
         int goodness(trainingPair * pairs, topScore * Top);
         void nlemmatiseStart();
@@ -496,7 +496,6 @@ class vertexPointer
                     this->IfPatternFails->printSep(f,level);
                 }
 
-            matchResult lemmatise(trainingPair * pair,optionStruct * options);
             node * cleanup(node * parent);
             int count()
                 {

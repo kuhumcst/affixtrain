@@ -949,9 +949,9 @@ int utfchar(char * p, int & U) /* int is big enough for all UTF-8 bytes */
 
 matchResult vertex::apply(trainingPair * trainingpair)
     {
-    char lemma[100];
+    static char lemma[100];
     CHECK("FglobTempDir");
-    char wrd[100];
+    static char wrd[100];
     size_t L1 = trainingpair->itsWordlength();
     if (L1 + 3 > sizeof(wrd))
         {

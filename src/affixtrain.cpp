@@ -974,17 +974,18 @@ matchResult vertex::apply(trainingPair * trainingpair)
     size_t lhl = trainingpair->itsLemmalength();
     const char * last = lh + lhl;
     matchResult ret = right;
-    
+    /*
     ++p;
     ++r;
     ++w;
+    */
     while (*p && *r)
         {
         if (*p == *w)
             {
             while (ret == right && *r && *r != ANY)
                 {
-                if (*r != END && (lh == last || *lh++ != *r))
+                if (*r != START && *r != END && (lh == last || *lh++ != *r))
                     ret = wrong;             
                 ++r;
                 }
@@ -1017,7 +1018,7 @@ matchResult vertex::apply(trainingPair * trainingpair)
                     {
                     while (ret != wrong && w < sub)
                         {
-                        if (*w != END && (lh == last || *lh++ != *w))
+                        if (*w != START && *w != END && (lh == last || *lh++ != *w))
                             ret = wrong;
                         ++w;
                         }
@@ -1037,7 +1038,7 @@ matchResult vertex::apply(trainingPair * trainingpair)
                     {
                     while (ret != wrong && w < sub)
                         {
-                        if (*w != END && (lh == last || *lh++ != *w))
+                        if (*w != START && *w != END && (lh == last || *lh++ != *w))
                             ret = wrong;
                         ++w;
                         }

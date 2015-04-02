@@ -1920,10 +1920,6 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
                     }
                 }
             *pnode = new node(*pvf++);
-#if _NA
-            int inputR = (this->Right ? this->Right->count() : 0); 
-            int inputW = (Wrong ? Wrong->count() : 0);
-#endif
 #if AMBIGUOUS
             (*pnode)->init(&this->Right,&Wrong,level+1,options);
 #else

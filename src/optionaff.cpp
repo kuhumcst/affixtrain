@@ -842,7 +842,6 @@ void optionStruct::completeArgs()
     Blobs = 0; // If there are no non-empty lines, there are no blobs either.
     Lines = 0;
     int kar = 0;
-    int prevkar = 0;
     unsigned int lineProfile = 0;
     while ((kar = fgetc(f)) != EOF)
         {
@@ -872,7 +871,6 @@ void optionStruct::completeArgs()
                 lineProfile |= 4; // set third bit when making non-empty line
                 }
             }
-        prevkar = kar;
         }
     if(lineProfile & 4)
         { // last line was not finished off with newline

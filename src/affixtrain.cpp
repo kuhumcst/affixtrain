@@ -3463,9 +3463,8 @@ bool haswritabledir(const char * name)
         else
             {
             char command[1024];
-            bool hasDir = false;
             sprintf(command, "%s %s", MKDIR, dirname);
-            system(command);
+            if (system(command)) return false;
             res = canwriteindir(dirname);
             }
         delete[] dirname;
@@ -3505,7 +3504,7 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
     char FlexrulePassFormat[1024];
     char AccumulatedFlexrulePassFormat[1024];
     sprintf(FlexrulePassFormat,"%s%%s.pass%%d.cutoff%%%%d",options->tempDir());
-    sprintf(AccumulatedFlexrulePassFormat,"%s%%s.pass%d.cutoff%%%%d.accumulated",options->tempDir());
+    sprintf(AccumulatedFlexrulePassFormat,"%s%%s.pass%%d.cutoff%%%%d.accumulated",options->tempDir());
     clock_t start = clock();
     sprintf(pairsToTrainInNextPassFormat, "pairsToTrainInNextPass.%s%s.pass%%d", options->extra(), tag);
     sprintf(ingestedFractionOfAmbiguousPairsFormat, "ingestedFractionOfAmbiguousPairs.%s%s.pass%%d", options->extra(), tag);
@@ -3762,19 +3761,21 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
                     sprintf(command, "%s %s", MKDIR, dirname);
                     if (options->verbose())
                         printf("command %s\n", command);
-                    system(command);
-                    fptest = fopen(testfile, "w");
-                    ++openfiles;
-                    if (fptest)
+                    if (!system(command))
                         {
-                        if (options->verbose())
-                            printf("testfile created\n");
-                        --openfiles;
-                        fclose(fptest);
-                        remove(testfile);
-                        if (options->verbose())
-                            printf("testfile deleted\n");
-                        hasDir = true;
+                        fptest = fopen(testfile, "w");
+                        ++openfiles;
+                        if (fptest)
+                            {
+                            if (options->verbose())
+                                printf("testfile created\n");
+                            --openfiles;
+                            fclose(fptest);
+                            remove(testfile);
+                            if (options->verbose())
+                                printf("testfile deleted\n");
+                            hasDir = true;
+                            }
                         }
                     }
                 if (hasDir)

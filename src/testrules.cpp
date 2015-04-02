@@ -1729,34 +1729,36 @@ class counting
                 );
             fflush(fptab);
             }
-        void validationcolumn(char ** cell, int cutoff, int maxcount, int ttrainlines, lineab * AffixLine, int norow)
+        void validationcolumn(const char ** cell, int cutoff, int maxcount, int ttrainlines, lineab * AffixLine, int norow)
             {
             double ntot = n.tsame + n.tambiguous[0] + n.tambiguous[1] + n.tambiguous[2] + n.tdifferent;
             const char * f1 = "%14d ";
             const char * f2 = "%14.6f ";
+            char ** ell = new char *[norow];
             for(int i = 0;i < norow;++i)
-                cell[i] = new char[22];
-            sprintf(cell[0],f1,cutoff);
-            sprintf(cell[1],f2,(double)n.tflexcount/(double)maxcount);
-            sprintf(cell[2],f2,ttrainlines == 0 ? 100.0 : 100.0*(double)n.tflexcount/(double)ttrainlines);
-            sprintf(cell[3],f2,ntot > 0 ? 100.0*(double)n.tsame/ntot : 0.0);
-            sprintf(cell[4],f2,ntot > 0 ? 100.0*(double)n.tambiguous[0]/ntot : 0.0);
-            sprintf(cell[5],f2,ntot > 0 ? 100.0*(double)n.tambiguous[1]/ntot : 0.0);
-            sprintf(cell[6],f2,ntot > 0 ? 100.0*(double)n.tambiguous[2]/ntot : 0.0);
-            sprintf(cell[7],f2,ntot > 0 ? 100.0*(double)n.tdifferent/ntot : 0.0);
-            sprintf(cell[8],f2,ntot > 0 ? 100.0*this->StandardDev.calculate(esam) : 0.0);
-            sprintf(cell[9],f2,ntot > 0 ? 100.0*this->StandardDev.calculate(eamb0) : 0.0);
-            sprintf(cell[10],f2,ntot > 0 ? 100.0*this->StandardDev.calculate(eamb1) : 0.0);
-            sprintf(cell[11],f2,ntot > 0 ? 100.0*this->StandardDev.calculate(eamb2) : 0.0);
-            sprintf(cell[12],f2,ntot > 0 ? 100.0*this->StandardDev.calculate(edif) : 0.0);
-            sprintf(cell[13],f2,ntot > 0 ? 100.0*(double)n.tambiguousRules/ntot : 0.0);
-            sprintf(cell[14],f2,ntot > 0 ? 100.0*(double)this->n.Decision.false_amb/ntot : 0.0);
-            sprintf(cell[15],f2,ntot > 0 ? 100.0*(double)this->n.Decision.false_not_amb/ntot : 0.0);
-            sprintf(cell[16],f2,ntot > 0 ? 100.0*(double)this->n.Decision.true_amb/ntot : 0.0);
-            sprintf(cell[17],f2,ntot > 0 ? 100.0*(double)this->n.Decision.true_not_amb/ntot : 0.0);
-            sprintf(cell[18],f2,this->n.Decision.precision());
-            sprintf(cell[19],f2,this->n.Decision.recall());
-            sprintf(cell[20],"%6.3f*N^%4.3f ", exp(AffixLine->a()), AffixLine->b());//0.056414*N^0.799693
+                cell[i] = ell[i] = new char[22];
+            sprintf(ell[0],f1,cutoff);
+            sprintf(ell[1],f2,(double)n.tflexcount/(double)maxcount);
+            sprintf(ell[2],f2,ttrainlines == 0 ? 100.0 : 100.0*(double)n.tflexcount/(double)ttrainlines);
+            sprintf(ell[3],f2,ntot > 0 ? 100.0*(double)n.tsame/ntot : 0.0);
+            sprintf(ell[4],f2,ntot > 0 ? 100.0*(double)n.tambiguous[0]/ntot : 0.0);
+            sprintf(ell[5],f2,ntot > 0 ? 100.0*(double)n.tambiguous[1]/ntot : 0.0);
+            sprintf(ell[6],f2,ntot > 0 ? 100.0*(double)n.tambiguous[2]/ntot : 0.0);
+            sprintf(ell[7],f2,ntot > 0 ? 100.0*(double)n.tdifferent/ntot : 0.0);
+            sprintf(ell[8],f2,ntot > 0 ? 100.0*this->StandardDev.calculate(esam) : 0.0);
+            sprintf(ell[9],f2,ntot > 0 ? 100.0*this->StandardDev.calculate(eamb0) : 0.0);
+            sprintf(ell[10],f2,ntot > 0 ? 100.0*this->StandardDev.calculate(eamb1) : 0.0);
+            sprintf(ell[11],f2,ntot > 0 ? 100.0*this->StandardDev.calculate(eamb2) : 0.0);
+            sprintf(ell[12],f2,ntot > 0 ? 100.0*this->StandardDev.calculate(edif) : 0.0);
+            sprintf(ell[13],f2,ntot > 0 ? 100.0*(double)n.tambiguousRules/ntot : 0.0);
+            sprintf(ell[14],f2,ntot > 0 ? 100.0*(double)this->n.Decision.false_amb/ntot : 0.0);
+            sprintf(ell[15],f2,ntot > 0 ? 100.0*(double)this->n.Decision.false_not_amb/ntot : 0.0);
+            sprintf(ell[16],f2,ntot > 0 ? 100.0*(double)this->n.Decision.true_amb/ntot : 0.0);
+            sprintf(ell[17],f2,ntot > 0 ? 100.0*(double)this->n.Decision.true_not_amb/ntot : 0.0);
+            sprintf(ell[18],f2,this->n.Decision.precision());
+            sprintf(ell[19],f2,this->n.Decision.recall());
+            sprintf(ell[20],"%6.3f*N^%4.3f ", exp(AffixLine->a()), AffixLine->b());//0.056414*N^0.799693
+            delete[]ell;
             }
         void printingNice(int cutoff,double fraction,int maxcount,FILE * fptab,int ttrainlines,optionStruct * Options)
             {
@@ -2050,7 +2052,7 @@ void trainAndTest
                         lowestntdifferent = c[cutoff].n.tdifferent;
                         }
                     }
-                char * texts[] =    {
+                const char * texts[] =    {
                                     "cutoff         ",
                                     "rules          ",
                                     "rules%         ",
@@ -2076,7 +2078,7 @@ void trainAndTest
                 int nocol = 7;
                 int norow = sizeof(texts)/sizeof(texts[0]);
                 int nocell = norow*nocol;
-                char * cell[sizeof(texts)/sizeof(texts[0]) * 7];
+                const char * cell[sizeof(texts)/sizeof(texts[0]) * 7];
                 for(int j = 0;j < norow;++j)
                     cell[j] = texts[j];
                 for(int k = 0;k < nocol - 1;++k)

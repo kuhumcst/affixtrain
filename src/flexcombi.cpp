@@ -223,18 +223,20 @@ struct fileBuffer
 
 			char V[5] = "";
 			V[4] = 0;
-			fread(V,1,4,flexrulefile);
-			if((V[0] & 1) && (V[3] & 1))
-				{
-				if(strcmp(V,"\rV3\r")) // Version string at beginning of file. If read as int, must have lowest bit set! Therefore \r (00001101).
-					return false;
-				length -= 4;
-				}
-			else
-				{
-				//printf("Old version\n");
-				rewind(flexrulefile);
-				}
+            if (4 == fread(V, 1, 4, flexrulefile))
+                {
+                if ((V[0] & 1) && (V[3] & 1))
+                    {
+                    if (strcmp(V, "\rV3\r")) // Version string at beginning of file. If read as int, must have lowest bit set! Therefore \r (00001101).
+                        return false;
+                    length -= 4;
+                    }
+                else
+                    {
+                    //printf("Old version\n");
+                    rewind(flexrulefile);
+                    }
+                }
 
 			Length = length;
 			while (Length & 3) ++Length;

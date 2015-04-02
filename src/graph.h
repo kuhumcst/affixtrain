@@ -366,8 +366,8 @@ class vertex
 #endif
         char * itsPattern(){return Pattern.itsTxt();}
         char * itsReplacement(){return Replacement.itsTxt();}
-        const strng * itsstrngPattern()const{return &Pattern;}
-        const strng * itsstrngReplacement()const{return &Replacement;}
+        const strng & itsstrngPattern()const{return Pattern;}
+        const strng & itsstrngReplacement()const{return Replacement;}
         void incRelations(){++Relations;}
         void decRelations(){--Relations;}
         int relations(){return Relations;}
@@ -378,7 +378,6 @@ class vertex
         void setNext(vertex * next){Next = next;}
         void setHead(vertex ** head){Head = head;}
         char * itsTxt(){return Pattern.itsTxt();}
-        //strng * replacement(){return &Replacement;}
         vertex * findReplacement(vertex * Rule)
             {
             vertex * p = this;

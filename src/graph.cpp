@@ -1461,8 +1461,8 @@ int printRules(node * nd
 		// Wildcards are the character in the constant ANY (currently ':')
         if(options->verbose())
 		    printf("pat [%s] rep [%s]\n",nd->V->itsPattern(),nd->V->itsReplacement());
-        strng * pat = nd->V->itsstrngPattern()->substr(1,strlen(nd->V->itsPattern()) - 2);
-        strng * rep = nd->V->itsstrngReplacement()->substr(1,strlen(nd->V->itsReplacement()) - 2);
+        strng * pat = nd->V->itsstrngPattern().substr(1,strlen(nd->V->itsPattern()) - 2);
+        strng * rep = nd->V->itsstrngReplacement().substr(1,strlen(nd->V->itsReplacement()) - 2);
         strng * patreps[100];
         unsigned int i;
         for(i = 0;i < sizeof(patreps)/sizeof(patreps[0]);++i)

@@ -919,8 +919,10 @@ void vertex::construct(const char * pat, const char * rep)
         if (*prep != END)
             strcpy(++prep, AnyEnd);
         }
-    Pattern = new strng(lpattern);
-    Replacement = new strng(lreplacement);
+//    Pattern = new strng(lpattern);
+//    Replacement = new strng(lreplacement);
+    Pattern.dup(lpattern);
+    Replacement.dup(lreplacement);
     ++VertexCount;
     }
 

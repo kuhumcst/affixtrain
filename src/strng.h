@@ -52,11 +52,12 @@ class strng
             {
             return Txt;
             }
+        void dup(const char * buf){Txt = ::dup(buf);}
         strng(const char * buf);
         strng(const char * buf,size_t length);
         strng(const strng * s)
             {
-            Txt = dup(s->Txt);
+            Txt = ::dup(s->Txt);
             ++StrngCount;
             }
         strng(int kar)

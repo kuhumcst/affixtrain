@@ -323,8 +323,8 @@ class vertex
     {
     private:
         friend class hash;
-        strng * Pattern;
-        strng * Replacement;
+        strng Pattern;
+        strng Replacement;
         vertex * Next; // vertices with the same hash key.
         vertex ** Head;
         int RefCount;
@@ -341,14 +341,8 @@ class vertex
 #endif
         double wght;
     public:
-        const char * cpattern()
-            {
-            return itsPattern();
-            }
-        const char * creplacement()
-            {
-            return itsReplacement();
-            }
+        const char * cpattern(){return itsPattern();}
+        const char * creplacement(){return itsReplacement();}
         bool apply(trainingPair * trainingpair,size_t lemmalength,char * lemma);
         bool applym(trainingPair * trainingpair, size_t lemmalength, char * lemma, char * mask, optionStruct * options);
         edif dif(vertex * other);
@@ -370,56 +364,32 @@ class vertex
         */
         void computeImpedance();
 #endif
-        virtual char * itsPattern(){return Pattern->itsTxt();}
-        virtual char * itsReplacement(){return Replacement->itsTxt();}
-        virtual const strng * itsstrngPattern()const{return Pattern;}
-        virtual const strng * itsstrngReplacement()const{return Replacement;}
+        char * itsPattern(){return Pattern.itsTxt();}
+        char * itsReplacement(){return Replacement.itsTxt();}
+        const strng * itsstrngPattern()const{return &Pattern;}
+        const strng * itsstrngReplacement()const{return &Replacement;}
         void incRelations(){++Relations;}
         void decRelations(){--Relations;}
         int relations(){return Relations;}
         void print(FILE * f,int level);
         void printRule(FILE * f,int level,int nr);
         void print1(FILE * f);
-        vertex * getNext()
-            {
-            return Next;
-            }
-        void setNext(vertex * next)
-            {
-            Next = next;
-            }
-        void setHead(vertex ** head)
-            {
-            Head = head;
-            }
-        char * itsTxt()
-            {
-            return Pattern->itsTxt();
-            }
-        strng * replacement()
-            {
-            return Replacement;
-            }
+        vertex * getNext(){return Next;}
+        void setNext(vertex * next){Next = next;}
+        void setHead(vertex ** head){Head = head;}
+        char * itsTxt(){return Pattern.itsTxt();}
+        //strng * replacement(){return &Replacement;}
         vertex * findReplacement(vertex * Rule)
             {
             vertex * p = this;
-            while(p && (!p->Replacement->eq(Rule->creplacement()) || !p->Pattern->eq(Rule->cpattern())))
+            while(p && (!p->Replacement.eq(Rule->creplacement()) || !p->Pattern.eq(Rule->cpattern())))
                 p = p->Next;
             return p;
             }
         void destroy();
-        void incRefCnt()
-            {
-            ++RefCount;
-            }
-        void decRefCnt()
-            {
-            --RefCount;
-            }
-        int refCount()
-            {
-            return RefCount;
-            }
+        void incRefCnt(){++RefCount;}
+        void decRefCnt(){--RefCount;}
+        int refCount(){return RefCount;}
         ~vertex();
         void deleteThis();
         void construct(const char * pat, const char * rep);

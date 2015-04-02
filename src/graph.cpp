@@ -565,7 +565,7 @@ char * dupn(const char * buf,size_t n)
 
 strng::strng(const char * buf)
     {
-    Txt = dup(buf);
+    Txt = ::dup(buf);
     ++StrngCount;
     }
 
@@ -638,7 +638,7 @@ void vertex::computeImpedance()
     */
     impedance = 0.0;
     
-    const char * p = Pattern->itsTxt();
+    const char * p = Pattern.itsTxt();
     while(*p && *p != ANY)
         {
         //++p;
@@ -668,12 +668,12 @@ void vertex::computeImpedance()
 
 void vertex::print1(FILE * f)
     {
-    fprintf(f,"{%s\t%s}",Pattern->itsTxt(),Replacement->itsTxt());
+    fprintf(f,"{%s\t%s}",Pattern.itsTxt(),Replacement.itsTxt());
     }
 
 void vertex::print(FILE * f,int level)
     {
-        fprintf(f,"%*s|\t{%s\t%s}\n",level,"",Pattern->itsTxt(),Replacement->itsTxt());
+        fprintf(f,"%*s|\t{%s\t%s}\n",level,"",Pattern.itsTxt(),Replacement.itsTxt());
     }
 
 void vertex::printRule(FILE * f,int level,int nr)
@@ -681,8 +681,8 @@ void vertex::printRule(FILE * f,int level,int nr)
     fprintf(f,"%d\t%d\t%.*s\t%.*s\n",
         nr,
         level+1, // 1-based
-        (int)(strlen(Pattern->itsTxt()) - 2),Pattern->itsTxt()+1,
-        (int)(strlen(Replacement->itsTxt()) - 2),Replacement->itsTxt()+1);
+        (int)(strlen(Pattern.itsTxt()) - 2),Pattern.itsTxt()+1,
+        (int)(strlen(Replacement.itsTxt()) - 2),Replacement.itsTxt()+1);
     }
 
 
@@ -698,8 +698,8 @@ void vertex::destroy()
 
 vertex::~vertex()
     {
-    delete Pattern;
-    delete Replacement;
+//    delete Pattern;
+//    delete Replacement;
     --VertexCount;
     }
 
@@ -716,8 +716,10 @@ vertex::vertex(vertex * Rule,hash * Hash):
 
         {
         assert(Hash);
-        Pattern = new strng(Rule->cpattern());
-        Replacement = new strng(Rule->replacement());
+//        Pattern = new strng(Rule->cpattern());
+//        Replacement = new strng(Rule->replacement());
+        Pattern.dup(Rule->cpattern());
+        Replacement.dup(Rule->creplacement());
         ++VertexCount;
         }
 
@@ -2034,7 +2036,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
 void vertex::adjustWeight()
     {    
     double i = 1.0;
-    for (const char * p = this->Pattern->itsTxt(); *p; ++p)
+    for (const char * p = this->Pattern.itsTxt(); *p; ++p)
         if (*p == ANY)
             i += 1.0;
     this->wght *= i;

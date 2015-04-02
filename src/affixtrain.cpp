@@ -115,29 +115,6 @@ class tagClass
 
 
 class shortRulePair;
-class fullRulePair : public rulePair
-    {
-    private:
-        char Pattern[1000];
-        char Replacement[1000];
-    protected:
-        virtual char * itsPattern(){ return Pattern; }
-        virtual char * itsReplacement(){ return Replacement; }
-    public:
-        fullRulePair(const char * pat, const char * rep);
-        fullRulePair(shortRulePair * Rule);
-        virtual ~fullRulePair(){ --FullRulePairCount; }
-        void copy(fullRulePair * Rule);
-        const char * pattern()
-            {
-            return Pattern;
-            }
-        const char * replacement()
-            {
-            return Replacement;
-            }
-    };
-
 FILE * fopenOrExit(const char * name, const char * mode, const char * descriptionOfFile) // must not contain format specifiers
     {
     assert(name);
@@ -159,19 +136,6 @@ FILE * fopenOrExit(const char * name, const char * mode, const char * descriptio
         exit(-1);
         }
     return fp;
-    }
-
-fullRulePair::fullRulePair(const char * pat, const char * rep)
-    {
-    strcpy(Pattern, pat);
-    strcpy(Replacement, rep);
-    ++FullRulePairCount;
-    }
-
-void fullRulePair::copy(fullRulePair * Rule)
-    {
-    strcpy(Pattern, Rule->Pattern);
-    strcpy(Replacement, Rule->Replacement);
     }
 
 class ruleTemplate;
@@ -880,51 +844,84 @@ ptrdiff_t similData::isimil(
     return max;
     }
 
-fullRulePair::fullRulePair(shortRulePair * Rule)
+vertex::vertex(shortRulePair * Rule) :
+    Head(0), RefCount(0), Relations(0), Hash(0)
+    , R__R(0)
+    , R__W(0)
+    , W__R(0)
+    , W__W(0)
+#if _NA
+    , R__NA(0)
+    , W__NA(0)
+#endif
+    {
+    construct((const char*)Rule->itsPatternArray(), (const char*)Rule->itsReplacementArray());
+    }
+
+vertex::vertex(const char * pat, const char * rep) :
+Head(0), RefCount(0), Relations(0), Hash(0)
+, R__R(0)
+, R__W(0)
+, W__R(0)
+, W__W(0)
+#if _NA
+, R__NA(0)
+, W__NA(0)
+#endif
+    {
+    construct(pat, rep);
+    }
+
+
+void vertex::construct(const char * pat, const char * rep)
     {
     CHECK("EglobTempDir");
-    char * ppat = Pattern;
-    char * prep = Replacement;
+    char lpattern[1000];
+    char lreplacement[1000];
+    char * ppat = lpattern;
+    char * prep = lreplacement;
 
-    size_t patlen = strlen((const char*)Rule->itsPatternArray());
-    size_t replen = strlen((const char*)Rule->itsReplacementArray());
-    if (*Rule->itsPatternArray() != START)
+    size_t patlen = strlen(pat);
+    size_t replen = strlen(rep);
+    if (*pat != START)
         {
-        if (*Rule->itsReplacementArray() != START)
+        if (*rep != START)
             {
-            strcpy(Pattern, StartAny/*"^*"*/);
-            strcpy(Replacement, StartAny/*"^*"*/);
+            strcpy(ppat, StartAny);
+            strcpy(prep, StartAny);
             ppat += 2;
             prep += 2;
             }
         else
             {
-            strcpy(Pattern, Start/*"^"*/);
+            strcpy(ppat, Start);
             ++ppat;
             }
         }
-    else if (*Rule->itsReplacementArray() != START)
+    else if (*rep != START)
         {
-        strcpy(Replacement, Start/*"^"*/);
+        strcpy(prep, Start);
         ++prep;
         }
-    strcpy(ppat, Rule->itsPatternArray());
-    strcpy(prep, Rule->itsReplacementArray());
+    strcpy(ppat, pat);
+    strcpy(prep, rep);
     ppat += patlen - 1;
     prep += replen - 1;
     if (*ppat == ANY && *prep == ANY)
         {
-        strcpy(++ppat, End/*"$"*/);
-        strcpy(++prep, End/*"$"*/);
+        strcpy(++ppat, End);
+        strcpy(++prep, End);
         }
     else
         {
         if (*ppat != END)
-            strcpy(++ppat, AnyEnd/*"*$"*/);
+            strcpy(++ppat, AnyEnd);
         if (*prep != END)
-            strcpy(++prep, AnyEnd/*"*$"*/);
+            strcpy(++prep, AnyEnd);
         }
-    ++FullRulePairCount;
+    Pattern = new strng(lpattern);
+    Replacement = new strng(lreplacement);
+    ++VertexCount;
     }
 
 
@@ -1556,34 +1553,20 @@ bool ruleTemplate::makebigger(int countdown, int & anihilatedGuards, optionStruc
     }
 
 
-bool shortRulePair::checkRule(/*ruleTemplate * Template,*/trainingPair * trainingpair, rulePair * parentPat)
+bool shortRulePair::checkRule(trainingPair * trainingpair, rulePair * parentPat)
     {
     CHECK("NglobTempDir");
     char Lemma[100] = "";
-    fullRulePair FullRule(this);
+    vertex FullRule(this);
     bool ret;
-    /*
-    if(parentPat)
-    fprintf(flog,"parent:pat %s rep %s\n",parentPat->pattern(),parentPat->replacement());
-    fprintf(flog,"this  :pat %s rep %s\n",FullRule.pattern(),FullRule.replacement());
-    fprintf(flog,"trainingpair:");
-    trainingpair->print(flog);
-    fprintf(flog,"\n");
-    */
     if ((!parentPat || FullRule.dif(parentPat) == dif_bigger)
         && FullRule.apply(trainingpair, sizeof(Lemma), Lemma)
         )
         {
         ret = trainingpair->isCorrect(Lemma);
-        /*
-        fprintf(flog,"ret:%s\n",ret ? "true" : "false");
-        */
         }
     else
         {
-        /*
-        fprintf(flog,"ret is false\n");
-        */
         ret = false;
         }
     return ret;
@@ -1592,13 +1575,9 @@ bool shortRulePair::checkRule(/*ruleTemplate * Template,*/trainingPair * trainin
 static int storeRule(hash * Hash, shortRulePair * Rule, vertex *& V)
     {
     CHECK("OglobTempDir");
-    fullRulePair FullRule(Rule);
+    vertex FullRule(Rule);
     bool New;
     V = Hash->getVertex(&FullRule, New);
-    /*
-    V->print1(flog);
-    fprintf(flog,"\n");
-    */
     if (New)
         {
         return 1;
@@ -1631,7 +1610,7 @@ int trainingPair::makeCorrectRules(hash * Hash, ruleTemplate * Template, const c
          )
         {
         shortRulePair Rule(this, &locTemplate);
-        if (Rule.checkRule(/*&locTemplate,*/this, parent))
+        if (Rule.checkRule(this, parent))
             {
             different = false;
             vertex * e;
@@ -2474,26 +2453,17 @@ static void writeAllTestPairs(trainingPair * TrainingPair, const char * ext, int
     --openfiles;
     fclose(ftests);
     }
-/*
-static void checkTrainingPairIntegrity()
-{
-int ii;
-for(ii = 0;ii < globlines;++ii)
-if(!globTrainingPair[ii].isset(b_ambiguous|b_doublet|b_test|b_skip))
-globTrainingPair[ii].checkIntegrity();
-}
-*/
+
 static void doTheRules(hash * Hash, trainingPair * TrainingPair, node ** top, optionStruct * options)
     {
     CHECK("eglobTempDir");
-    //    fullRulePair ROOT("^*$","^*$");
-    fullRulePair ROOT(StartAnyEnd, StartAnyEnd/*"^*$","^*$"*/);
+    vertex ROOT(StartAnyEnd, StartAnyEnd);
     bool New;
     vertex * best = Hash->getVertex(&ROOT, New);
 
     *top = new node(best);
     trainingPair * Right = NULL;
-    (*top)->init(&Right, &TrainingPair, 0/*,0,0*/, options);
+    (*top)->init(&Right, &TrainingPair, 0, options);
     (*top) = (*top)->cleanup(NULL);
     }
 
@@ -3663,7 +3633,6 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
         fprintf(fo, "StrngCount                  %d\n", StrngCount);
         fprintf(fo, "RuleTemplateCount           %d\n", RuleTemplateCount);
         fprintf(fo, "ShortRulePairCount          %d\n", ShortRulePairCount);
-        fprintf(fo, "FullRulePairCount           %d\n", FullRulePairCount);
 
         clock_t finish = clock();
         double  duration = 0;

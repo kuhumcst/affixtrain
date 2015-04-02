@@ -52,7 +52,6 @@ int RulePairCount = 0;
 int StrngCount = 0;
 int RuleTemplateCount = 0;
 int ShortRulePairCount = 0;
-int FullRulePairCount = 0;
 
 int VCount = 0;
 
@@ -705,7 +704,7 @@ vertex::~vertex()
     }
 
 vertex::vertex(rulePair * Rule,hash * Hash):
-        Head(0),RefCount(0),/*bits(0),*/Relations(0),Hash(Hash)
+        Head(0),RefCount(0),Relations(0),Hash(Hash)
         ,R__R(0)
         ,R__W(0)
         ,W__R(0)

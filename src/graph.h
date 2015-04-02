@@ -77,7 +77,6 @@ extern int HashCount;
 extern int RulePairCount;
 extern int RuleTemplateCount;
 extern int ShortRulePairCount;
-extern int FullRulePairCount;
 
 edif dif(char * Txt, char * s_Txt);
 
@@ -329,6 +328,7 @@ class rulePair
     };
 
 class trainingPairPointer;
+class shortRulePair;
 
 typedef enum {failure,wrong,right} matchResult;
 
@@ -433,8 +433,11 @@ class vertex : public rulePair
             }
         ~vertex();
         void deleteThis();
+        void construct(const char * pat, const char * rep);
         vertex(rulePair * Rule,hash * Hash);
-        matchResult lemmatise(trainingPair * pair,char ** plemma);
+        vertex(shortRulePair * Rule);
+        vertex(const char * pat, const char * rep);
+        matchResult lemmatise(trainingPair * pair, char ** plemma);
         matchResult lemmatisem(trainingPair * pair, char ** mask, char ** plemma, optionStruct * options);
         int goodness(trainingPair * pairs, topScore * Top);
         void nlemmatiseStart();

@@ -949,7 +949,6 @@ int utfchar(char * p, int & U) /* int is big enough for all UTF-8 bytes */
 
 matchResult vertex::apply(trainingPair * trainingpair)
     {
-    static char lemma[100];
     CHECK("FglobTempDir");
     static char wrd[100];
     size_t L1 = trainingpair->itsWordlength();
@@ -964,22 +963,34 @@ matchResult vertex::apply(trainingPair * trainingpair)
     wrd[L1 + 2] = 0;
     char * p = Pattern.itsTxt();
     char * r = Replacement.itsTxt();
-    if (!*p) // root
+    if (!*p)
         {
         static char lStartAnyEnd[4] = { START, ANY, END, 0 };
         p = lStartAnyEnd/*"^*$"*/;
         r = p;
         }
     char * w = wrd;
-    char * d = lemma;
-    char * last = lemma + 100 - 7;
+    const char * lh = trainingpair->itsLemmaHead();
+    size_t lhl = trainingpair->itsLemmalength();
+    const char * last = lh + lhl;
+    matchResult ret = right;
+    
+    ++p;
+    ++r;
+    ++w;
     while (*p && *r)
         {
         if (*p == *w)
             {
-            while (*r && *r != ANY && d < last)
+            while (ret == right && *r && *r != ANY)
                 {
-                *d++ = *r++;
+                if (*r != END && (lh == last || *lh++ != *r))
+                    ret = wrong;             
+                ++r;
+                }
+            while (*r && *r != ANY)
+                {
+                ++r;
                 }
 
             do
@@ -1004,15 +1015,17 @@ matchResult vertex::apply(trainingPair * trainingpair)
                 char * sub = strstr(w, p);
                 if (sub)
                     {
-                    while (w < sub && d < last)
+                    while (ret != wrong && w < sub)
                         {
-                        *d++ = *w++;
+                        if (*w != END && (lh == last || *lh++ != *w))
+                            ret = wrong;
+                        ++w;
                         }
+                    w = sub;
                     }
                 else
                     {
                     *ep = ANY;
-                    d = lemma;
                     break;
                     }
                 *ep = ANY;
@@ -1022,21 +1035,22 @@ matchResult vertex::apply(trainingPair * trainingpair)
                 char * sub = strstr(w, p);
                 if (sub)
                     {
-                    while (w < sub && d < last)
+                    while (ret != wrong && w < sub)
                         {
-                        *d++ = *w++;
+                        if (*w != END && (lh == last || *lh++ != *w))
+                            ret = wrong;
+                        ++w;
                         }
+                    w = sub;
                     }
                 else
                     {
-                    d = lemma;
                     break;
                     }
                 }
             }
         else
             {
-            d = lemma;
             break;
             }
         }
@@ -1044,26 +1058,9 @@ matchResult vertex::apply(trainingPair * trainingpair)
         {
         return failure;
         }
-    *d = '\0';
-    d = lemma;
-    char * oldd = d;
-    while (*++d)
-        {
-        *oldd++ = *d;
-        }
-    *oldd = '\0';
-    if (oldd > lemma + 1)
-        oldd[-1] = '\0';
-    return strncmp(lemma, trainingpair->itsLemmaHead(), trainingpair->itsLemmalength()) ? wrong : right;
-/*    const char * a = lemma;
-    const char * b = trainingpair->itsLemmaHead();
-    const char * e = b + trainingpair->itsLemmalength();
-    while (b < e && *a == *b)
-        {
-        ++a;
-        ++b;
-        }
-    return (!*a && b == e) ? right : wrong;*/
+    if (lh != last)
+        return wrong;
+    return ret;
     }
 
 bool vertex::applym(trainingPair * trainingpair, size_t lemmalength, char * lemma, char * mask, optionStruct * options)

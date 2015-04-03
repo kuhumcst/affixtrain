@@ -965,6 +965,7 @@ static matchResult loop(char * p,char *w)
                 {
                 assert(*p != *w);
                 assert(*p != ANY);
+                printf("AAA\n");
                 return failure;
                 }
             assert(*p == ANY || *p == *w);
@@ -985,7 +986,7 @@ static matchResult loop(char * p,char *w)
                 else
                     {
                     *ep = ANY;
-                    break;
+                    return failure;
                     }
                 *ep = ANY;
                 }
@@ -998,19 +999,21 @@ static matchResult loop(char * p,char *w)
                     }
                 else
                     {
-                    break;
+                    return failure;
                     }
                 }
             }
         else
             {
             assert(*p != ANY);
-            break;
+            printf("BBB\n");
+            return failure;
             }
         }
     if (*p)
         {
         assert(*p);
+        printf("CCC\n");
         return failure;
         }
     return wrong;
@@ -1045,7 +1048,7 @@ matchResult vertex::apply(trainingPair * trainingpair)
     matchResult ret = right;
     
     ++r;
-    while (*p /*&& *r*/)
+    while (*p)
         {
         assert(*r != START);
         if (*p == *w)
@@ -1119,7 +1122,7 @@ matchResult vertex::apply(trainingPair * trainingpair)
                 else
                     {
                     *ep = ANY;
-                    break;
+                    return failure;
                     }
                 *ep = ANY;
                 }
@@ -1142,20 +1145,22 @@ matchResult vertex::apply(trainingPair * trainingpair)
                     }
                 else
                     {
-                    break;
+                    return failure;
                     }
                 }
             }
         else
             {
             assert(*p != ANY);
-            break;
+            printf("DDD\n");
+            return failure;
             }
         }
     if (*p)
         {
         assert(*r);
         assert(ret == right);
+        printf("EEE\n");
         return failure;
         }
     if (lh != last)

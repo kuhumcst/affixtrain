@@ -947,6 +947,79 @@ int utfchar(char * p, int & U) /* int is big enough for all UTF-8 bytes */
     return q - p;
     }
 
+static matchResult loop(char * p,const char * r,char *w)
+    {
+    while (*p && *r)
+        {
+        if (*p == *w)
+            {
+            while (*r && *r != ANY)
+                {
+                ++r;
+                }
+
+            do
+                {
+                ++p;
+                ++w;
+                } while (*p && *p != ANY && *p == *w);
+
+            if (*p != *r)
+                {
+                return failure;
+                }
+            }
+        else if (*r == ANY)
+            {
+            ++p;
+            ++r;
+            char * ep = strchr(p, ANY);
+            if (ep)
+                {
+                *ep = '\0';
+                char * sub = strstr(w, p);
+                if (sub)
+                    {
+                    if (w < sub)
+                        {
+                        w = sub;
+                        }
+                    }
+                else
+                    {
+                    *ep = ANY;
+                    break;
+                    }
+                *ep = ANY;
+                }
+            else
+                {
+                char * sub = strstr(w, p);
+                if (sub)
+                    {
+                    if (w < sub)
+                        {
+                        w = sub;
+                        }
+                    }
+                else
+                    {
+                    break;
+                    }
+                }
+            }
+        else
+            {
+            break;
+            }
+        }
+    if (*p || *r)
+        {
+        return failure;
+        }
+    return wrong;
+    }
+
 matchResult vertex::apply(trainingPair * trainingpair)
     {
     CHECK("FglobTempDir");
@@ -974,11 +1047,6 @@ matchResult vertex::apply(trainingPair * trainingpair)
     size_t lhl = trainingpair->itsLemmalength();
     const char * last = lh + lhl;
     matchResult ret = right;
-    /*
-    ++p;
-    ++r;
-    ++w;
-    */
     while (*p && *r)
         {
         if (*p == *w)
@@ -986,11 +1054,25 @@ matchResult vertex::apply(trainingPair * trainingpair)
             while (ret == right && *r && *r != ANY)
                 {
                 if (*r != START && *r != END && (lh == last || *lh++ != *r))
-                    ret = wrong;             
-                ++r;
-                }
-            while (*r && *r != ANY)
-                {
+                    {
+                    ret = wrong;
+                    while (*r && *r != ANY)
+                        {
+                        ++r;
+                        }
+                    do
+                        {
+                        ++p;
+                        ++w;
+                        } while (*p && *p != ANY && *p == *w);
+
+                    if (*p != *r)
+                        {
+                        return failure;
+                        }
+
+                    return loop(p, r, w);
+                    }
                 ++r;
                 }
 
@@ -1019,10 +1101,14 @@ matchResult vertex::apply(trainingPair * trainingpair)
                     while (ret != wrong && w < sub)
                         {
                         if (*w != START && *w != END && (lh == last || *lh++ != *w))
+                            {
                             ret = wrong;
+                            w = sub;
+                            *ep = ANY;
+                            return loop(p, r, w);
+                            }
                         ++w;
                         }
-                    w = sub;
                     }
                 else
                     {
@@ -1039,10 +1125,13 @@ matchResult vertex::apply(trainingPair * trainingpair)
                     while (ret != wrong && w < sub)
                         {
                         if (*w != START && *w != END && (lh == last || *lh++ != *w))
+                            {
                             ret = wrong;
+                            w = sub;
+                            return loop(p, r, w);
+                            }
                         ++w;
                         }
-                    w = sub;
                     }
                 else
                     {

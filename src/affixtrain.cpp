@@ -959,20 +959,20 @@ static matchResult loop(char * p,char *w)
                 ++w;
                 } while (*p && *p != ANY && *p == *w);
 
-            assert(!*p || *p == ANY || *p != *w);
+//            assert(!*p || *p == ANY || *p != *w);
 
             if (*p != ANY && *p != *w)
                 {
-                assert(*p != *w);
-                assert(*p != ANY);
-                printf("AAA\n");
+  //              assert(*p != *w);
+    //            assert(*p != ANY);
+      //          printf("AAA\n");
                 return failure;
                 }
-            assert(*p == ANY || *p == *w);
+        //    assert(*p == ANY || *p == *w);
             }
         else if (*p == ANY)
             {
-            assert(*p == ANY);
+          //  assert(*p == ANY);
             ++p;
             char * ep = strchr(p, ANY);
             if (ep)
@@ -1005,16 +1005,10 @@ static matchResult loop(char * p,char *w)
             }
         else
             {
-            assert(*p != ANY);
-            printf("BBB\n");
+            //assert(*p != ANY);
+            //printf("BBB\n");
             return failure;
             }
-        }
-    if (*p)
-        {
-        assert(*p);
-        printf("CCC\n");
-        return failure;
         }
     return wrong;
     }
@@ -1071,7 +1065,7 @@ matchResult vertex::apply(trainingPair * trainingpair)
 
                     if (*p != *r)
                         {
-                        assert(*p != *w);
+              //          assert(*p != *w);
                         return failure;
                         }
 
@@ -1088,15 +1082,15 @@ matchResult vertex::apply(trainingPair * trainingpair)
 
             if (*p != *r)
                 {
-                assert(*p != *w);
+                //assert(*p != *w);
                 return failure;
                 }
             }
         else if (*p == ANY)
             {
-            assert(*p == ANY);
-            assert(*w != START);
-            assert(*r == ANY);
+//            assert(*p == ANY);
+  //          assert(*w != START);
+    //        assert(*r == ANY);
             ++p;
             ++r;
             char * ep = strchr(p, ANY);
@@ -1108,7 +1102,7 @@ matchResult vertex::apply(trainingPair * trainingpair)
                     {
                     while (w < sub)
                         {
-                        assert(*w != END);
+      //                  assert(*w != END);
                         if (lh == last || *lh++ != *w)
                             {
                             ret = wrong;
@@ -1133,7 +1127,7 @@ matchResult vertex::apply(trainingPair * trainingpair)
                     {
                     while (w < sub)
                         {
-                        assert(*w != END);
+        //                assert(*w != END);
                         if (lh == last || *lh++ != *w)
                             {
                             ret = wrong;
@@ -1151,17 +1145,10 @@ matchResult vertex::apply(trainingPair * trainingpair)
             }
         else
             {
-            assert(*p != ANY);
-            printf("DDD\n");
+          //  assert(*p != ANY);
+            //printf("DDD\n");
             return failure;
             }
-        }
-    if (*p)
-        {
-        assert(*r);
-        assert(ret == right);
-        printf("EEE\n");
-        return failure;
         }
     if (lh != last)
         return wrong;

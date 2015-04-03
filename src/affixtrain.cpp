@@ -947,32 +947,32 @@ int utfchar(char * p, int & U) /* int is big enough for all UTF-8 bytes */
     return q - p;
     }
 
-static matchResult loop(char * p,const char * r,char *w)
+static matchResult loop(char * p,char *w)
     {
-    while (*p && *r)
+    while (*p)
         {
         if (*p == *w)
             {
-            while (*r && *r != ANY)
-                {
-                ++r;
-                }
-
             do
                 {
                 ++p;
                 ++w;
                 } while (*p && *p != ANY && *p == *w);
 
-            if (*p != *r)
+            assert(!*p || *p == ANY || *p != *w);
+
+            if (*p != ANY && *p != *w)
                 {
+                assert(*p != *w);
+                assert(*p != ANY);
                 return failure;
                 }
+            assert(*p == ANY || *p == *w);
             }
-        else if (*r == ANY)
+        else if (*p == ANY)
             {
+            assert(*p == ANY);
             ++p;
-            ++r;
             char * ep = strchr(p, ANY);
             if (ep)
                 {
@@ -980,10 +980,7 @@ static matchResult loop(char * p,const char * r,char *w)
                 char * sub = strstr(w, p);
                 if (sub)
                     {
-                    if (w < sub)
-                        {
-                        w = sub;
-                        }
+                    w = sub;
                     }
                 else
                     {
@@ -997,10 +994,7 @@ static matchResult loop(char * p,const char * r,char *w)
                 char * sub = strstr(w, p);
                 if (sub)
                     {
-                    if (w < sub)
-                        {
-                        w = sub;
-                        }
+                    w = sub;
                     }
                 else
                     {
@@ -1010,11 +1004,13 @@ static matchResult loop(char * p,const char * r,char *w)
             }
         else
             {
+            assert(*p != ANY);
             break;
             }
         }
-    if (*p || *r)
+    if (*p)
         {
+        assert(*p);
         return failure;
         }
     return wrong;
@@ -1047,19 +1043,23 @@ matchResult vertex::apply(trainingPair * trainingpair)
     size_t lhl = trainingpair->itsLemmalength();
     const char * last = lh + lhl;
     matchResult ret = right;
-    while (*p && *r)
+    
+    ++r;
+    while (*p /*&& *r*/)
         {
+        assert(*r != START);
         if (*p == *w)
             {
-            while (ret == right && *r && *r != ANY)
+            while (*r && *r != ANY)
                 {
-                if (*r != START && *r != END && (lh == last || *lh++ != *r))
+                if (*r != END && (lh == last || *lh++ != *r))
                     {
                     ret = wrong;
                     while (*r && *r != ANY)
                         {
                         ++r;
                         }
+
                     do
                         {
                         ++p;
@@ -1068,10 +1068,11 @@ matchResult vertex::apply(trainingPair * trainingpair)
 
                     if (*p != *r)
                         {
+                        assert(*p != *w);
                         return failure;
                         }
 
-                    return loop(p, r, w);
+                    return loop(p, w);
                     }
                 ++r;
                 }
@@ -1084,11 +1085,15 @@ matchResult vertex::apply(trainingPair * trainingpair)
 
             if (*p != *r)
                 {
+                assert(*p != *w);
                 return failure;
                 }
             }
-        else if (*r == ANY)
+        else if (*p == ANY)
             {
+            assert(*p == ANY);
+            assert(*w != START);
+            assert(*r == ANY);
             ++p;
             ++r;
             char * ep = strchr(p, ANY);
@@ -1098,14 +1103,15 @@ matchResult vertex::apply(trainingPair * trainingpair)
                 char * sub = strstr(w, p);
                 if (sub)
                     {
-                    while (ret != wrong && w < sub)
+                    while (w < sub)
                         {
-                        if (*w != START && *w != END && (lh == last || *lh++ != *w))
+                        assert(*w != END);
+                        if (lh == last || *lh++ != *w)
                             {
                             ret = wrong;
                             w = sub;
                             *ep = ANY;
-                            return loop(p, r, w);
+                            return loop(p, w);
                             }
                         ++w;
                         }
@@ -1122,13 +1128,14 @@ matchResult vertex::apply(trainingPair * trainingpair)
                 char * sub = strstr(w, p);
                 if (sub)
                     {
-                    while (ret != wrong && w < sub)
+                    while (w < sub)
                         {
-                        if (*w != START && *w != END && (lh == last || *lh++ != *w))
+                        assert(*w != END);
+                        if (lh == last || *lh++ != *w)
                             {
                             ret = wrong;
                             w = sub;
-                            return loop(p, r, w);
+                            return loop(p, w);
                             }
                         ++w;
                         }
@@ -1141,11 +1148,14 @@ matchResult vertex::apply(trainingPair * trainingpair)
             }
         else
             {
+            assert(*p != ANY);
             break;
             }
         }
-    if (*p || *r)
+    if (*p)
         {
+        assert(*r);
+        assert(ret == right);
         return failure;
         }
     if (lh != last)

@@ -947,7 +947,7 @@ int utfchar(char * p, int & U) /* int is big enough for all UTF-8 bytes */
     return q - p;
     }
 
-static matchResult loop(char * p,char *w)
+static matchResult wrongOrFailure(char * p,char *w)
     {
     while (*p)
         {
@@ -959,20 +959,13 @@ static matchResult loop(char * p,char *w)
                 ++w;
                 } while (*p && *p != ANY && *p == *w);
 
-//            assert(!*p || *p == ANY || *p != *w);
-
             if (*p != ANY && *p != *w)
                 {
-  //              assert(*p != *w);
-    //            assert(*p != ANY);
-      //          printf("AAA\n");
                 return failure;
                 }
-        //    assert(*p == ANY || *p == *w);
             }
         else if (*p == ANY)
             {
-          //  assert(*p == ANY);
             ++p;
             char * ep = strchr(p, ANY);
             if (ep)
@@ -1005,8 +998,6 @@ static matchResult loop(char * p,char *w)
             }
         else
             {
-            //assert(*p != ANY);
-            //printf("BBB\n");
             return failure;
             }
         }
@@ -1037,21 +1028,17 @@ matchResult vertex::apply(trainingPair * trainingpair)
         }
     char * w = wrd;
     const char * lh = trainingpair->itsLemmaHead();
-    size_t lhl = trainingpair->itsLemmalength();
-    const char * last = lh + lhl;
-    matchResult ret = right;
+    const char * last = lh + trainingpair->itsLemmalength();
     
     ++r;
     while (*p)
         {
-        assert(*r != START);
         if (*p == *w)
             {
             while (*r && *r != ANY)
                 {
                 if (*r != END && (lh == last || *lh++ != *r))
                     {
-                    ret = wrong;
                     while (*r && *r != ANY)
                         {
                         ++r;
@@ -1063,13 +1050,14 @@ matchResult vertex::apply(trainingPair * trainingpair)
                         ++w;
                         } while (*p && *p != ANY && *p == *w);
 
-                    if (*p != *r)
+                    if (*p == *r)
                         {
-              //          assert(*p != *w);
+                        return wrongOrFailure(p, w);
+                        }
+                    else
+                        {
                         return failure;
                         }
-
-                    return loop(p, w);
                     }
                 ++r;
                 }
@@ -1082,15 +1070,11 @@ matchResult vertex::apply(trainingPair * trainingpair)
 
             if (*p != *r)
                 {
-                //assert(*p != *w);
                 return failure;
                 }
             }
         else if (*p == ANY)
             {
-//            assert(*p == ANY);
-  //          assert(*w != START);
-    //        assert(*r == ANY);
             ++p;
             ++r;
             char * ep = strchr(p, ANY);
@@ -1102,13 +1086,11 @@ matchResult vertex::apply(trainingPair * trainingpair)
                     {
                     while (w < sub)
                         {
-      //                  assert(*w != END);
                         if (lh == last || *lh++ != *w)
                             {
-                            ret = wrong;
                             w = sub;
                             *ep = ANY;
-                            return loop(p, w);
+                            return wrongOrFailure(p, w);
                             }
                         ++w;
                         }
@@ -1127,12 +1109,10 @@ matchResult vertex::apply(trainingPair * trainingpair)
                     {
                     while (w < sub)
                         {
-        //                assert(*w != END);
                         if (lh == last || *lh++ != *w)
                             {
-                            ret = wrong;
                             w = sub;
-                            return loop(p, w);
+                            return wrongOrFailure(p, w);
                             }
                         ++w;
                         }
@@ -1145,14 +1125,12 @@ matchResult vertex::apply(trainingPair * trainingpair)
             }
         else
             {
-          //  assert(*p != ANY);
-            //printf("DDD\n");
             return failure;
             }
         }
     if (lh != last)
         return wrong;
-    return ret;
+    return right;
     }
 
 bool vertex::applym(trainingPair * trainingpair, size_t lemmalength, char * lemma, char * mask, optionStruct * options)

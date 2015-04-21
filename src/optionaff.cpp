@@ -769,26 +769,29 @@ void optionStruct::completeArgs()
             }
         }
 
-    if(!strcmp(X,"W"))
+    if(X)
         {
-        WeightFunction = esupport;
-        }
-    else if(!strcmp(X,"D"))
-        {
-        WeightFunction = edepth;
-        }
-    else if(!strcmp(X,"C"))
-        {
-        WeightFunction = econstant;
-        }
-    else if (!strcmp(X, "E"))
-        {
-        WeightFunction = eentropy;
-        }
-    else
-        {
-        printf("Option -X can only have values C, D or W\n");
-        exit(1);
+        if(!strcmp(X,"W"))
+            {
+            WeightFunction = esupport;
+            }
+        else if(!strcmp(X,"D"))
+            {
+            WeightFunction = edepth;
+            }
+        else if(!strcmp(X,"C"))
+            {
+            WeightFunction = econstant;
+            }
+        else if (!strcmp(X, "E"))
+            {
+            WeightFunction = eentropy;
+            }
+        else
+            {
+            printf("Option -X can only have values C, D or W\n");
+            exit(1);
+            }
         }
 
 
@@ -891,47 +894,51 @@ OptReturnTp optionStruct::readArgs(int argc, char * argv[])
     int optchar;
 
     OptReturnTp result = GoOn;
-    while ((optchar = getopt(argc, argv, opts)) != -1)
+    while ((optchar = getopt(argc, argv, opts)) != -1 && result != Leave)
         {
         OptReturnTp res = doSwitch(optchar, optarg, argv[0]);
         if (res > result)
             result = res;
         }
-    if (!i && !c && !o && !e && !n && !f)
+    if(result != Leave)
         {
-        while (optind < argc)
+        if (!i && !c && !o && !e && !n && !f)
             {
-            if (!i)
-                i = dupl(argv[optind++]);
-            else if (c < -1)
+            while (optind < argc)
                 {
-                if (argv[optind] && *argv[optind])
-                    c = *argv[optind] - '0';
+                if (!i)
+                    i = dupl(argv[optind++]);
+                else if (c < -1)
+                    {
+                    if (argv[optind] && *argv[optind])
+                        c = *argv[optind] - '0';
 
-                if (c > 9 || c < 0)
-                    c = -1;
+                    if (c > 9 || c < 0)
+                        c = -1;
+                    }
+                else if (!o)
+                    o = dupl(argv[optind++]);
+                else if (!e)
+                    e = dupl(argv[optind++]);
+                else if (!n)
+                    n = dupl(argv[optind++]);
+                else if (!f)
+                    f = dupl(argv[optind++]);
+                else
+                    printf("Too many arguments:%s\n", argv[optind]);
                 }
-            else if (!o)
-                o = dupl(argv[optind++]);
-            else if (!e)
-                e = dupl(argv[optind++]);
-            else if (!n)
-                n = dupl(argv[optind++]);
-            else if (!f)
-                f = dupl(argv[optind++]);
-            else
-                printf("Too many arguments:%s\n", argv[optind]);
             }
-        }
-    else if (optind < argc)
-        {
-        if (i && c && o && e && n && f)
-            printf("Too many arguments:%s\n", argv[optind]);
-        else
-            printf("You cannot have a command line with both option-style arguments and option-less-fixed-position arguments:%s\n", argv[optind]);
+        else if (optind < argc)
+            {
+            if (i && c && o && e && n && f)
+                printf("Too many arguments:%s\n", argv[optind]);
+            else
+                printf("You cannot have a command line with both option-style arguments and option-less-fixed-position arguments:%s\n", argv[optind]);
+            }
+
+        completeArgs();
         }
 
-    completeArgs();
     return result;
     }
 

@@ -20,7 +20,7 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "1.74"
+#define VERSION "2.01"
 
 #include "affixtrain.h"
 #include "testrules.h"
@@ -3741,7 +3741,7 @@ int main(int argc, char **argv)
         {
         printf("affixtrain - supervised learning of affix rules for AFFIXTRAIN, version " VERSION "\n");
         printf("%s -h for usage\n", argv[0]);
-        exit(0);
+        return 0;
         }
     optionStruct options;
     switch (options.readArgs(argc, argv))
@@ -3749,10 +3749,10 @@ int main(int argc, char **argv)
         case GoOn:
             break;
         case Leave:
-            exit(0);
+            return 0;
         case Error:
             fprintf(stderr, "Error: Error in options. Exiting\n");
-            exit(1);
+            return 1;
         }
 
     if (options.verbose())
@@ -3774,13 +3774,13 @@ int main(int argc, char **argv)
             if (!haswritabledir(options.tempDir()))
                 {
                 printf("Cannot create file %s. Did you specify an existing and writable temp directory? (option -j)\n", tempDir("testFile", &options));
-                exit(-1);
+                return -1;
                 }
             }
         else if (!canwriteindir("."))
             {
             printf("Cannot write in the working directory.\n");
-            exit(-1);
+            return -1;
             }
 
         if (options.computeParms())
@@ -3842,4 +3842,5 @@ int main(int argc, char **argv)
             }
         }
     cleanUpOptions();
+    return 0;
     }

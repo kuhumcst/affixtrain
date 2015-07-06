@@ -839,6 +839,7 @@ matchResult vertex::lemmatise(trainingPair * pair)
         {
             case right:
                 pair->unset(b_wrong);
+                pair->unset(b_bench); // 20150706
                 pair->set(b_ok);
                 break;
             case wrong:
@@ -1654,8 +1655,9 @@ void trainingPair::makeWrongAmbiguousIfRightPresent(trainingPair *& Wrong,traini
                 p->Next = Ambiguous;
                 Ambiguous = p;
                 p->set(b_oksibling);
+                p->set(b_bench);
                 }
-            p->set(b_bench);
+            //p->set(b_bench); // It must not be possible to have all homographs put on the bench, because then they go all further to the next round. Exactly one should not be on the bench.
             }
         else // No homographs
             {

@@ -590,7 +590,7 @@ class vertexPointer
                         {
                         double rcount = (double)n->Right->count();
                         rcount /= Nnodes;
-                        assert(rcount >= 0.9);
+//                        assert(rcount >= 0.9);
                         ret += rcount*log(rcount);
                         }
                     if (n->IfPatternSucceeds)

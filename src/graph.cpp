@@ -908,6 +908,9 @@ matchResult vertex::lemmatise(trainingPair * pair)
                         ;
                     }
                 assert(pair->getTentativeRes() != yes);
+                break;
+            default:
+                ;
         }
 #endif
     return ret;

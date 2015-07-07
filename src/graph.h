@@ -133,10 +133,10 @@ class trainingPair
                      trainingPairPointer pointing to this trainingPair. */
         char * Lemma; // as computed
         vertex * V; // the rule that made Lemma
+        vertexPointer * applicableRules;
         unsigned int bits:4;
         unsigned int ambs:3;
         unsigned int tentativeAmbs:3;
-        vertexPointer * applicableRules;
         void deleteRules();
     public:
 #if AMBIGUOUS
@@ -235,7 +235,7 @@ class trainingPair
             {
             return tentativeAmbs;
             }
-        bool checkResAll(int what)
+        bool checkResAll(eResult what)
             {
             bool ret = false;
             trainingPair * p;
@@ -249,7 +249,7 @@ class trainingPair
                     printf("\n");
                     }
                 }
-            return false;
+            return ret;
             }
         void fprint(FILE * fp);
         void fprintAll(FILE * fp);

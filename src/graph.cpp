@@ -82,10 +82,6 @@ strng * protect(strng * p)
 	const char * txt = p->itsTxt();
 	if(strcspn(txt,"()\"!?' \t{}[]-#@%/\\;+*^$`&|=_:,.><") < strlen(txt))
 		{
-		/*
-		printf("txt: [%s]\n",txt);
-		getchar();
-		*/
 		strng * ret = new strng("\"");
 		strng slash("\\\\");
 		strng quot("\\\"");
@@ -94,7 +90,6 @@ strng * protect(strng * p)
 		while((pq = strpbrk(txt,"\\\"")) != NULL)
 			{
 			strng stxt(txt,pq - txt);
-			//printf("stxt %s pq %s\n",stxt.itsTxt(),pq);
 			if(*pq == '\\')
 				ret->cat(&stxt,&slash,(const strng *)0);
 			else
@@ -432,7 +427,6 @@ bool strongerCondition(char ** A,char ** B)
     char * b = *B;
     while(b && a)
         {
-        //printf("*A [%s] *B [%s] ",a,b);
         sub = 0;
         while(a)
             {
@@ -448,7 +442,6 @@ bool strongerCondition(char ** A,char ** B)
             }
         b = *++B;
         }
-//    printf("%s\n",(!*B && sub) ? "strongerCondition":"not strongerCondition");
     return !*B && sub;
     }
 
@@ -611,7 +604,6 @@ void trainingPair::allDeleteRules()
 
 trainingPair::~trainingPair()
     {
-    //printf("delete trainingPair %p %.*s %.*s\n",this, this->itsWordlength(),this->itsWord(), this->itsLemmalength(), this->itsLemmaHead());
     deleteRules();
     delete [] Lemma;
     Lemma = NULL;
@@ -749,13 +741,13 @@ int trainingPair::printAll(FILE * f,const char * h,int s)
             }
         fprintf(f,"\n");
         }
-    fprintf(f,"# of training pairs listed:%d\n",n);
+//    fprintf(f,"# of training pairs listed:%d\n",n);
     return n;
     }
 
 void trainingPair::print(FILE * f)
     {
-    fprintf(f,"%.*s\t%.*s",(int)(wordlength),Word,(int)(lemmalength),LemmaHead);
+    fprintf(f,"%.*s\t%.*s\t%s",(int)(wordlength),Word,(int)(lemmalength),LemmaHead,getRes() == undecided ? "undecided" : getRes() == yes ? "yes" : getRes() == no ? "no" : getRes() == notme ? "notme" : "???" );
     }
 
 void trainingPair::printMore(FILE * f)
@@ -801,8 +793,8 @@ matchResult vertex::lemmatisem(trainingPair * pair, char ** pmask, char ** plemm
     static char lemma[100];
     static char mask[100];
 #if AMBIGUOUS
-    pair->unset(b_ok);
-    pair->unset(b_wrong);
+//    pair->unset(b_ok);
+//    pair->unset(b_wrong);
 #endif
     if (applym(pair, sizeof(lemma), lemma, mask, options))
         {
@@ -813,14 +805,44 @@ matchResult vertex::lemmatisem(trainingPair * pair, char ** pmask, char ** plemm
         if (pair->isCorrect(lemma))
             {
 #if AMBIGUOUS
-            pair->set(b_ok);
+//            pair->set(b_ok);
+            trainingPair * q = pair->Alt;
+            while(q != pair)
+                {
+                q->setRes(notme);
+                q = q->Alt;
+                }
+            pair->setRes(yes);
+            /*printf("MATCH:");
+            pair->print(stdout);
+            printf("\n");*/
 #endif
             return right;
             }
         else
             {
 #if AMBIGUOUS
-            pair->set(b_wrong);
+//            pair->set(b_wrong);
+            switch(pair->getRes())
+                {
+                case yes:
+                    {
+                    trainingPair * q = pair->Alt;
+                    while(q != pair)
+                        {
+                        q->setRes(no);
+                        q = q->Alt;
+                        }
+                    }
+                    // fall through
+                case undecided:
+                case no:
+                    pair->setRes(no);
+                    break;
+                case notme:
+                    pair->setRes(notme);
+                    break;
+                }
 #endif
             return wrong;
             }
@@ -838,17 +860,54 @@ matchResult vertex::lemmatise(trainingPair * pair)
     switch (ret)
         {
             case right:
+                /*
                 pair->unset(b_wrong);
                 pair->unset(b_bench); // 20150706
                 pair->set(b_ok);
+                */
+                {
+                trainingPair * q = pair->Alt;
+                while(q != pair)
+                    {
+                    q->setTentativeRes(notme);
+                    q = q->Alt;
+                    }
+                pair->setTentativeRes(yes);
                 break;
+                }
+            /*
             case wrong:
                 pair->unset(b_ok);
                 pair->set(b_wrong);
                 break;
-            default:
-                pair->unset(b_ok);
-                pair->unset(b_wrong);
+            */
+            case wrong:
+//                pair->unset(b_ok);
+//                pair->unset(b_wrong);
+                switch(pair->getTentativeRes())
+                    {
+                    case yes:
+                        {
+                        trainingPair * q = pair->Alt;
+                        while(q != pair)
+                            {
+                            q->setTentativeRes(no);
+                            q = q->Alt;
+                            }
+                        }
+                        // fall through
+                    case undecided:
+                    case no:
+                        pair->setTentativeRes(no);
+                        break;
+                    case notme:
+                        pair->setTentativeRes(notme);
+                        break;
+                    default:
+                        //printf("?????????????????\n");
+                        ;
+                    }
+                assert(pair->getTentativeRes() != yes);
         }
 #endif
     return ret;
@@ -873,17 +932,79 @@ trainingPair * trainingPair::nth(int n)
     return pairs;
     }
 
+void vertex::markAmbiguousForNextRound(trainingPair * pair)
+    {
+    trainingPair * p;
+    for(p=pair;p;p = p->next())
+        {
+//        if(p->isset(b_ambiguous))
+            p->setRes(undecided);
+        }
+    //this->printRule(stdout,0,0);
+    for(p=pair;p;p = p->next())
+        {
+//        if(p->isset(b_ambiguous))
+            {
+            lemmatise(p);
+            /*if(p->getRes() == yes)
+                {
+                printf("yes:");
+                p->print(stdout);
+                printf("\n");
+                }*/
+            }
+        }
+    /*
+    for(p=pair;p;p = p->next())
+        {
+        if(p->isset(b_ambiguous))
+            {
+            p->print(stdout);
+            printf(" ");
+            switch(p->getRes())
+                {
+                case undecided:
+                    printf("undecided");
+                    break;
+                case yes:
+                    printf("yes");
+                    break;
+                case no:
+                    printf("no");
+                    break;
+                case notme:
+                    printf("notme");
+                    break;
+                default:
+                    printf("UNKNOWN");
+                }
+            printf("\n");
+            }
+        }
+    */
+    }
+
 
 int vertex::nlemmatise(trainingPair * pair,int n,bool InputRight)
     {
     int ret = 0;
+    trainingPair * p = pair;
+    int m = n;
+    while(p && m != 0)
+        {
+        p->setTentativeRes(undecided);
+        p = p->next();
+        --m;
+        }
     while(pair && n != 0)
         {
         ++ret;
         switch(lemmatise(pair))
             {
             case wrong:
-                if(!pair->isset(b_oksibling))
+                assert(pair->getTentativeRes() == no || pair->getTentativeRes() == notme);
+                //if(!pair->isset(b_oksibling))
+                if(pair->getTentativeRes() != notme)
                     { // don't count homographs that have an ok sibling
                     pair->addRule(this,InputRight,false);
                     }
@@ -892,6 +1013,7 @@ int vertex::nlemmatise(trainingPair * pair,int n,bool InputRight)
                     }
                 break;
             case right:
+                assert(pair->getTentativeRes() == yes);
                 // do opportunistically count homographs that are ok
                 pair->addRule(this,InputRight,true);
                 break;
@@ -909,6 +1031,7 @@ int vertex::nlemmatise(trainingPair * pair,int n,bool InputRight)
         pair = pair->next();
         --n;
         }
+    assert(!pair);
     return ret;;
     }
 
@@ -1179,7 +1302,8 @@ int trainingPair::cmpFreq(const trainingPair * B) const
 void trainingPair::fprint(FILE * famb)
     {
     fprintf(famb,"%.*s\t%.*s",(int)(this->wordlength),this->Word,(int)(this->lemmalength),this->LemmaHead);
-    if(this->Lemma && this->isset(b_wrong))
+    //if(this->Lemma && this->isset(b_wrong))
+    if(this->Lemma && this->getRes() != yes)
         {
         fprintf(famb,"\t%s",this->Lemma);
         if(V)
@@ -1348,7 +1472,8 @@ void trainingPair::fprintTraining(FILE * fp
 void trainingPair::fprintAll(FILE * famb)
     {
     fprintf(famb,"%.*s\t%.*s",(int)(this->wordlength),this->Word,(int)(this->lemmalength),this->LemmaHead);
-    if(this->Lemma && this->isset(b_wrong))
+    //if(this->Lemma && this->isset(b_wrong))
+    if(this->Lemma && this->getRes() != yes)
         {
         fprintf(famb,"\t%s",this->Lemma);
         if(V)
@@ -1423,7 +1548,6 @@ int printRules(node * nd
 #if BRACMATOUTPUT
             snode = makeNode(patreps,nr,pat,rep,L,R,&nLL,&nRR);
             fprintf(fobra,"(");
-            //printf("(");
 #else
             makeNode(patreps,pat,rep,L,R,&nLL,&nRR);
 #endif
@@ -1631,12 +1755,14 @@ void trainingPair::makeWrongAmbiguousIfRightPresent(trainingPair *& Wrong,traini
     Wrong = Ambiguous = 0;
     while(p)
         {
+        assert(p->getRes() != yes);
         trainingPair * nxt = p->Next;
         if(p->Alt != p) 
             { // there are homographs
             // perhaps one of its friends is ok.
             trainingPair * q = p->Alt;
-            while(q != p && !q->isset(b_ok))
+            //while(q != p && !q->isset(b_ok))
+            while(q != p && q->getRes() != yes)
                 {
                 q = q->Alt;
                 }
@@ -1646,16 +1772,17 @@ void trainingPair::makeWrongAmbiguousIfRightPresent(trainingPair *& Wrong,traini
                 // This inverts the order of training pairs in the Wrong list!
                 p->Next = Wrong;
                 Wrong = p;
-                p->unset(b_oksibling);
+                //p->unset(b_oksibling);
                 }
             else
                 { // An ok friend is found.
                 // Put p at the head of the Ambiguous list.
-                q->unset(b_bench);
+                assert(p->getRes() == notme);
+                //q->unset(b_bench);
                 p->Next = Ambiguous;
                 Ambiguous = p;
-                p->set(b_oksibling);
-                p->set(b_bench);
+                //p->set(b_oksibling);
+                //p->set(b_bench);
                 }
             //p->set(b_bench); // It must not be possible to have all homographs put on the bench, because then they go all further to the next round. Exactly one should not be on the bench.
             }
@@ -1724,6 +1851,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
     trainingPair ** pRight = &this->Right; // Pattern succeeds and replacement is right.
     assert(this->Right == NULL);
 
+    //V->printRule(stdout,0,0);
 
     this->splitTrainingPairList(*allRight,pNotApplicableRight,pWrong,pRight,options);
     this->splitTrainingPairList(*allWrong,pNotApplicableWrong,pWrong,pRight,options);
@@ -1736,6 +1864,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
 
     this->Right->allDeleteRules();
     trainingPair * Ambiguous = 0;
+
     if(Wrong)
         {
         Wrong->allDeleteRules();
@@ -1743,6 +1872,8 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
         Wrong->makeWrongAmbiguousIfRightPresent(Wrong,Ambiguous);
 #endif
         }
+    //this->Right->printAll(stdout,"rgt: ",' ');
+    //Ambiguous->printAll(stdout,"amb: ",' ');
     if(Wrong)
         {
         if(Ambiguous)
@@ -1881,7 +2012,6 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
             int outputR = (this->Right ? this->Right->count() : 0); 
             int outputW = (Wrong ? Wrong->count() : 0);
 #endif
-
             if(wpart < 0) // 20101207
                 {
                 for(vertex ** pvi = pvf;pvi < pvN;++pvi)
@@ -1936,6 +2066,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
             // hack:
 
             int CnT;
+            Wrong->checkResAll(yes);
 #if AMBIGUOUS
             // Take apart the wrongly lemmatised homographs that have a correctly lemmatised sibling. 
             Wrong->makeWrongAmbiguousIfRightPresent(Wrong,Ambiguous);
@@ -1968,6 +2099,15 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
             pnode = &(*pnode)->IfPatternFails;
             }
         while(Wrong);
+        /*if(this->Right)
+            {
+            this->Right->printAll(stdout,"rgt:\n",'\n');
+            //V->markAmbiguousForNextRound(this->Right);
+            }
+        if(Ambiguous)
+            {
+            Ambiguous->printAll(stdout,"AMB:\n",'\n');
+            }*/
 
         *pnode = 0;
         for(int i = 0;i < lastN;++i)

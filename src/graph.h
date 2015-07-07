@@ -87,19 +87,20 @@ class vertexCount;
 class ruleTemplate;
 class optionStruct;
 
-const int b_ambiguous     = 1 << 0;
-const int b_doublet       = 1 << 1;
-const int b_test          = 1 << 2;
-const int b_ok            = 1 << 3; // if AMBIGUOUS is set TRUE, b_ok and 
-const int b_wrong         = 1 << 4; // b_wrong are used during build-up as well
-const int b_skip          = 1 << 5;
-const int b_oksibling     = 1 << 6;
-const int b_bench         = 1 << 7; // Homographs that are not lemmatised 
+const int b_doublet       = 1 << 0;
+const int b_test          = 1 << 1;
+const int b_skip          = 1 << 2;
+const int b_ambiguous     = 1 << 3;
+//const int b_ok            = 1 << 4; // if AMBIGUOUS is set TRUE, b_ok and 
+//const int b_wrong         = 1 << 5; // b_wrong are used during build-up as well
+//const int b_oksibling     = 1 << 6;
+//const int b_bench         = 1 << 7; // Homographs that are not lemmatised 
                                     // correctly but that have a correctly
                                     // lemmatised sibling get this flag and 
                                     // are ignored for the remainder of the
                                     // training.
 
+enum eResult {undecided, yes, no, notme};
 
 class vertexPointer;
 
@@ -132,7 +133,9 @@ class trainingPair
                      trainingPairPointer pointing to this trainingPair. */
         char * Lemma; // as computed
         vertex * V; // the rule that made Lemma
-        int bits;
+        unsigned int bits:4;
+        unsigned int ambs:3;
+        unsigned int tentativeAmbs:3;
         vertexPointer * applicableRules;
         void deleteRules();
     public:
@@ -204,17 +207,49 @@ class trainingPair
             }
         static void makeChains(int allPairs,trainingPair * TrainingPair,trainingPair ** train,trainingPair ** test,optionStruct * options);
         static int makeNextTrainingSet(int allPairs,trainingPair * TrainingPair,FILE * train,FILE * done,FILE * combined, FILE * disamb,optionStruct * options);
-        void set(int bit)
+        inline void set(int bit)
             {
             bits |= bit;
             }
-        void unset(int bit)
+        inline void unset(int bit)
             {
             bits &= ~bit;
             }
-        int isset(int bit)
+        inline int isset(int bit)
             {
             return bit & bits;
+            }
+        inline void setRes(eResult r)
+            {
+            ambs = r;
+            }
+        inline unsigned int getRes()
+            {
+            return ambs;
+            }
+        inline void setTentativeRes(eResult r)
+            {
+            tentativeAmbs = r;
+            }
+        inline unsigned int getTentativeRes()
+            {
+            return tentativeAmbs;
+            }
+        bool checkResAll(int what)
+            {
+            bool ret = false;
+            trainingPair * p;
+            for(p = this;p;p = p->next())
+                {
+                if(p->getRes() == what)
+                    {
+                    ret = true;
+                    printf("CHECK:");
+                    p->print(stdout);
+                    printf("\n");
+                    }
+                }
+            return false;
             }
         void fprint(FILE * fp);
         void fprintAll(FILE * fp);
@@ -278,7 +313,7 @@ class trainingPair
         void print(FILE * f);
         void printMore(FILE * f);
         void printSep(FILE * f);
-        trainingPair():Next(0),Mask(0),Lemma(0),V(0),applicableRules(0)
+        trainingPair():Next(0),Mask(0),Lemma(0),V(0),applicableRules(0),ambs(undecided),tentativeAmbs(undecided)
             {
             ++TrainingPairCount;
             }
@@ -394,6 +429,7 @@ class vertex
         int goodness(trainingPair * pairs, topScore * Top);
         void nlemmatiseStart();
         int nlemmatise(trainingPair * pairs,int n,bool InputRight);
+        void markAmbiguousForNextRound(trainingPair * pair);
     };
 
 extern bool building;

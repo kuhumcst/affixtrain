@@ -2145,7 +2145,8 @@ int trainingPair::makeNextTrainingSet   ( int allPairs
                 fprintf(combined, "\t");
                 TrainingPair[pairs].printMore(combined);
                 }
-            else if (TrainingPair[pairs].isset(b_bench))
+//            else if (TrainingPair[pairs].isset(b_bench))
+            else if (TrainingPair[pairs].getRes() != yes)
                 {
                 TrainingPair[pairs].printMore(train);
                 fprintf(combined, "\t");

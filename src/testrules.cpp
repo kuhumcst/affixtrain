@@ -120,6 +120,7 @@ static const char * reducedlemmalistef(optionStruct * Options)
     return rwl;
     }
 
+/*
 static const char * newStyleRulesf(optionStruct * Options)
     {
     static char * nsr = 0;
@@ -139,7 +140,7 @@ static const char * newStyleRulesf(optionStruct * Options)
         }
     return nsr;
     }
-
+*/
 
 
 class lineab
@@ -1956,7 +1957,8 @@ void trainAndTest
                 optionStruct testOptions(*Options);
                 testOptions.seti(Ttraining);
                 testOptions.setc(CUTOFF_HIGH);
-                testOptions.seto(newStyleRulesf(Options));
+                //testOptions.seto(newStyleRulesf(Options));
+                testOptions.seto(Options->flexrules());
                 testOptions.sete(LGf(Options));
                 testOptions.setn("123");
                 testOptions.setf(XTRf(Options));
@@ -1977,15 +1979,19 @@ void trainAndTest
                     sprintf(controlResult,formatControlResult,fraction,count,cutoff);
                     sprintf(controlResultN,formatControlResultN,fraction,count,cutoff);
                     char Affixrules[250];
-                    const char * lastslash = strrchr(newStyleRulesf(Options),*SLASH);
+                    //const char * lastslash = strrchr(newStyleRulesf(Options),*SLASH);
+                    const char * lastslash = strrchr(Options->flexrules(),*SLASH);
                     const char * filename;
                     if(lastslash)
                         {
                         filename = lastslash + 1;
-                        sprintf(Affixrules,"%.*s%d%s%s",(int)(filename - newStyleRulesf(Options)),newStyleRulesf(Options),cutoff,SLASH,filename);
+                        //sprintf(Affixrules,"%.*s%d%s%s",(int)(filename - newStyleRulesf(Options)),newStyleRulesf(Options),cutoff,SLASH,filename);
+                        sprintf(Affixrules,"%.*s%d%s%s",(int)(filename - Options->flexrules()),Options->flexrules(),cutoff,SLASH,filename);
                         }
                     else
-                        sprintf(Affixrules,"%d%c%s",cutoff,DIRSEP,newStyleRulesf(Options));
+                        sprintf(Affixrules,"%d%c%s",cutoff,DIRSEP,Options->flexrules());
+                        //sprintf(Affixrules,"%d%c%s",cutoff,DIRSEP,newStyleRulesf(Options));
+                    
 
                     sprintf(Soutput,formatSOutput,cutoff,fraction,count);
                     sprintf(output,formatOutput,cutoff,fraction,count);
@@ -2252,7 +2258,7 @@ static int doit(optionStruct * Options)
         delete [] lines;
         lines = NULL;
         }
-    newStyleRulesf(0);// cleanup static local variable pointing to memory allocated on the heap.
+//    newStyleRulesf(0);// cleanup static local variable pointing to memory allocated on the heap.
     return 0;
     }
 

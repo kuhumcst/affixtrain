@@ -25,5 +25,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 bool flexcombi(const char * bestflexrules, const char * nextbestflexrules, const char * combinedflexrules);
 int prettyPrint(const char * flexrulesIn);
 int prettyPrintBracmat(const char * flexrulesIn);
-
+extern const char * prettytxt;
+extern const char * prettybra;
 #endif

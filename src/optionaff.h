@@ -105,7 +105,8 @@ class optionStruct
         const char * wordList() const{return i;}
         const char * tempDir() const{return j;}
         const char * columns() const{return n;}
-        const char * flexrules() const{return o;}
+        //const char * flexrules() const{return o;}
+        const char * flexrules();
         const char * bestParms() const{return B;}
         const char * currentParms() const{return P;}
         const char * ruleWeightFunction() const{return X;}

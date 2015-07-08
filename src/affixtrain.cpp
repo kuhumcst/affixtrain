@@ -20,7 +20,7 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "2.2"
+#define VERSION "2.21"
 
 #include "affixtrain.h"
 #include "testrules.h"
@@ -3638,8 +3638,6 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
             dest[0] = '\0';
             for (int cut = 0; cut <= options->cutoff(); ++cut)
                 {
-                sprintf(dest, bestRulesFormat, cut);
-
                 char dirname[500];
                 const char * lastslash = strrchr(nflexrules, DIRSEP);
                 const char * filename;
@@ -3700,9 +3698,25 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
                     }
                 if (hasDir)
                     {
-                    sprintf(command, "%s%c%s", dirname, DIRSEP, filename);
-                    remove(command);
-                    rename(dest, command);
+                    char finalPath[1024];
+                    sprintf(finalPath, "%s%c%s", dirname, DIRSEP, filename);
+                    remove(finalPath);
+                    sprintf(dest, bestRulesFormat, cut);
+                    rename(dest, finalPath);
+                    char * lastdest = dest+strlen(dest);
+                    char * lastfinalPath = finalPath+strlen(finalPath);
+                    if(prettytxt)
+                        {
+                        strcpy(lastdest,prettytxt);
+                        strcpy(lastfinalPath,prettytxt);
+                        rename(dest, finalPath);
+                        }
+                    if(prettybra)
+                        {
+                        strcpy(lastdest,prettybra);
+                        strcpy(lastfinalPath,prettybra);
+                        rename(dest, finalPath);
+                        }
                     }
                 }
             }

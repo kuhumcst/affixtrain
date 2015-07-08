@@ -93,6 +93,9 @@ buf+8   prefix pattern starts here
 #include <assert.h>
 
 
+const char * prettytxt = NULL;
+const char * prettybra = NULL;
+
 typedef unsigned char typetype;
 
 static void Strrev(char * s)
@@ -460,7 +463,9 @@ int prettyPrint(const char * flexrulesIn)
         }
 
     char filenameOut[1000];
-    sprintf(filenameOut, "%s.pretty.txt", flexrulesIn);
+    if(prettytxt == NULL)
+        prettytxt = ".pretty.txt";
+    sprintf(filenameOut, "%s%s", flexrulesIn,prettytxt);
 
     FILE * fm = fopen(filenameOut, "wb");
     ++openfiles;
@@ -681,7 +686,9 @@ int prettyPrintBracmat(const char * flexrulesIn)
         }
 
     char brafile[1000];
-    sprintf(brafile, "%s.pretty.bra", flexrulesIn);
+    if(prettybra == NULL)
+        prettybra = ".pretty.bra";
+    sprintf(brafile, "%s%s", flexrulesIn,prettybra);
     
     FILE * fmbra = fopen(brafile, "wb");
     ++openfiles;

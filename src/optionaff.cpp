@@ -795,6 +795,9 @@ void optionStruct::completeArgs()
             }
         }
 
+    if(WeightFunction != esupport)
+        C = -1; // This option is only used in combination with -XW.
+
     if (!i)
         {
         fprintf(stderr, "Error: No training data (-i option)\n");

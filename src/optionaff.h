@@ -83,7 +83,7 @@ class optionStruct
         int SwathIteration;
         int NumberOfNodes;
         int TrainingPairsLines;
-        double Weight;
+        double TreePenalty;
 //        double DepthWeight;
         char * Argstring;
         OptWeightFunction WeightFunction;
@@ -134,7 +134,7 @@ class optionStruct
         void setSwathIteration(int SI){SwathIteration = SI;}
         void setNumberOfNodes(int NoN){NumberOfNodes = NoN;}
         void setTrainingPairsLines(int TPL){TrainingPairsLines = TPL;}
-        void setWeight(double W){Weight = W;}
+        void setWeight(double W){TreePenalty = W;}
 
         void seti(const char * WordList);
         void seto(const char * Result);

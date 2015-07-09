@@ -2687,32 +2687,6 @@ static struct rotation best    =
         }         	         	         	          //(0 unresolved comparisons)
 */
 
-
-
-//int D[NPARMS]        = {0};
-
-/*
-static double  R[] = // 64 elements
-    {
-    1, 0, 0, 0,
-    0, 1, 0, 0,
-    0, 0, 1, 0,
-    0, 0, 0, 1,
-    1,-1, 0, 0,
-    1, 1, 0, 0,
-    1, 0,-1, 0,
-    1, 0, 1, 0,
-    1, 0, 0, 1,
-    1, 0, 0,-1,
-    0, 1,-1, 0,
-    0, 1, 1, 0,
-    0, 1, 0,-1,
-    0, 1, 0, 1,
-    0, 0, 1,-1,
-    0, 0, 1, 1
-    };
-*/
-
 static void plus(double * dest, double * term,int cols)
     {
     for(int col = 0;col < cols;++col)
@@ -2813,24 +2787,6 @@ void copybest()
     {
     parms = best; // go on with best result so far.
     }
-//static int minparmsoff = 0;
-
-
-//static const char * besttxt;
-//static const char * parmstxt = NULL;
-//static int OnlyZeros = NPARMS;
-/*
-static bool allZeros()
-    {
-    double x2 = 0;
-    int i;
-    for(i = 0;i < NPARMS;++i)
-        {
-        x2 += parms.Matrix[i]*parms.Matrix[i];
-        }
-    return x2 <= 0;
-    }
-*/
 
 
 static double integral(double x,int n)

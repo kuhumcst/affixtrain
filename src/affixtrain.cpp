@@ -20,7 +20,7 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "2.21"
+#define VERSION "2.22"
 
 #include "affixtrain.h"
 #include "testrules.h"
@@ -3313,22 +3313,26 @@ void computeParms(optionStruct * options)
 
                 if (options->verbose())
                     printf("swath %d brownNo %d currentNo %d\n", swath, brownNo, currentNo);
-                if (  (options->getWeightFunction() == econstant && brownNo <= currentNo) 
-                   || ( (  options->getWeightFunction() == esupport 
-                        || options->getWeightFunction() == eentropy
-                        )
-                      && brownweight <= currentweight
+                if (  (  brownNo <= currentNo
+                      && options->getWeightFunction() == econstant 
+                      ) 
+                   || (  brownweight <= currentweight
+                      && (  options->getWeightFunction() == esupport 
+                         || options->getWeightFunction() == eentropy
+                         || options->getWeightFunction() == edepth
+                         )
                       )
-                   || (options->getWeightFunction() == edepth && brownweight <= currentweight)
                    )
                     {
-                    bool improvement =  (  (options->getWeightFunction() == econstant  && (brownNo < currentNo)) 
-                                         || ( (options->getWeightFunction() == esupport
+                    bool improvement =  (  (  (brownNo < currentNo)
+                                           && options->getWeightFunction() == econstant
+                                           ) 
+                                        || (  (brownweight < currentweight)
+                                           && (  options->getWeightFunction() == esupport
                                               || options->getWeightFunction() == eentropy
+                                              || options->getWeightFunction() == edepth
                                               ) 
-                                            && (brownweight < currentweight)
-                                            )
-                                        || (options->getWeightFunction() == edepth     && (brownweight < currentweight))
+                                           )
                                         );
                     if (options->verbose())
                         printf("%s\n", improvement ? "IMPROVEMENT" : "same");

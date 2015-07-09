@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <assert.h>
 
 
-//        printf("usage: makeaffixrules -w <word list> -c <cutoff> -C <expected cutoff> -o <flexrules> -e <extra> -n <columns> -f <compfunc> [<word list> [<cutoff> [<flexrules> [<extra> [<columns> [<compfunc>]]]]]]\n");
+//        printf("usage: makeaffixrules -w <word list> -c <pruning threshold> -C <expected pruning threshold> -o <flexrules> -e <extra> -n <columns> -f <compfunc> [<word list> [<pruning threshold> [<flexrules> [<extra> [<columns> [<compfunc>]]]]]]\n");
 
 static char opts[] = "?@:A:B:b:c:C:D:d:e:F:f:hH:i:j:K:L:M:N:n:o:O:p:P:Q:q:R:s:T:t:v:X:x:W:" /* GNU: */ "wr";
 static char *** Ppoptions = NULL;
@@ -95,8 +95,8 @@ optionStruct::optionStruct(optionStruct & O)
 
 optionStruct::optionStruct()
     {
-    c = -1; // cutoff 
-    C = -1; // expected cutoff when determining the parameters using weightedcount()
+    c = -1; // pruning threshold, cutoff 
+    C = -1; // expected pruning threshold when determining the parameters using weightedcount() (-XW)
     // Rules with C+1 supporting word/lemma pairs have the highest penalty.
     // Rules with C or fewer supporting word/lemma pairs are probably best cut off.
     // To decide whether that is the case, the rules must be tested with OOV word/lemma pairs.
@@ -241,14 +241,14 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
         case 'X':
             X = dupl(locoptarg);
             break;
-        case 'c': // cutoff
+        case 'c': // pruning threshold, cutoff
             if (locoptarg && *locoptarg)
                 c = *locoptarg - '0';
 
             if (c > 9 || c < 0)
                 c = -1;
             break;
-        case 'C': // cutoff for weightedcount
+        case 'C': // pruning threshold (cutoff) for weightedcount
             if (locoptarg && *locoptarg)
                 C = *locoptarg - '0';
 
@@ -312,9 +312,9 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
         case 'h':
         case '?':
             printf("usage:\n"
-                "affixtrain [-@ <option file>] -i <word list> [-c <cutoff>] [-C <expected cutoff>] [-o <flexrules>] [-e <extra>] [-n <columns>] [-f <compfunc>] [-p[-]] [-s[-]] [-v[-]] [-j <tempdir>] [-L<n>] [-H<n>]"
+                "affixtrain [-@ <option file>] -i <word list> [-c <pruning threshold>] [-C <expected pruning threshold>] [-o <flexrules>] [-e <extra>] [-n <columns>] [-f <compfunc>] [-p[-]] [-s[-]] [-v[-]] [-j <tempdir>] [-L<n>] [-H<n>]"
                 "\nor\n"
-                "affixtrain [<word list> [<cutoff> [<flexrules> [<extra> [<columns> [<compfunc>]]]]]]"
+                "affixtrain [<word list> [<pruning threshold> [<flexrules> [<extra> [<columns> [<compfunc>]]]]]]"
                 "\nor\n"
                 "affixtrain -b <rules>"
                 "\n");
@@ -322,8 +322,8 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
                 "    A semicolon comments out the rest of the line.\n"
                 );
             printf("-i: (input) full form / lemma list\n");
-            printf("-c: discard rules with little support. 0 <= cutoff <= 9\n");
-            printf("-C: (together with -p) expected cutoff (parameter for rule weight function). 0 <= cutoff <= 9\n");
+            printf("-c: discard rules with little support. 0 <= pruning threshold <= 9\n");
+            printf("-C: (together with -p and -XW) expected pruning threshold (parameter for tree penalty function). 0 <= expected pruning threshold <= 9\n");
             printf("-D: penalty parameters. Four or six: R__R;W__R;R__W;W__W[;R__NA;W__NA]\n");
             printf("-o: (output) default is to automatically generate file name\n");
             printf("-e: language code (da,en,is,nl,ru, etc)\n");
@@ -336,13 +336,11 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
             printf("-K: number of differently sized fractions of trainingdata\n");
             printf("-N: number of iterations of training with same fraction of training data when fraction is minimal\n");
             printf("-M: number of iterations of training with same fraction of training data when fraction is maximal\n");
-            printf("-X: Rule weight function\n");
-            printf("  C:All rules the same weight\n");
-            printf("  D:Rules weight = recursion depth (about proportional with number of non-wildcard characters in pattern)\n");
-            printf("  E:Rules weight = entropy\n");
-            printf("  W:Lower (=better) weight for rules with more supporting examples at a node\n");
-            printf("-W: minimise weight (lower (better) the more supporting examples at a node), not count (sum of rules) (with -p or -f0)\n");
-            printf("-d: minimise weight times rule depth, not count (sum of rules) (with -p or -f0)\n");
+            printf("-X: Tree penalty function C D E or W:\n");
+            printf("  C All rules contribute with the same penalty\n");
+            printf("  D Rules deeper in the tree contribute more than rules near the root. Or: a rule's contribution is proportional with number of non-wildcard characters in the rule pattern.\n");
+            printf("  E Trees evenly distributing examples over the nodes have lowest penalty. (Strive for max entropy)\n");
+            printf("  W Rules with one less supporting examples than the expected pruning threshold. Set expected pruning threshold with -C parameter.\n");
             printf("-P: write parameters to file (default parms.txt if -p or -f0, otherwise no parameter file)\n");
             printf("-t: test the rules, not with the training data\n");
             printf("-T: test the rules with the training data\n");
@@ -775,6 +773,8 @@ void optionStruct::completeArgs()
         if(!strcmp(X,"W"))
             {
             WeightFunction = esupport;
+            if(C < 0)
+                C = 0;
             }
         else if(!strcmp(X,"D"))
             {
@@ -960,8 +960,8 @@ void optionStruct::print(FILE * fp) const
         fprintf(fp, "               ; (N/A) percentage of training pairs to set aside for testing\n-q %d\n", q);
         fprintf(fp, "               ; (N/A) penalties to decide which rule survives\n"); if (nD > 0){ fprintf(fp, "-D "); for (int i = 0; i < nD; ++i)fprintf(fp, "%f;", D[i]); fprintf(fp, "\n"); } else fprintf(fp, ";-D not specified\n");
         fprintf(fp, "               ; (N/A) compute parms (%s)\n-p %s\n", ComputeParms ? "yes" : "no", ComputeParms ? "" : "-");
-        fprintf(fp, "               ; (N/A) expected cutoff\n-C %d\n", C);
-        fprintf(fp, "               ; (N/A) rule weight (%s)\n-X %s\n"
+        fprintf(fp, "               ; (N/A) expected pruning threshold\n-C %d\n", C);
+        fprintf(fp, "               ; (N/A) tree penalty (%s)\n-X %s\n"
                 , WeightFunction == econstant ? "constant" 
                 : WeightFunction == esupport ? "more support is better" 
                 : WeightFunction == eentropy ? "higher entropy is better"
@@ -975,7 +975,7 @@ void optionStruct::print(FILE * fp) const
         fprintf(fp, "               ; (N/A) number of iterations of training with same fraction of training data when fraction is maximal\n-M %f\n", M);
         fprintf(fp, "               ; (N/A) competition function\n-f %s\n", f ? f : "?");
         fprintf(fp, "               ; (N/A) redo training after homographs for next round are removed (%s)\n-R %s\n", Redo ? "yes" : "no", Redo ? "" : "-");
-        fprintf(fp, "               ; (N/A) cutoff\n-c %d\n", c);
+        fprintf(fp, "               ; (N/A) pruning threshold\n-c %d\n", c);
         }
     else
         {
@@ -998,8 +998,11 @@ void optionStruct::print(FILE * fp) const
             {
             assert(P);
             assert(B);
-            fprintf(fp, "               ; expected cutoff\n-C %d\n", C);
-            fprintf(fp, "               ; rule weight (%s)\n-X %s\n"
+            if(WeightFunction == esupport)
+                fprintf(fp, "               ; expected optimal pruning threshold\n-C %d\n", C);
+            else
+                fprintf(fp, "               ; expected optimal pruning threshold (only effective in combination with -XW)\n-C %d\n", C);
+            fprintf(fp, "               ; tree penalty (%s)\n-X %s\n"
                     , WeightFunction == econstant ? "constant" 
                     : WeightFunction == esupport ? "more support is better" 
                     : WeightFunction == eentropy ? "higher entropy is better"
@@ -1013,13 +1016,13 @@ void optionStruct::print(FILE * fp) const
             fprintf(fp, "               ; number of iterations of training with same fraction of training data when fraction is maximal\n-M %f\n", M);
             fprintf(fp, "               ; (N/A) competition function\n-f %s\n", f ? f : "?");
             fprintf(fp, "               ; (N/A) redo training after homographs for next round are removed (%s)\n-R %s\n", Redo ? "yes" : "no", Redo ? "" : "-");
-            fprintf(fp, "               ; (N/A) cutoff\n-c %d\n", c);
+            fprintf(fp, "               ; (N/A) pruning threshold\n-c %d\n", c);
             }
         else
             {
             assert(f);
-            fprintf(fp, "               ; (N/A) expected cutoff\n-C %d\n", C);
-            fprintf(fp, "               ; (N/A) rule weight (%s)\n-X %s\n"
+            fprintf(fp, "               ; (N/A) expected pruning threshold\n-C %d\n", C);
+            fprintf(fp, "               ; (N/A) tree penalty (%s)\n-X %s\n"
                     , WeightFunction == econstant ? "constant" 
                     : WeightFunction == esupport ? "more support is better" 
                     : WeightFunction == eentropy ? "higher entropy is better"
@@ -1033,7 +1036,7 @@ void optionStruct::print(FILE * fp) const
             fprintf(fp, "               ; (N/A) number of iterations of training with same fraction of training data when fraction is maximal\n-M %f\n", M);
             fprintf(fp, "               ; competition function\n-f %s\n", f);
             fprintf(fp, "               ; redo training after homographs for next round are removed (%s)\n-R %s\n", Redo ? "yes" : "no", Redo ? "" : "-");
-            fprintf(fp, "               ; cutoff\n-c %d\n", c);
+            fprintf(fp, "               ; pruning threshold\n-c %d\n", c);
             }
         fprintf(fp, "               ; test without training data (%s)\n-T %s\n", TrainTest ? "yes" : "no", TrainTest ? "" : "-");
         fprintf(fp, "               ; test (without training data) (%s)\n-t %s\n", Test ? "yes" : "no", Test ? "" : "-");
@@ -1048,13 +1051,13 @@ void optionStruct::print(FILE * fp) const
         switch(WeightFunction)
             {
             case esupport:
-                fprintf(fp, "               ; Current weight-by-support: %.*e\n", DBL_DIG+2,Weight);
+                fprintf(fp, "               ; Current tree-penalty-by-support: %.*e\n", DBL_DIG+2,TreePenalty);
                 break;
             case eentropy:
-                fprintf(fp, "               ; Current weight-by-entropy: %.*e\n", DBL_DIG + 2, Weight);
+                fprintf(fp, "               ; Current tree-penalty-by-entropy: %.*e\n", DBL_DIG + 2, TreePenalty);
                 break;
             case edepth:
-                fprintf(fp, "               ; Current weight-by-depth: %.*e\n", DBL_DIG+2,Weight);
+                fprintf(fp, "               ; Current tree-penalty-by-depth: %.*e\n", DBL_DIG+2,TreePenalty);
                 break;
             case econstant:
                 break;

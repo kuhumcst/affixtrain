@@ -146,8 +146,8 @@ class optionStruct
 
         const char * argstring() const;
         void print(FILE * fp) const;
-        void printArgFile(char * evaluation) const;
-        
+        void printArgFile() const;
+        void printEvaluation(const char * introduction,char * evaluation,char * postScriptum) const;        
         optionStruct();
         optionStruct(optionStruct & O);
         ~optionStruct();

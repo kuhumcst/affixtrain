@@ -2716,7 +2716,7 @@ void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,int
     options->setTrainingPairsLines(lines);
     options->setWeight(weight);
 
-    options->printArgFile(0);
+    options->printArgFile();
     printf("%d.%d %d  \tparms ",swath,iterations,Nnodes);
     int i = 0;
     for(;i < NPARMS;++i)

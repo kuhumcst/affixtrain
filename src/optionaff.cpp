@@ -172,30 +172,21 @@ void optionStruct::detectFloatingPointNumbers(char * S)
     double d;
     char * s;
     char * endptr = 0;
-    for (s = S; (t = strchr(s, ';')) != 0; s = t + 1)
+    for (s = S;;s = t + 1)
         {
         d = strtod(s, &endptr);
         if (endptr && endptr > s && (endptr[-1] == '.' || (endptr[-1] >= '0' && endptr[-1] <= '9')))
             {
-            if (d >= 0.0)
-                Sum += d;
-            else
-                Sum -= d;
+            Sum += d*d;
             ++n;
             }
-        }
-    d = strtod(s, &endptr);
-    if (endptr && endptr > s && (endptr[-1] == '.' || (endptr[-1] >= '0' && endptr[-1] <= '9')))
-        {
-        if (d >= 0.0)
-            Sum += d;
-        else
-            Sum -= d;
-        ++n;
+        t = strchr(s, ';');
+        if(t == 0)
+            break;
         }
     if (Sum <= 0)
         {
-        fprintf(stderr, "Sum of penalty parameters shall not be zero\n");
+        fprintf(stderr, "Sum of squared penalty parameters shall not be zero\n");
         exit(-3);
         }
     if (n == 4 || n == 6)
@@ -203,15 +194,15 @@ void optionStruct::detectFloatingPointNumbers(char * S)
         nD = n;
         D = new double[n];
         n = 0;
-        for (s = S; (t = strchr(s, ';')) != 0; s = t + 1)
+        for (s = S;;s = t + 1)
             {
             d = strtod(s, &endptr);
             if (endptr && endptr > s && (endptr[-1] == '.' || (endptr[-1] >= '0' && endptr[-1] <= '9')))
                 D[n++] = d / Sum;
+            t = strchr(s, ';');
+            if(t == 0)
+                break;
             }
-        d = strtod(s, &endptr);
-        if (endptr && endptr > s && (endptr[-1] == '.' || (endptr[-1] >= '0' && endptr[-1] <= '9')))
-            D[n] = d / Sum;
         }
     else
         {
@@ -342,7 +333,7 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
             printf("  E Trees evenly distributing examples over the nodes have lowest penalty. (Strive for max entropy)\n");
             printf("  W Rules with one less supporting examples than the expected pruning threshold. Set expected pruning threshold with -C parameter.\n");
             printf("-P: write parameters to file (default parms.txt if -p or -f0, otherwise no parameter file)\n");
-            printf("-t: test the rules, not with the training data\n");
+            printf("-t: test the rules with data not used for training\n");
             printf("-T: test the rules with the training data\n");
             printf("-F; create flexrules. Can be combined with computation (-p) and testing (-t, -T)\n");
             printf("-n: columns (default 120):\n");
@@ -460,10 +451,10 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
         case 'x': // verbose
             Remove = locoptarg && *locoptarg == '-' ? false : true;
             break;
-        case 'T': // test with training data
+        case 'T': // test with the training data
             TrainTest = locoptarg && *locoptarg == '-' ? false : true;
             break;
-        case 't': // test (not with training data)
+        case 't': // test with data that is not use for training
             Test = locoptarg && *locoptarg == '-' ? false : true;
             break;
         case 'F': // create flexrules
@@ -1041,11 +1032,12 @@ void optionStruct::print(FILE * fp) const
             fprintf(fp, "               ; redo training after homographs for next round are removed (%s)\n-R %s\n", Redo ? "yes" : "no", Redo ? "" : "-");
             fprintf(fp, "               ; pruning threshold\n-c %d\n", c);
             }
-        fprintf(fp, "               ; test without training data (%s)\n-T %s\n", TrainTest ? "yes" : "no", TrainTest ? "" : "-");
-        fprintf(fp, "               ; test (without training data) (%s)\n-t %s\n", Test ? "yes" : "no", Test ? "" : "-");
+        fprintf(fp, "               ; test with the training data (%s)\n-T %s\n", TrainTest ? "yes" : "no", TrainTest ? "" : "-");
+        fprintf(fp, "               ; test with data not used for training (%s)\n-t %s\n", Test ? "yes" : "no", Test ? "" : "-");
         fprintf(fp, "               ; create flexrules (%s)\n-F %s\n", F ? "yes" : "no", F ? "" : "-");
         fprintf(fp, "               ; Number of blobs found in word list: %d whereof used for training %d\n", Blobs, FracBlobs == 0 ? Blobs : FracBlobs);
         fprintf(fp, "               ; Number of lines found in word list: %d whereof used for training %d\n", Lines, FracLines == 0 ? Lines : FracLines);
+        /*
         fprintf(fp, "               ; Current training size step: %d\n", Swath);
         fprintf(fp, "               ; Current iteration in current training size step: %d\n", SwathIteration);
         fprintf(fp, "               ; Current number of nodes: %d\n", NumberOfNodes);
@@ -1067,6 +1059,7 @@ void optionStruct::print(FILE * fp) const
             default:
                 break;
             }
+        */
         }
     }
 
@@ -1156,7 +1149,7 @@ const char * optionStruct::argstring() const
     return name;
     }
 
-void optionStruct::printArgFile(char * evaluation) const
+void optionStruct::printArgFile() const
     {
     const char * Args = argstring();
     char * name = new char[strlen("parms.")+strlen(Args)+1];
@@ -1165,13 +1158,31 @@ void optionStruct::printArgFile(char * evaluation) const
     FILE * fp = fopen(name, "wb");
     ++openfiles;
     print(fp);
-    if(evaluation)
-        {
-        fprintf(fp,"\n; Evaluation:\n; -----------\n%s",evaluation);
-        }
     --openfiles;
     fclose(fp);
     }
+
+
+void optionStruct::printEvaluation(const char * introduction,char * evaluation,char * postScriptum) const
+    {
+    if(evaluation)
+        {
+        const char * Args = argstring();
+        char * name = new char[strlen("parms.")+strlen(Args)+1];
+        strcpy(name, "parms.");
+        strcat(name, Args);
+        FILE * fp = fopen(name, "ab");
+        ++openfiles;
+        fprintf(fp,"\n; Evaluation:\n; -----------\n%s\n%s",introduction,evaluation);
+        if(postScriptum && *postScriptum)
+            {
+            fprintf(fp,"\n; Postscriptum\n\n%s",postScriptum);
+            }
+        --openfiles;
+        fclose(fp);
+        }
+    }
+
 
 const char * optionStruct::flexrules()
     {

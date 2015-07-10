@@ -189,6 +189,10 @@ class lineab
             else
                 return 0;
             }
+        bool computable()
+            {
+            return N >= 2;
+            }
     };
 
 #define CUTOFFS 10
@@ -1795,6 +1799,140 @@ class counting
     };
 
 
+void createReport(counting c[CUTOFFS],int maxcount,int ttrainlines,lineab AffixLine[CUTOFFS],int noOfSteps,int lastFraction,optionStruct * Options)
+    {
+    const char * texts[] =    {
+        "prun. thrshld. ",
+        "rules          ",
+        "rules%         ",
+        "same%          ",
+        "ambi1%         ",
+        "ambi2%         ",
+        "ambi3%         ",
+        "diff%          ",
+        "same%stdev     ",
+        "ambi1%stdev    ",
+        "ambi2%stdev    ",
+        "ambi3%stdev    ",
+        "diff%stdev     ",
+        "amb.rules%     ",
+        "false_amb%     ",
+        "false_not_amb% ",
+        "true_amb%      ",
+        "true_not_amb%  ",
+        "precision      ",
+        "recall         ",
+        "#rules =       "
+        };
+    int nocol = 7;
+    int norow = sizeof(texts)/sizeof(texts[0]);
+    int presentRows = norow;
+    const char * introduction;
+    char postScriptum[500];
+    if(AffixLine[0].computable())
+        {
+        introduction = "; Lemmatization results for data that is not part of the training data.\n";
+            
+        sprintf(postScriptum,
+            "; The number of rules can be estimated from the number of training examples by\n"
+            "; a power law. See the last line in the table above, which is based on %d\n"
+            "; different samples from the total available training data mass varying in size\n"
+            "; from %.2f %% to %.2f %%",noOfSteps,FRACTION_LOW/100.0,lastFraction/100.0);
+        }
+    else
+        {
+        introduction = 
+            "; Lemmatization results for all data in the training set.\n"
+            "; For pruning threshold 0 there may be no errors (diff%%).\n";
+        postScriptum[0] = 0;
+        --presentRows;
+        }
+    int nocell = norow*nocol;
+    const char * cell[sizeof(texts)/sizeof(texts[0]) * 7];
+    for(int j = 0;j < norow;++j)
+        cell[j] = texts[j];
+    for(int k = 0;k < nocol - 1;++k)
+        {
+        c[k].validationcolumn(cell + (k + 1)*norow, k, maxcount, ttrainlines, AffixLine + k, norow);
+        }
+    int len = 0;
+    for(int m = 0;m < nocell;++m)
+        len += strlen(cell[m]);
+    char * report = new char[len + 3*norow + 1];
+    report[0] = 0;
+    for(int row = 0;row < presentRows;++row)
+        {
+        strcat(report,"; ");
+        for(int col = 0;col < 7;++col)
+            {
+            int ind = row + col*norow;
+            strcat(report,cell[ind]);
+            }
+        strcat(report,"\n");
+        }
+    Options->printEvaluation(introduction,report,postScriptum);
+    delete [] report;
+    for(int row2 = 0;row2 < norow;++row2)
+        {
+        for(int col = 1;col < 7;++col)
+            {
+            delete [] cell[row2+col*norow];
+            }
+        }
+    }
+
+int nextFraction(int fraction)
+    {
+    switch(STEPSIZE)
+        {
+        case 100:
+            if(fraction < 1)
+                ++fraction;
+            else
+                fraction *= 2; 
+            break;
+        case 50:
+            if(fraction < 2)
+                ++fraction;
+            else 
+                {
+                fraction *= 3; 
+                fraction /= 2;
+                }
+            break;
+        default:
+        case 25:
+            if(fraction < 4)
+                ++fraction;
+            else 
+                {
+                fraction *= 5; 
+                fraction /= 4;
+                }
+            break;
+        case 10:
+            if(fraction < 10)
+                ++fraction;
+            else 
+                {
+                fraction *= 11; 
+                fraction /= 10;
+                }
+            break;
+        case 5:
+            if(fraction < 20)
+                ++fraction;
+            else 
+                {
+                fraction *= 21; 
+                fraction /= 20;
+                }
+            break;
+        }
+    return fraction;
+    }
+
+
 void trainAndTest
         (int linecnt
 #if CLUMPSENSITIVE
@@ -1857,7 +1995,8 @@ void trainAndTest
         }
 
     int fraction = 1;// 0 <= fraction <= 10000
-    for(fraction = FRACTION_LOW;fraction <= FRACTION_HIGH;)
+    int noOfSteps;
+    for(fraction = FRACTION_LOW,noOfSteps = 1;fraction <= FRACTION_HIGH;fraction = nextFraction(fraction),++noOfSteps)
         {
         if(!fptally)
             {
@@ -2058,62 +2197,9 @@ void trainAndTest
                         lowestntdifferent = c[cutoff].n.tdifferent;
                         }
                     }
-                const char * texts[] =    {
-                                    "cutoff         ",
-                                    "rules          ",
-                                    "rules%         ",
-                                    "same%          ",
-                                    "ambi1%         ",
-                                    "ambi2%         ",
-                                    "ambi3%         ",
-                                    "diff%          ",
-                                    "same%stdev     ",
-                                    "ambi1%stdev    ",
-                                    "ambi2%stdev    ",
-                                    "ambi3%stdev    ",
-                                    "diff%stdev     ",
-                                    "amb.rules%     ",
-                                    "false_amb%     ",
-                                    "false_not_amb% ",
-                                    "true_amb%      ",
-                                    "true_not_amb%  ",
-                                    "precision      ",
-                                    "recall         ",
-                                    "#rules =       "
-                                    };
-                int nocol = 7;
-                int norow = sizeof(texts)/sizeof(texts[0]);
-                int nocell = norow*nocol;
-                const char * cell[sizeof(texts)/sizeof(texts[0]) * 7];
-                for(int j = 0;j < norow;++j)
-                    cell[j] = texts[j];
-                for(int k = 0;k < nocol - 1;++k)
+              if(nextFraction(fraction) > FRACTION_HIGH)
                     {
-                    c[k].validationcolumn(cell + (k + 1)*norow, k, maxcount, ttrainlines, AffixLine + k, norow);
-                    }
-                int len = 0;
-                for(int m = 0;m < nocell;++m)
-                    len += strlen(cell[m]);
-                char * report = new char[len + 3*norow + 1];
-                report[0] = 0;
-                for(int row = 0;row < norow;++row)
-                    {
-                    strcat(report,"; ");
-                    for(int col = 0;col < 7;++col)
-                        {
-                        int ind = row + col*norow;
-                        strcat(report,cell[ind]);
-                        }
-                    strcat(report,"\n");
-                    }
-                Options->printArgFile(report);
-                delete [] report;
-                for(int row2 = 0;row2 < norow;++row2)
-                    {
-                    for(int col = 1;col < 7;++col)
-                        {
-                        delete [] cell[row2+col*norow];
-                        }
+                    createReport(c,maxcount,ttrainlines,AffixLine,noOfSteps,fraction,Options);
                     }
                 c[bestcutoff].printingNice(bestcutoff,fraction,maxcount,fptab,ttrainlines,Options);
                 FILE * fp = fopen(paramfile,"r");
@@ -2132,52 +2218,7 @@ void trainAndTest
                 fptab = 0;
                 }
             }
-        switch(STEPSIZE)
-            {
-            case 100:
-                if(fraction < 1)
-                    ++fraction;
-                else
-                    fraction *= 2; 
-                break;
-            case 50:
-                if(fraction < 2)
-                    ++fraction;
-                else 
-                    {
-                    fraction *= 3; 
-                    fraction /= 2;
-                    }
-                break;
-            default:
-            case 25:
-                if(fraction < 4)
-                    ++fraction;
-                else 
-                    {
-                    fraction *= 5; 
-                    fraction /= 4;
-                    }
-                break;
-            case 10:
-                if(fraction < 10)
-                    ++fraction;
-                else 
-                    {
-                    fraction *= 11; 
-                    fraction /= 10;
-                    }
-                break;
-            case 5:
-                if(fraction < 20)
-                    ++fraction;
-                else 
-                    {
-                    fraction *= 21; 
-                    fraction /= 20;
-                    }
-                break;
-            }
+       
         delete [] Counts;
 #if OnCE
         break; // STOP after after first results
@@ -2205,11 +2246,11 @@ static int readFile
     }
 
 
-static int doit(optionStruct * Options)
+static int doit(optionStruct * Options,bool TrainTest)
     {
     const char * XT;
     const char * TT;
-    init(Options->trainTest(),XT,TT);
+    init(TrainTest,XT,TT);
     int sep = '\t';
 
     if(XTRf(Options) == NULL)
@@ -2250,11 +2291,6 @@ static int doit(optionStruct * Options)
             ,Options
             );
 
-
-
-
-
-
         delete [] lines;
         lines = NULL;
         }
@@ -2266,7 +2302,10 @@ int testrules(optionStruct * Options)
     {
     if(lemmalistef(Options) && LGf(Options) && XTRf(Options))
         {
-        doit(Options);
+        if(Options->trainTest())
+            doit(Options,true);
+        if(Options->test())
+            doit(Options,false);
         return 0;
         }
 

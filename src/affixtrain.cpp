@@ -20,7 +20,7 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "2.23"
+#define VERSION "2.24"
 
 #include "affixtrain.h"
 #include "testrules.h"
@@ -3777,7 +3777,7 @@ int main(int argc, char **argv)
     if (options.verbose())
         {
         options.print(stdout);
-        options.printArgFile(0);
+        options.printArgFile();
         }
 
 
@@ -3814,8 +3814,9 @@ int main(int argc, char **argv)
 
         init(&options); // TODO Check that penalties are the best ones, not the last ones tried.
 
-        if(options.test())
+        if(options.test() || options.trainTest())
             {
+            options.printArgFile();
             testrules(&options);
             }
 

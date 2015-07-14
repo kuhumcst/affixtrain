@@ -241,7 +241,7 @@ class trainingPair
             trainingPair * p;
             for(p = this;p;p = p->next())
                 {
-                if(p->getRes() == what)
+                if(p->getRes() == (unsigned int)what)
                     {
                     ret = true;
                     printf("CHECK:");

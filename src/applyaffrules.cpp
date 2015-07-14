@@ -34,9 +34,6 @@ struct var
     const char * e;
     };
 
-//static char * buf = 0;
-//static long buflen = 0;
-
 class buffer
     {
     public:

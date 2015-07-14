@@ -194,7 +194,7 @@ static void printpat(char ** fields,int findex,char * start,char * end,FILE * fm
         }
     }
 
-static char * printrulesBracmat
+static void printrulesBracmat
                 ( char * rules
                 , char * max
                 , char * start
@@ -205,9 +205,6 @@ static char * printrulesBracmat
                 , int & nr
                 , int indent
                 );
-
-
-
 
 struct fileBuffer
     {
@@ -269,41 +266,6 @@ struct fileBuffer
 
 
 
-
-
-/*
-static char * printlistBracmat
-                ( char * p
-                , char * e
-                , int indent
-                , char * start
-                , char * end
-                , FILE * fmbra
-                , strng * L
-                , strng * R
-                , int & nr
-                , bool comma
-                )
-    {
-    if(p < e)
-        {
-        if(comma)
-            fprintf(fmbra,"%*s",2+indent*2,",");
-        size_t stlen = strlen(start);
-        size_t endlen = strlen(end);
-        while(p < e)
-            {
-            p = printrulesBracmat(p,e,start,end,fmbra,L,R,nr,indent+1);
-            start[stlen] = '\0';
-            Strrev(end);
-            end[endlen] = 0;
-            Strrev(end);
-            }
-        fprintf(fmbra,"%*s\n",2+indent*2,"");
-        }
-    return e;
-    }
-*/
 
 
 static char * printrules
@@ -483,7 +445,7 @@ int prettyPrint(const char * flexrulesIn)
     }
 
 
-static char * printChainBracmat
+static void printChainBracmat
 (char * p
 , char * e
 , int indent
@@ -493,18 +455,15 @@ static char * printChainBracmat
 , strng * L
 , strng * R
 , int & nr
-//, char * msg
 )
     {
     int index = *(int *)p;
     assert(!(index & 3));
     if (index > 0)
         {
-        //fprintf(fmbra, "%*s( %s.\n", indent, "", msg);
         fprintf(fmbra, "%*s(\n", indent, "");
         for (;;)
             {
-            //fprintf(fmbra, "%*s(ALT.\n", indent, "");
             fprintf(fmbra, "%*s(\n", indent, "");
             if (index == 4 || index == -4)
                 fprintf(fmbra, "%*s", indent, " parent\n");
@@ -518,7 +477,6 @@ static char * printChainBracmat
 					, L, R, nr
 					, indent
 					);
-            //fprintf(fmbra, "%*s ENDALT)\n", indent, "");
             fprintf(fmbra, "%*s )\n", indent, "");
 
             if (index > 0)
@@ -531,14 +489,12 @@ static char * printChainBracmat
             else
                 break;
             }
-        //fprintf(fmbra, "%*s END %s)\n", indent, "", msg);
         fprintf(fmbra, "%*s)\n", indent, "");
         }
-    return e;
     }
 
 
-static char * printrulesBracmat
+static void printrulesBracmat
                 ( char * rules
                 , char * max
                 , char * start
@@ -550,129 +506,120 @@ static char * printrulesBracmat
                 , int indent
                 )
     {
-    if (max <= rules)
-        return rules;
-    ptrdiff_t index = *(int *)rules;
-    assert(!(index & 3));
-    if (index == 0)
-        index = max - rules;
-    assert(!(index & 3));
-    char * p = rules + sizeof(int);
-    typetype type = *(typetype*)p;
-    if (type > 3)
-        type = 0;
-    else
-        p += sizeof(typetype);
-    size_t slen = strlen(start);
-    size_t elen = strlen(end);
-    fprintf(fmbra,"\n%*s",indent*2,"(\n");
-
-	char * fields[44];
-    fields[0] = p;
-    int findex = 1;
-    while(*p != '\n')
+    int parens = 0;
+    while(max > rules)
         {
-        if(*p == '\t')
-            fields[findex++] = ++p;
+        ptrdiff_t index = *(int *)rules;
+        assert(!(index & 3));
+        if (index == 0)
+            index = max - rules;
+        assert(!(index & 3));
+        char * p = rules + sizeof(int);
+        typetype type = *(typetype*)p;
+        if (type > 3)
+            type = 0;
         else
-            ++p;
+            p += sizeof(typetype);
+        size_t slen = strlen(start);
+        size_t elen = strlen(end);
+        fprintf(fmbra,"\n%*s",indent*2,"(\n");
+        ++parens;
+	    char * fields[44];
+        fields[0] = p;
+        int findex = 1;
+        while(*p != '\n')
+            {
+            if(*p == '\t')
+                fields[findex++] = ++p;
+            else
+                ++p;
+            }
+
+        fields[findex] = ++p; // p is now within 3 bytes from the next record.
+        fprintf(fmbra,"%*s",indent*2,"");
+        char pattern[1000];
+        char replacement[1000];
+        printpatBracmat(fields,findex,start,end,pattern,replacement);
+        strng spattern(pattern);
+        strng sreplacement(replacement);
+        strng * nLL = 0;
+        strng * nRR = 0;
+        strng * patreps[100];
+        unsigned int i;
+        for(i = 0;i < sizeof(patreps)/sizeof(patreps[0]);++i)
+            patreps[i] = 0;
+        strng * snode = makeNode(patreps,nr,&spattern,&sreplacement,L,R,&nLL,&nRR);
+        fprintf(fmbra,"((%s) ",snode->itsTxt());
+        delete snode;
+        strng nL(L);
+        strng nR(nRR);
+        nL.cat(nLL,(const strng *)0);
+        nR.cat(R,(const strng *)0);
+        delete nLL;
+        delete nRR;
+        ptrdiff_t nxt = p - rules;
+        nxt += sizeof(int) - 1;
+        nxt /= sizeof(int);
+        nxt *= sizeof(int);
+        p = rules+nxt;
+
+        if (type & 2)
+            { // several chains of children ahead
+		    if(p < rules + index)
+			    {
+			    fprintf(fmbra,",");
+			    printChainBracmat
+					    (p
+					    , rules + index
+					    , indent + 2
+					    , start
+					    , end
+					    , fmbra
+					    , &nL, &nR, nr
+					    //, " ambiguous children"
+					    );
+			    }
+            }
+        else
+            {
+		    if(p < rules + index)
+			    {
+			    fprintf(fmbra,",");
+			    printrulesBracmat
+					    (p
+					    , rules + index
+					    , start
+					    , end
+					    , fmbra
+					    , &nL, &nR, nr
+					    , indent + 2
+					    );
+			    }
+            }
+	    fprintf(fmbra," ) ");
+        start[slen] = '\0';
+        Strrev(end);
+        end[elen] = 0;
+        Strrev(end);
+        rules += index;
+        if (type & 1)
+            {
+            printChainBracmat
+				    (rules
+				    , max
+				    , indent + 1
+				    , start
+				    , end
+				    , fmbra
+				    , L, R, nr
+				    //, " ambiguous tails of children"
+				    );
+            break;
+            }
         }
 
-    fields[findex] = ++p; // p is now within 3 bytes from the next record.
-    fprintf(fmbra,"%*s",indent*2,"");
-    char pattern[1000];
-    char replacement[1000];
-    printpatBracmat(fields,findex,start,end,pattern,replacement);
-    strng spattern(pattern);
-    strng sreplacement(replacement);
-    strng * nLL = 0;
-    strng * nRR = 0;
-    strng * patreps[100];
-    unsigned int i;
-    for(i = 0;i < sizeof(patreps)/sizeof(patreps[0]);++i)
-        patreps[i] = 0;
-    strng * snode = makeNode(patreps,nr,&spattern,&sreplacement,L,R,&nLL,&nRR);
-    fprintf(fmbra,"((%s) ",snode->itsTxt());
-    strng nL(L);
-    strng nR(nRR);
-    nL.cat(nLL,(const strng *)0);
-    nR.cat(R,(const strng *)0);
-    delete nLL;
-    delete nRR;
-    ptrdiff_t nxt = p - rules;
-    nxt += sizeof(int) - 1;
-    nxt /= sizeof(int);
-    nxt *= sizeof(int);
-    p = rules+nxt;
-
-    if (type & 2)
-        { // several chains of children ahead
-		if(p < rules + index)
-			{
-			fprintf(fmbra,",");
-			p = printChainBracmat
-					(p
-					, rules + index
-					, indent + 2
-					, start
-					, end
-					, fmbra
-					, &nL, &nR, nr
-					//, " ambiguous children"
-					);
-			}
-        }
-    else
-        {
-		if(p < rules + index)
-			{
-			fprintf(fmbra,",");
-			p = printrulesBracmat
-					(p
-					, rules + index
-					, start
-					, end
-					, fmbra
-					, &nL, &nR, nr
-					, indent + 2
-					);
-			}
-        }
-	fprintf(fmbra," ) ");
-    start[slen] = '\0';
-    Strrev(end);
-    end[elen] = 0;
-    Strrev(end);
-    if (type & 1)
-        {
-        p = printChainBracmat
-				(rules + index
-				, max
-				, indent + 1
-				, start
-				, end
-				, fmbra
-				, L, R, nr
-				//, " ambiguous tails of children"
-				);
-        }
-    else
-		{
-        p = printrulesBracmat
-				(rules + index
-				, max
-				, start
-				, end
-				, fmbra
-				, L, R, nr
-				, indent
-				);
-		}
-
-//    p = printlistBracmat(p,rules+index,indent,start,end,fmbra,&nL,&nR,nr,true);
-    delete snode;
-    fprintf(fmbra,"\n%*s",indent*2,")\n");
-    return p;
+    while(--parens >= 0)
+        fprintf(fmbra,"\n%*s",indent*2,")\n");
     }
 
 

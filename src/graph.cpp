@@ -809,9 +809,11 @@ matchResult vertex::lemmatisem(trainingPair * pair, char ** pmask, char ** plemm
             trainingPair * q = pair->Alt;
             while(q != pair)
                 {
+                q->set(b_solved);
                 q->setRes(notme);
                 q = q->Alt;
                 }
+            pair->set(b_solved);
             pair->setRes(yes);
             /*printf("MATCH:");
             pair->print(stdout);
@@ -826,21 +828,24 @@ matchResult vertex::lemmatisem(trainingPair * pair, char ** pmask, char ** plemm
             switch(pair->getRes())
                 {
                 case yes:
+                case undecided:
+                case no:
                     {
                     trainingPair * q = pair->Alt;
                     while(q != pair)
                         {
-                        q->setRes(no);
+                        assert(q->getRes() == notme);
+                        q->setRes(undecided);
                         q = q->Alt;
                         }
                     }
-                    // fall through
-                case undecided:
-                case no:
                     pair->setRes(no);
                     break;
                 case notme:
-                    pair->setRes(notme);
+                    if(!pair->isset(b_solved))
+                        {
+                        pair->setRes(no);
+                        }
                     break;
                 }
 #endif
@@ -870,9 +875,11 @@ matchResult vertex::lemmatise(trainingPair * pair)
                 while(q != pair)
                     {
                     q->setTentativeRes(notme);
+                    q->set(b_tentativelysolved);
                     q = q->Alt;
                     }
                 pair->setTentativeRes(yes);
+                pair->set(b_tentativelysolved);
                 break;
                 }
             /*
@@ -887,21 +894,21 @@ matchResult vertex::lemmatise(trainingPair * pair)
                 switch(pair->getTentativeRes())
                     {
                     case yes:
+                    case undecided:
+                    case no:
                         {
                         trainingPair * q = pair->Alt;
                         while(q != pair)
                             {
-                            q->setTentativeRes(no);
+                            q->setTentativeRes(undecided);
                             q = q->Alt;
                             }
-                        }
-                        // fall through
-                    case undecided:
-                    case no:
                         pair->setTentativeRes(no);
                         break;
+                        }
                     case notme:
-                        pair->setTentativeRes(notme);
+                        if(!pair->isset(b_tentativelysolved))
+                            pair->setTentativeRes(no);
                         break;
                     default:
                         //printf("?????????????????\n");
@@ -942,6 +949,7 @@ void vertex::markAmbiguousForNextRound(trainingPair * pair)
         {
 //        if(p->isset(b_ambiguous))
             p->setRes(undecided);
+            p->unset(b_tentativelysolved);
         }
     //this->printRule(stdout,0,0);
     for(p=pair;p;p = p->next())
@@ -996,6 +1004,7 @@ int vertex::nlemmatise(trainingPair * pair,int n,bool InputRight)
     while(p && m != 0)
         {
         p->setTentativeRes(undecided);
+        p->unset(b_tentativelysolved);
         p = p->next();
         --m;
         }
@@ -1639,7 +1648,12 @@ int printRules(node * nd
     }
 
 void node::splitTrainingPairList(trainingPair * all,trainingPair **& pNotApplicable,trainingPair **& pWrong,trainingPair **& pRight,optionStruct * options)
-    {
+    {    
+    for(trainingPair * tp = all;tp;tp = tp->next())
+        {
+        tp->unset(b_solved);
+        }
+
     while(all)
         {
         trainingPair * nxt = all->next();
@@ -2119,9 +2133,12 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
             }
         delete [] pv;
         }
+    /*
     else
         {
+        Nothing wrong
         }
+    */
     }
 
 void vertex::adjustWeight()

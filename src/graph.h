@@ -87,10 +87,12 @@ class vertexCount;
 class ruleTemplate;
 class optionStruct;
 
-const int b_doublet       = 1 << 0;
-const int b_test          = 1 << 1;
-const int b_skip          = 1 << 2;
-const int b_ambiguous     = 1 << 3;
+const int b_doublet             = 1 << 0;
+const int b_test                = 1 << 1;
+const int b_skip                = 1 << 2;
+const int b_ambiguous           = 1 << 3;
+const int b_solved              = 1 << 4;
+const int b_tentativelysolved   = 1 << 5;
 //const int b_ok            = 1 << 4; // if AMBIGUOUS is set TRUE, b_ok and 
 //const int b_wrong         = 1 << 5; // b_wrong are used during build-up as well
 //const int b_oksibling     = 1 << 6;

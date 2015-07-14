@@ -217,7 +217,6 @@ static char * rewrite(const char *& word, const char *& wordend, const char * p)
                 //                    length of infix       length of unmatched after infix
                 resultlength += (fields[M + 1] - fields[M] - 1) + (vars[m].e - vars[m].s);
                 }
-            //++news;
             destination = new char[resultlength + 1];
             printed = sprintf(destination, "%.*s%.*s", (int)(fields[2] - fields[1] - 1), fields[1], (int)(vars[0].e - vars[0].s), vars[0].s);
             for (m = 1; 2 * m + 3 < findex; ++m)
@@ -261,26 +260,21 @@ static char ** addLemma(char ** lemmas, const char * lemma)
                     return lemmas;
                     }
                 }
-            //++news;
             char ** nlemmas = new char *[i + 2];
             for (i = 0; lemmas[i]; ++i)
                 {
                 nlemmas[i] = lemmas[i];
                 }
-            //--news;
             delete[] lemmas;
             lemmas = nlemmas;
-            //++news;
             lemmas[i] = new char[strlen(lemma) + 1];
             strcpy(lemmas[i], lemma);
             lemmas[++i] = 0;
             }
         else
             {
-            //++news;
             lemmas = new char *[2];
             lemmas[1] = 0;
-            //++news;
             lemmas[0] = new char[strlen(lemma) + 1];
             strcpy(lemmas[0], lemma);
             }
@@ -430,8 +424,6 @@ static char * concat(char ** L)
         int i;
         for (i = 0; L[i]; ++i)
             lngth += strlen(L[i]) + 1;
-        //++lngth;
-        //++news;
         char * ret = new char[lngth];
         ret[0] = 0;
         if(L[0])
@@ -445,7 +437,6 @@ static char * concat(char ** L)
             strcat(ret, L[i]);
             delete[] L[i];
             }
-        //--news;
         delete[] L;
         ret[lngth-1] = 0;
         return ret;
@@ -491,7 +482,6 @@ const char * applyRules(const char * word,buffer * Buffer)
 
 bool lemmatiseFile(const char * OneWordPerLineFile,const char * rulefile,const char * resultFile)
     {
-    //return false;
     buffer Buffer;
     if(!readRules(rulefile,&Buffer))
         return false;

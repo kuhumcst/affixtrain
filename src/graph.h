@@ -140,7 +140,7 @@ class trainingPair
         trainingPair * AltLemma; // forms closed loop of inflected forms (of same lemma)
 #endif
 #if AMBIGUOUS
-        trainingPair * trainingPair::makeWrongAmbiguousIfRightPresent(trainingPair *& Ambiguous);
+        trainingPair * makeWrongAmbiguousIfRightPresent(trainingPair *& Ambiguous);
 #endif
         void addRule(vertex * V,bool InputRight,bool Right);
         void allDeleteRules();

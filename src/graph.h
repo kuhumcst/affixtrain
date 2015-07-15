@@ -93,14 +93,6 @@ const int b_skip                = 1 << 2;
 const int b_ambiguous           = 1 << 3;
 const int b_solved              = 1 << 4;
 const int b_tentativelysolved   = 1 << 5;
-//const int b_ok            = 1 << 4; // if AMBIGUOUS is set TRUE, b_ok and 
-//const int b_wrong         = 1 << 5; // b_wrong are used during build-up as well
-//const int b_oksibling     = 1 << 6;
-//const int b_bench         = 1 << 7; // Homographs that are not lemmatised 
-                                    // correctly but that have a correctly
-                                    // lemmatised sibling get this flag and 
-                                    // are ignored for the remainder of the
-                                    // training.
 
 enum eResult {undecided, yes, no, notme};
 
@@ -136,7 +128,7 @@ class trainingPair
         char * Lemma; // as computed
         vertex * V; // the rule that made Lemma
         vertexPointer * applicableRules;
-        unsigned int bits:4;
+        unsigned int bits:8;
         unsigned int ambs:3;
         unsigned int tentativeAmbs:3;
         void deleteRules();
@@ -148,7 +140,7 @@ class trainingPair
         trainingPair * AltLemma; // forms closed loop of inflected forms (of same lemma)
 #endif
 #if AMBIGUOUS
-        void makeWrongAmbiguousIfRightPresent(trainingPair *& Wrong,trainingPair *& Ambiguous);
+        trainingPair * trainingPair::makeWrongAmbiguousIfRightPresent(trainingPair *& Ambiguous);
 #endif
         void addRule(vertex * V,bool InputRight,bool Right);
         void allDeleteRules();
@@ -700,11 +692,7 @@ class vertexPointer
                 }
            
 
-#if AMBIGUOUS
-            void init(trainingPair ** allRight,trainingPair ** allWrong/*,trainingPair ** allAmbiguous*/,int level,optionStruct * options);
-#else
-            void init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,vertex ** pvp,int Np*/,optionStruct * options);
-#endif
+            void init(trainingPair ** allRight,trainingPair ** allWrong,int level,optionStruct * options);
             void splitTrainingPairList(trainingPair * all,trainingPair **& pNotApplicable,trainingPair **& pWrong,trainingPair **& pRight,optionStruct * options);
             node(vertex * V):V(V),IfPatternSucceeds(0),IfPatternFails(0),Right(0)
                 {

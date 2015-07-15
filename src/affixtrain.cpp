@@ -3455,6 +3455,7 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
     do
         {
         ++passes;
+        printf("passes:%d\n",passes);
         char flexrulesPass[1256];
         sprintf(flexrulesPass, FlexrulePassFormat, nflexrules, passes);
         char ext[100];

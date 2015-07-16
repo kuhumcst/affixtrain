@@ -1324,7 +1324,7 @@ static void compare(const char * output, const char * control, int & same, int &
                 tab = NULL;
                 hash = strchr(s,'#');
                 char * bar;
-                if(hash)
+                if(hash && hash > s && '0' <= hash[1] && hash[1] <= 9)
                     {
                     *hash = '\0';
                     Ref = strtol(hash+1,NULL,10);

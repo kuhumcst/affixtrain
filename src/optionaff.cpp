@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <string.h>
 #include <ctype.h>
 #include <assert.h>
+#include <math.h>
 
 
 //        printf("usage: makeaffixrules -w <word list> -c <pruning threshold> -C <expected pruning threshold> -o <flexrules> -e <extra> -n <columns> -f <compfunc> [<word list> [<pruning threshold> [<flexrules> [<extra> [<columns> [<compfunc>]]]]]]\n");
@@ -168,37 +169,59 @@ void optionStruct::detectFloatingPointNumbers(char * S)
     {
     int n = 0;
     char * t = 0;
+    double Sum2 = 0.0;
     double Sum = 0.0;
     double d;
     char * s;
-    char * endptr = 0;
-    for (s = S;;s = t + 1)
+    char * endptr = S;
+    char * newendptr = 0;
+    for (s = S;;s = t + 1,endptr = newendptr)
         {
-        d = strtod(s, &endptr);
-        if (endptr && endptr > s && (endptr[-1] == '.' || (endptr[-1] >= '0' && endptr[-1] <= '9')))
+        d = strtod(s, &newendptr);
+        if  (   newendptr && newendptr > s 
+            &&  newendptr > endptr 
+            &&  (   newendptr[-1] == '.' 
+                ||  (   newendptr[-1] >= '0' 
+                    &&  newendptr[-1] <= '9'
+                    )
+                )
+            )
             {
-            Sum += d*d;
+            Sum2 += d*d;
             ++n;
             }
         t = strchr(s, ';');
         if(t == 0)
             break;
         }
-    if (Sum <= 0)
+    if (Sum2 <= 0)
         {
         fprintf(stderr, "Sum of squared penalty parameters shall not be zero\n");
         exit(-3);
         }
+    Sum = sqrt(Sum2);
     if (n == 4 || n == 6)
         {
         nD = n;
         D = new double[n];
         n = 0;
-        for (s = S;;s = t + 1)
+        endptr = S;
+        newendptr = 0;
+        for (s = S;;s = t + 1,endptr = newendptr)
             {
-            d = strtod(s, &endptr);
-            if (endptr && endptr > s && (endptr[-1] == '.' || (endptr[-1] >= '0' && endptr[-1] <= '9')))
-                D[n++] = d / Sum;
+            d = strtod(s, &newendptr);
+            if  (   newendptr && newendptr > s 
+                &&  newendptr > endptr 
+                &&  (   newendptr[-1] == '.' 
+                    ||  (   newendptr[-1] >= '0' 
+                        &&  newendptr[-1] <= '9'
+                        )
+                    )
+                )
+                {
+                D[n] = d / Sum;
+                ++n;
+                }
             t = strchr(s, ';');
             if(t == 0)
                 break;

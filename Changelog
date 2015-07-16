@@ -1,0 +1,14 @@
+Version 2.26 - 2015.07.16
+-------------------------
+Started changelog.
+Current state of affixtrain:
+1. Testing with training data gives zero incorrectly lemmatized words. This is
+   as at always should have been, but it wasn't 100% the case until now.
+2. Unlimited ambiguity is allowed. The first versions of affixtrain could
+   handle at most two lemmas per word form. After introducing a new flexrule
+   file format, this limitation is gone.
+3. When running affixtrain, a parameter file is created that documents what
+   was done. Any test results are added at the end. These results can help
+   decide which pruning threshold (also called cutoff) is optimal for
+   lemmatization of OOV words. (You probably want to use the optional
+   dictionary if you choose to use pruned flexrules.)

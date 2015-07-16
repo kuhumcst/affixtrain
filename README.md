@@ -33,6 +33,15 @@ Training takes place in three stages:
     disadvantage you should also provide a binary dictionary to the lemmatiser.
     Use cstlemma -h to see how to do that.
     
+Empty lines in the training/testing data are interpreted as cluster separators.
+If the data has no empty lines between non-empty lines, the training and
+testing occurs on a line-by-line basis, but if there are such empty lines,
+training and testing occurs on a cluster-by-cluster basis. For example, by
+collecting homographs in clusters and defining all non-ambiguous full forms as
+one-line clusters, testing with 'OOV' words (that is, words that were not used
+during training) will result in more realistic estimates of how well the rules
+are able to spot and lemmatize ambiguous full forms.
+    
 Notice that the whole process easily can take many days, even a couple of
 weeks, to run.
     

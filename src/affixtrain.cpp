@@ -2874,15 +2874,23 @@ static bool doTraining
         }
 
     FILE * wordsFile = fopenOrExit(tempDir(wordsGroupedByRuleName, options), "wb", "words file");
+#if AMBIGUOUS
     ambivalentWords = 0;
     alternatives = 0;
+#endif
     allwords = 0;
     top->printSep(wordsFile, 0);
+#if AMBIGUOUS
     fprintf(wordsFile
             , "\nAll words: %d    Words with alternative lemmas: %d    Words that are not lemmatized correctly: %d\n"
             , allwords
             , ambivalentWords
             , alternatives);
+#else
+    fprintf(wordsFile
+            , "\nAll words: %d\n"
+            , allwords);
+#endif
     --openfiles;
     fclose(wordsFile); /* Lists all words, grouped by the rule that creates each word's lemma. */
 

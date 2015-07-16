@@ -43,10 +43,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // Set this number as high as possible. A high value entails very heavy use 
 // of memory!
 
-#define AMBIGUOUS 1
+#define AMBIGUOUS 0
 // AMBIGUOUS 1
 // Handle ambiguous data by redoing training a second time without the
 // homographs that were handled in the first round.
+// AMBIGUOUS 0
+// Disambiguate the training data, either by lemma frequency or heuristically by taking the first
 
 #define PESSIMISTIC 0
 

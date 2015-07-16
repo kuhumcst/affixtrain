@@ -63,8 +63,10 @@ thres12 to 4.
 extern int visitno;
 extern double wght;
 
+#if AMBIGUOUS
 extern int ambivalentWords;
 extern int alternatives;
+#endif
 extern int allwords;
 
 
@@ -94,7 +96,11 @@ const int b_ambiguous           = 1 << 3;
 const int b_solved              = 1 << 4;
 const int b_tentativelysolved   = 1 << 5;
 
-enum eResult {undecided, yes, no, notme};
+enum eResult {undecided, yes, no
+#if AMBIGUOUS
+                                , notme
+#endif
+    };
 
 class vertexPointer;
 
@@ -423,7 +429,9 @@ class vertex
         int goodness(trainingPair * pairs, topScore * Top);
         void nlemmatiseStart();
         int nlemmatise(trainingPair * pairs,int n,bool InputRight);
+#if AMBIGUOUS
         void markAmbiguousForNextRound(trainingPair * pair);
+#endif
     };
 
 extern bool building;

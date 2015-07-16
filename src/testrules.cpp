@@ -1346,7 +1346,7 @@ static void compare(const char * output, const char * control, int & same, int &
                 else
                     {
                     bar = strchr(s,'|');
-                    if(bar)
+                    if(bar && bar > s && bar[1])
                         {
                         ambiguousRule = true;
                         *bar = '\0';

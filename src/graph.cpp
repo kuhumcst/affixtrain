@@ -38,8 +38,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // (Chosen like this to let qsort sort in descending order.)
 int visitno;
 
+#if AMBIGUOUS
 int ambivalentWords;
 int alternatives;
+#endif
 int allwords;
 
 int NodeCount = 0;
@@ -734,7 +736,11 @@ int trainingPair::printAll(FILE * f,const char * h,int s)
 
 void trainingPair::print(FILE * f)
     {
+#if AMBIGUOUS
     fprintf(f,"%.*s\t%.*s\t%s ",(int)(wordlength),Word,(int)(lemmalength),LemmaHead,getRes() == undecided ? "undecided" : getRes() == yes ? "yes" : getRes() == no ? "no" : getRes() == notme ? "notme" : "???" );
+#else
+    fprintf(f,"%.*s\t%.*s\t%s ",(int)(wordlength),Word,(int)(lemmalength),LemmaHead,getRes() == undecided ? "undecided" : getRes() == yes ? "yes" : getRes() == no ? "no" : "???" );
+#endif
     }
 
 void trainingPair::printMore(FILE * f)
@@ -831,48 +837,52 @@ matchResult vertex::lemmatisem(trainingPair * pair, char ** pmask, char ** plemm
 matchResult vertex::lemmatise(trainingPair * pair)
     {
     matchResult ret = apply(pair);
-#if AMBIGUOUS
     switch (ret)
         {
-            case right:
+        case right:
+            {
+#if AMBIGUOUS
+            for(trainingPair * q = pair->Alt;q != pair;q = q->Alt)
                 {
-                for(trainingPair * q = pair->Alt;q != pair;q = q->Alt)
-                    {
-                    q->setTentativeRes(notme);
-                    q->set(b_tentativelysolved);
-                    }
-                pair->setTentativeRes(yes);
-                pair->set(b_tentativelysolved);
-                break;
+                q->setTentativeRes(notme);
+                q->set(b_tentativelysolved);
                 }
-            case wrong:
-                switch(pair->getTentativeRes())
-                    {
-                    case yes:
-                    case undecided:
-                    case no:
-                        {
-                        for(trainingPair * q = pair->Alt;q != pair;q = q->Alt)
-                            {
-                            q->setTentativeRes(undecided);
-                            }
-                        pair->setTentativeRes(no);
-                        break;
-                        }
-                    case notme:
-                        if(!pair->isset(b_tentativelysolved))
-                            pair->setTentativeRes(no);
-                        break;
-                    default:
-                        //printf("?????????????????\n");
-                        ;
-                    }
-                assert(pair->getTentativeRes() != yes);
-                break;
-            default:
-                ;
-        }
 #endif
+            pair->setTentativeRes(yes);
+            pair->set(b_tentativelysolved);
+            break;
+            }
+        case wrong:
+            switch(pair->getTentativeRes())
+                {
+                case yes:
+                case undecided:
+                case no:
+                    {
+#if AMBIGUOUS
+                    for(trainingPair * q = pair->Alt;q != pair;q = q->Alt)
+                        {
+                        q->setTentativeRes(undecided);
+                        }
+#endif
+                    pair->setTentativeRes(no);
+                    break;
+                    }
+#if AMBIGUOUS
+                case notme:
+                    if(!pair->isset(b_tentativelysolved))
+                        pair->setTentativeRes(no);
+                    break;
+#endif
+                default:
+                    //printf("?????????????????\n");
+                    ;
+                }
+            assert(pair->getTentativeRes() != yes);
+            break;
+        default:
+            ;
+        }
     return ret;
     }
 
@@ -895,6 +905,7 @@ trainingPair * trainingPair::nth(int n)
     return pairs;
     }
 
+#if AMBIGUOUS
 void vertex::markAmbiguousForNextRound(trainingPair * pair)
     {
     trainingPair * p;
@@ -908,7 +919,7 @@ void vertex::markAmbiguousForNextRound(trainingPair * pair)
         lemmatise(p);
         }
     }
-
+#endif
 
 int vertex::nlemmatise(trainingPair * pair,int n,bool InputRight)
     {
@@ -928,6 +939,7 @@ int vertex::nlemmatise(trainingPair * pair,int n,bool InputRight)
         switch(lemmatise(pair))
             {
             case wrong:
+#if AMBIGUOUS
                 assert(pair->getTentativeRes() == no || pair->getTentativeRes() == notme);
                 if(pair->getTentativeRes() != notme)
                     { // don't count homographs that have an ok sibling
@@ -936,6 +948,9 @@ int vertex::nlemmatise(trainingPair * pair,int n,bool InputRight)
                 else
                     {
                     }
+#else
+                pair->addRule(this,InputRight,false);
+#endif
                 break;
             case right:
                 assert(pair->getTentativeRes() == yes);
@@ -1776,7 +1791,9 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level/*,ve
     *allWrong = NotApplicableWrong;
 
     this->Right->allDeleteRules();
+#if AMBIGUOUS
     trainingPair * Ambiguous = 0;
+#endif
 
     if(Wrong)
         {

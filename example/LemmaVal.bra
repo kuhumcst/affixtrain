@@ -1,0 +1,196 @@
+{LemmaVal.bra
+
+Given rules and the training data (or other full form - lemma data, plus additional info like POS tags), 
+produce the lemmas of the full forms and compare those with the lemmas in the training data.
+Write errors in a file.}
+
+X=
+  ( doit
+  =   
+    .   ( reverse
+        =   a R
+          .   :?R
+            & whl'(!arg:%?a ?arg&!a !R:?R)
+            & !R
+        )
+      & ( theLemmas
+        =   R l
+          .   :?R
+            &   whl
+              ' ( !arg:(?l.?) %?arg
+                & !R !l "|":?R
+                )
+            & !arg:(?l.?)
+            & !R !l:?R
+            & str$!R
+        )
+      & !arg:(?TheFlexRules.?WordLemmaPosData.(=?linepat))
+      & get$"lemmatize.bra"
+      & str$(!TheFlexRules "NRS.bra"):?NRSfile
+      & str$(!TheFlexRules "hexs.bra"):?hexsfile
+      & str$(!TheFlexRules "exs.bra"):?exsfile
+      & get$!TheFlexRules:?theTree
+      & ( (   get$!NRSfile
+            & out$(got !NRSfile)
+            & new$hash:?H
+            &   whl
+              ' (!NRS:%?k ?NRS&(H..insert)$!k)
+            & out$"Type word and press ENTER. To stop, just press ENTER."
+            &   whl
+              ' ( get':~:?word
+                & lemmatise$(!theTree.!word..0):?R
+                & :?RES
+                &   whl
+                  ' ( !R:(?wrd.?nrs) ?R
+                    & 0:?CLS
+                    &   whl
+                      ' ( !nrs:%?nr ?nrs
+                        & (H..find)$!nr:(?.?cls)
+                        & !CLS+!cls:?CLS
+                        )
+                    & !RES (!wrd.!CLS):?RES
+                    )
+                & out$(!word ":" !RES)
+                )
+            & BYE
+          |   ( get$!hexsfile&out$(got !hexsfile)
+              |   ( get$!exsfile&out$(got !exsfile)
+                  |   ( fil$(!WordLemmaPosData,r)
+                      | out$cannotopen
+                      )
+                    & (fil$(,STR,\n)|out$cannotread)
+                    & out$reading
+                    & :?exs
+                    &   whl
+                      ' ( fil$:(?line.?)
+                        & (   @(!line:!linepat)
+                            & ( @(!wrd:? " " ?)
+                              | (!wrd.!lem.!cls) !exs:?exs
+                              )
+                          | 
+                          )
+                        )
+                    & out$read
+                    & lst$(exs,!exsfile,NEW)
+                    & out$saved
+                    & (fil$(,SET,-1)|)
+                  )
+                & :?hexs
+                &   whl
+                  ' ( !exs:(?wrd.?r1) ?exs
+                    &   whl
+                      ' ( !exs:(!wrd.?r2) ?exs
+                        & !r2 !r1:?r1
+                        )
+                    &   whl
+                      ' (   !r1
+                          : ?A (?L.?C1) ?M (!L.?C2) ?Z
+                        & !A (!L.!C1+!C2) !M !Z:?r1
+                        )
+                    &   whl
+                      ' ( !r1:?aa (?q.?A+#%*?M+?Z) ?zz
+                        & !aa (!q.!A+!M+!Z) !zz:?r1
+                        )
+                    & (!wrd.!r1) !hexs:?hexs
+                    )
+                & lst$(hexs,!hexsfile,NEW)
+              )
+            & !hexs:?Hexs
+            & :?wordnls:?lemnls
+            &   whl
+              ' ( !Hexs:(?word.?lems:?Lems) ?Hexs
+                & \n !word !wordnls:?wordnls
+                & \n theLemmas$!lems !lemnls:?lemnls
+                )
+            & put$(str$(reverse$!wordnls),"wordnls.txt",NEW)
+            & put$(str$(reverse$!lemnls),"lemnls.txt",NEW)
+            & :?ERRORS
+            & (   
+                & new$hash:?H
+                &   whl
+                  ' ( !hexs:(?word.?lems:?Lems) ?hexs
+                    &   lemmatise$(!theTree.!word..0)
+                      : ?results
+                      : ?ress
+                    &   whl
+                      ' ( !results:(?lm.?nrs) ?results
+                        & !lems:?A (!lm.?cls) ?Z
+                        & !A !Z:?lems
+                        &   whl
+                          ' ( !nrs:%?nr ?nrs
+                            & (   (H..find)$!nr:(?nnr.?CLS)
+                                & (H..remove)$!nr
+                              | 0:?CLS
+                              )
+                            & (H..insert)$(!nr.!CLS+!cls)
+                            )
+                        )
+                    & ( !lems:!results:
+                      |     (!word.!ress.!Lems.!lems.!results)
+                            !ERRORS
+                        : ?ERRORS
+                      )
+                    )
+                & :?NRS
+                & (H..forall)$(=.!arg !NRS:?NRS)
+                & lst$(NRS,!NRSfile,NEW)
+              |   whl
+                ' ( !hexs:(?word.?lems:?Lems) ?hexs
+                  &   lemmatise$(!theTree.!word..0)
+                    : ?results
+                    : ?ress
+                  &   whl
+                    ' ( !results:(?lm.?nrs) ?results
+                      & !lems:?A (!lm.?cls) ?Z
+                      & !A !Z:?lems
+                      )
+                  & ( !lems:!results:
+                    |   (!word.!ress.!Lems.!lems.!results) !ERRORS
+                      : ?ERRORS
+                    )
+                  )
+              )
+            & lst$(ERRORS,"ERRORS.bra",NEW)
+          )
+        |   las mat koop kopen bak bakken dood doden was
+          & roken:?testWords
+          & out$!testWords
+          &   whl
+            ' ( !testWords:%?word ?testWords
+              & out$(!word ":" lemmatise$(!theTree.!word..0))
+              )
+        )
+      & done
+  )
+  ( new
+  =   
+    .   (its.doit)
+      $ ( "0/flexrules.short_XC.pretty.bra"
+        . short
+        . (=?wrd \t ?lem \t ?cls \t ?)
+        )
+  );
+
+r=
+  get'("LemmaVal.bra",TXT)
+& rmv$(str$(LemmaVal ".bak"))
+& ren$("LemmaVal.bra".str$(LemmaVal ".bak"))
+&   put
+  $ ( "{LemmaVal.bra
+
+Given rules and the training data (or other full form - lemma data, plus additional info like POS tags), 
+produce the lemmas of the full forms and compare those with the lemmas in the training data.
+Write errors in a file.}
+
+"
+    , "LemmaVal.bra"
+    , NEW
+    , BIN
+    )
+& lst'(X,"LemmaVal.bra",APP)
+& put'(\n,"LemmaVal.bra",APP,BIN)
+& lst'(r,"LemmaVal.bra",APP)
+& put$(str$("\nnew'" X ";\n"),"LemmaVal.bra",APP,BIN)
+& ;
+
+new'X;

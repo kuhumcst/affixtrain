@@ -745,6 +745,8 @@ void trainingPair::print(FILE * f)
 
 void trainingPair::printMore(FILE * f)
     {
+    if(!f)
+        return;
     fprintf(f,"%.*s\t%.*s",(int)(wordlength),Word,(int)(lemmalength),LemmaHead);
 #if WORDCLASS
     fprintf(f,"\t%.*s",(int)(wordclasslength),WordClass);
@@ -769,7 +771,8 @@ void trainingPair::printSep(FILE * f)
             for(trainingPair * p = tp->Alt;p != tp;p = p->Alt)
                 {
                 ++alternatives;
-                fprintf(f,"%.*s\t%.*s\t@@%s\n",(int)(p->wordlength),p->Word,(int)(p->lemmalength),p->LemmaHead,p->isset(b_test) ? "t" : "");
+//                fprintf(f,"%.*s\t%.*s\t@@%s\n",(int)(p->wordlength),p->Word,(int)(p->lemmalength),p->LemmaHead,p->isset(b_test) ? "t" : "");
+                fprintf(f,"%.*s\t%.*s\n",(int)(p->wordlength),p->Word,(int)(p->lemmalength),p->LemmaHead);
                 }
             }
 #endif
@@ -1480,8 +1483,13 @@ int printRules(node * nd
         if(nd->IfPatternSucceeds)
             {
 #if BRACMATOUTPUT
-            snode = makeNode(patreps,nr,pat,rep,L,R,&nLL,&nRR);
-            fprintf(fobra,"(");
+            if(fobra)
+                {
+                snode = makeNode(patreps,nr,pat,rep,L,R,&nLL,&nRR);
+                fprintf(fobra,"(");
+                }
+            else
+                makeNode(patreps,nr,pat,rep,L,R,&nLL,&nRR);
 #else
             makeNode(patreps,pat,rep,L,R,&nLL,&nRR);
 #endif
@@ -1512,16 +1520,19 @@ int printRules(node * nd
             patreps[3] = tmprep;
             }
         //*/
-        fprintf(folem,"%d\t",ind);
-        if(patreps[0])
+        if(folem)
             {
-            for(i = 0;patreps[i+2];i+=2)
+            fprintf(folem,"%d\t",ind);
+            if(patreps[0])
                 {
-                fprintf(folem,"%s\t%s\t",patreps[i]->itsTxt(),patreps[i+1]->itsTxt());
+                for(i = 0;patreps[i+2];i+=2)
+                    {
+                    fprintf(folem,"%s\t%s\t",patreps[i]->itsTxt(),patreps[i+1]->itsTxt());
+                    }
+                fprintf(folem,"%s\t%s",patreps[i]->itsTxt(),patreps[i+1]->itsTxt());
                 }
-            fprintf(folem,"%s\t%s",patreps[i]->itsTxt(),patreps[i+1]->itsTxt());
+            fprintf(folem,"\n");
             }
-        fprintf(folem,"\n");
         for(i = 0;patreps[i];++i)
             delete patreps[i];
 
@@ -1531,13 +1542,17 @@ int printRules(node * nd
         nd->V->printRule(fo,ind,nr);
 #endif
 #if BRACMATOUTPUT
-        fprintf(fobra,"%s\n",snode->itsTxt());
-        delete snode;
+        if(fobra)
+            {
+            fprintf(fobra,"%s\n",snode->itsTxt());
+            delete snode;
+            }
 #endif
         if(nd->IfPatternSucceeds)
             {
 #if BRACMATOUTPUT
-            fprintf(fobra,",");
+            if(fobra)
+                fprintf(fobra,",");
 #endif
             strng nL(L);
             strng nR(nRR);
@@ -1559,7 +1574,8 @@ int printRules(node * nd
                 , options
                 );
 #if BRACMATOUTPUT
-            fprintf(fobra,")\n");
+            if(fobra)
+                fprintf(fobra,")\n");
 #endif
             }
         delete nLL;

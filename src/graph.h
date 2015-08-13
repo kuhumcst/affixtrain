@@ -90,7 +90,7 @@ class ruleTemplate;
 class optionStruct;
 
 const int b_doublet             = 1 << 0;
-const int b_test                = 1 << 1;
+//const int b_test                = 1 << 1;
 const int b_skip                = 1 << 2;
 const int b_ambiguous           = 1 << 3;
 const int b_solved              = 1 << 4;

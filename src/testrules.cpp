@@ -110,38 +110,15 @@ static const char * LGf(optionStruct * Options)
 
 static const char * lemmalistef(optionStruct * Options)
     {
-    return Options->wordList();
+    return Options->wordLemmaList();
     }
 
 static const char * reducedlemmalistef(optionStruct * Options)
     {
     static char rwl[1000];
-    sprintf(rwl,"%s.reduced",Options->wordList());
+    sprintf(rwl,"%s.reduced",Options->wordLemmaList());
     return rwl;
     }
-
-/*
-static const char * newStyleRulesf(optionStruct * Options)
-    {
-    static char * nsr = 0;
-    if(Options)
-        {
-        const char * Args = Options->argstring();
-        if(nsr)
-            delete[] nsr;
-        nsr = new char[strlen("flexrules.")+strlen(Args)+1];
-        strcpy(nsr,"flexrules.");
-        strcat(nsr,Args);
-        }
-    else
-        {
-        delete[] nsr;
-        nsr = 0;
-        }
-    return nsr;
-    }
-*/
-
 
 class lineab
     {
@@ -964,7 +941,6 @@ static int readlines(int columnfull,int columnbase,int columnPOS,line *& lines,i
 #if CLUMPSENSITIVE
     else
         {
-        printf("randomix(%d)\n",clumpcnt);
         randomix(clumps,clumpcnt);
         }
 #endif
@@ -1311,7 +1287,9 @@ static void compare(const char * output, const char * control, int & same, int &
             if(komma && komma[1])
                 *komma = '\0';
             else
+                {
                 trim(pb2);
+                }
 
             trim(b1);
             trim(b4);

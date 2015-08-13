@@ -36,7 +36,8 @@ class optionStruct
                     // R__R;W__R;R__W;W__W
                     // or
                     // R__R;W__R;R__W;W__W;R__NA;W__NA
-        int nD; // set by counting numbers in D
+                    // Defaults to 0;0;1;0;0;0
+        int nD; // set by counting numbers in D, defaults to 6
         int c; // cutoff
         int C; // expected cutoff
         const char * e; // extra
@@ -49,6 +50,8 @@ class optionStruct
         const char * P; // Current parms
         const char * b; // raw rules
         const char * X; // rule weight function, defaults to constant (1)
+        const char * I; // Input (with option -b: additionally lemmatise a word list - one word per line)
+        const char * O; // Output (lemmas of input -I) (with option -b)
         bool ComputeParms;// compute parms
         bool SuffixOnly;// suffix only
         bool ExpensiveInfix;/*to create intermediate between full affix
@@ -67,7 +70,7 @@ class optionStruct
                    more after the removal of the homographs that will be
                    handled in the next iteration.*/
         int Q; // Max recursion depth when attempting to create candidate rule
-        int q; /* Percentage of training pairs to set aside for testing set to
+  /*      int q;*/ /* Percentage of training pairs to set aside for testing set to
                positive value if you want to set PERC percent of the avaliable
                data aside for testing.*/
         bool F; // Create flexrules. Can be combined with computation (-p) and
@@ -100,19 +103,21 @@ class optionStruct
         void setReadLines(int li) { FracLines = li; }
         const int cutoff() const{ return c; }
         const int expectedCutoff() const{return C;}
-        const char * extra() const{return e;}
+        const char * extra() const{return e ? e : "";}
         const char * compfunc() const{return f;}
-        const char * wordList() const{return i;}
+        const char * wordPerLineList() const{return I;}
+        const char * wordLemmaList() const{return i;}
         const char * tempDir() const{return j;}
         const char * columns() const{return n;}
         //const char * flexrules() const{return o;}
         const char * flexrules();
+        const char * lemmas() const{return O;}
         const char * bestParms() const{return B;}
         const char * currentParms() const{return P;}
         const char * ruleWeightFunction() const{return X;}
         const char * rawRules() const{return b;}
         const int maxRecursionDepthRuleCreation()const{return Q;}
-        const int percentageTestPairs()const{return q;}
+//        const int percentageTestPairs()const{return q;}
         const bool computeParms()const{return ComputeParms;}
         const bool suffixOnly()const{return SuffixOnly;}
         const bool expensiveInfix(){ return ExpensiveInfix; }
@@ -136,7 +141,9 @@ class optionStruct
         void setTrainingPairsLines(int TPL){TrainingPairsLines = TPL;}
         void setWeight(double W){TreePenalty = W;}
 
-        void seti(const char * WordList);
+        void setI(const char * WordList);
+        void seti(const char * WordLemmaList);
+        void setO(const char * Result);
         void seto(const char * Result);
         void sete(const char * Extra);
         void setn(const char * Columns);

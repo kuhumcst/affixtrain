@@ -32,10 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <assert.h>
 #include <math.h>
 
-
-//        printf("usage: makeaffixrules -w <word list> -c <pruning threshold> -C <expected pruning threshold> -o <flexrules> -e <extra> -n <columns> -f <compfunc> [<word list> [<pruning threshold> [<flexrules> [<extra> [<columns> [<compfunc>]]]]]]\n");
-
-static char opts[] = "?@:A:B:b:c:C:D:d:e:F:f:hH:i:j:K:L:M:N:n:o:O:p:P:Q:q:R:s:T:t:v:X:x:W:" /* GNU: */ "wr";
+static char opts[] = "?@:A:B:b:c:C:D:d:e:F:f:hH:I:i:j:K:L:M:N:n:O:o:p:P:Q:"/*q:*/"R:s:T:t:v:X:x:W:" /* GNU: */ "wr";
 static char *** Ppoptions = NULL;
 static char ** Poptions = NULL;
 static int optionSets = 0;
@@ -57,6 +54,8 @@ optionStruct::optionStruct(optionStruct & O)
     C = O.C;
     e = dupl(O.e);
     f = dupl(O.f);
+    I = dupl(O.i);
+    this->O = dupl(O.O);
     i = dupl(O.i);
     n = dupl(O.n);
     o = dupl(O.o);
@@ -82,7 +81,7 @@ optionStruct::optionStruct(optionStruct & O)
     F = O.F;
     TrainTest = O.TrainTest;
     Q = O.Q;
-    q = O.q;
+    //q = O.q;
     K = O.K;
     M = O.M;
     N = O.N;
@@ -96,14 +95,16 @@ optionStruct::optionStruct(optionStruct & O)
 
 optionStruct::optionStruct()
     {
-    c = -1; // pruning threshold, cutoff 
+    c = 5; // pruning threshold, cutoff 
     C = -1; // expected pruning threshold when determining the parameters using weightedcount() (-XW)
     // Rules with C+1 supporting word/lemma pairs have the highest penalty.
     // Rules with C or fewer supporting word/lemma pairs are probably best cut off.
     // To decide whether that is the case, the rules must be tested with OOV word/lemma pairs.
     e = NULL; // extra
     f = NULL; // compfunc
-    i = NULL; // word list
+    I = NULL; // word list (with -b option)
+    O = NULL; // lemmas of word list (with -b option)
+    i = NULL; // word/lemma list
     n = NULL; // columns
     o = NULL; // flexrules
     B = NULL;
@@ -113,27 +114,28 @@ optionStruct::optionStruct()
     b = NULL; // raw file (see t)
     D = NULL;
     nD = 0;
-    ComputeParms = false;// compute parms
+    ComputeParms = true;// compute parms
     SuffixOnly = false;// suffix rules only
     ExpensiveInfix = false;
     SuffixOnlyParmSeen = false;
     Argstring = 0;
     Verbose = false;// verbose
-    Remove = false;
-    Minfraction = 1.0; // L
+    Remove = true;
+    Minfraction = 0.01; // L
     Maxfraction = 1.0; // H
     Redo = false;
-    Test = false;
-    F = false;
-    TrainTest = false;
+    Test = true;
+    F = true;
+    TrainTest = true;
     Q = 1;
-    q = 1;
+    //q = 1;
     K = 20;   // Number of differently sized fractions of trainingdata 
     M = 10.0; // # Iterations when training with Maxfraction of input
     N = 100.0;// # Iterations when training with Minfraction of input
 
-    Blobs = 0; // Number of blobs found in word list
-    Lines = 0; // Number of lines found in word list
+    WeightFunction = econstant;
+    Blobs = 0; // Number of blobs found in word/lemma list
+    Lines = 0; // Number of lines found in word/lemma list
     FracBlobs = 0; // Number of blobs used for training
     FracLines = 0; // Number of lines used for training
     }
@@ -153,6 +155,7 @@ optionStruct::~optionStruct()
     {
     delete[] e;
     delete[] f;
+    delete[] I;
     delete[] i;
     delete[] j;
     delete[] n;
@@ -226,6 +229,13 @@ void optionStruct::detectFloatingPointNumbers(char * S)
             if(t == 0)
                 break;
             }
+        
+        if(D[1] > 0 && D[2] < 0)
+            { // The penalty for W=>R and R=>W must be negative and positive, respectively. (W=>R is "good" and R=>W is "bad")
+            for(n = 0;n < nD;++n)
+                D[n] = -D[n];
+            }
+           
         }
     else
         {
@@ -259,8 +269,8 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
             if (locoptarg && *locoptarg)
                 c = *locoptarg - '0';
 
-            if (c > 9 || c < 0)
-                c = -1;
+            if (c < 0 || c > 9)
+                c = 0;
             break;
         case 'C': // pruning threshold (cutoff) for weightedcount
             if (locoptarg && *locoptarg)
@@ -270,15 +280,18 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
                 C = -1;
             break;
         case 'e': // extra
-            e = dupl(locoptarg);
-            if (strstr(e, "_suffix"))
+            if (locoptarg)
                 {
-                if (this->SuffixOnlyParmSeen && SuffixOnly == false)
+                e = dupl(locoptarg);
+                if (strstr(e, "_suffix"))
                     {
-                    fprintf(stderr, "Option -e [%s] and option -s %s are contradictory\n", e, locoptarg);
-                    exit(-1);
+                    if (this->SuffixOnlyParmSeen && SuffixOnly == false)
+                        {
+                        fprintf(stderr, "Option -e [%s] and option -s %s are contradictory\n", e, locoptarg);
+                        exit(-1);
+                        }
+                    SuffixOnly = true;
                     }
-                SuffixOnly = true;
                 }
             break;
         case 'f': // compfunc
@@ -326,19 +339,21 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
         case 'h':
         case '?':
             printf("usage:\n"
-                "affixtrain [-@ <option file>] -i <word list> [-c <pruning threshold>] [-C <expected pruning threshold>] [-o <flexrules>] [-e <extra>] [-n <columns>] [-f <compfunc>] [-p[-]] [-s[-]] [-v[-]] [-j <tempdir>] [-L<n>] [-H<n>]"
+                "affixtrain [-@ <option file>] -i <word/lemma list> [-c <pruning threshold>] [-C <expected pruning threshold>] [-o <flexrules>] [-e <extra>] [-n <columns>] [-f <compfunc>] [-p[-]] [-s[-]] [-v[-]] [-j <tempdir>] [-L<n>] [-H<n>]"
                 "\nor\n"
-                "affixtrain [<word list> [<pruning threshold> [<flexrules> [<extra> [<columns> [<compfunc>]]]]]]"
+                "affixtrain [<word/lemma list> [<pruning threshold> [<flexrules> [<extra> [<columns> [<compfunc>]]]]]]"
                 "\nor\n"
                 "affixtrain -b <rules>"
                 "\n");
             printf("-@: Options are read from file with lines formatted as: -<option letter> <value>\n"
                 "    A semicolon comments out the rest of the line.\n"
                 );
+            printf("-I: (input) full form list. (Together with -b option.)\n");
             printf("-i: (input) full form / lemma list\n");
             printf("-c: discard rules with little support. 0 <= pruning threshold <= 9\n");
             printf("-C: (together with -p and -XW) expected pruning threshold (parameter for tree penalty function). 0 <= expected pruning threshold <= 9\n");
             printf("-D: penalty parameters. Four or six: R__R;W__R;R__W;W__W[;R__NA;W__NA]\n");
+            printf("-O: (output) default is stdout (Together with -b and -I options.)\n");
             printf("-o: (output) default is to automatically generate file name\n");
             printf("-e: language code (da,en,is,nl,ru, etc)\n");
             printf("-p: compute parameters (overrules -f)\n");
@@ -407,14 +422,17 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
             printf("  17:koud ()\n");
             printf("  18:parms0 (Use computed parameter settings.)\n");
             printf("  19:parmsoff (obsolete, same as -f18)\n");
-            printf("-b: Name of binary rule file. Pretty print rule file and then exit.\n");
+            printf("-b: Name of binary rule file. Pretty print rule file and create Bracmat\n    version of rule file. Optionally (-I) lemmatise file.\n");
             printf("-Q: Max recursion depth when attempting to create candidate rule\n");
-            printf("-q: Percentage of training pairs to set aside for testing\n");
+//            printf("-q: Percentage of training pairs to set aside for testing\n");
             return Leave;
         case 'D':
             detectFloatingPointNumbers(locoptarg);
             break;
-        case 'i': // word list
+        case 'I': // word list
+            I = dupl(locoptarg);
+            break;
+        case 'i': // full form/lemma list
             i = dupl(locoptarg);
             break;
         case 'j': // temp dir
@@ -422,6 +440,9 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
             break;
         case 'n': // columns
             n = dupl(locoptarg);
+            break;
+        case 'O': // lemmas
+            O = dupl(locoptarg);
             break;
         case 'o': // flexrules
             o = dupl(locoptarg);
@@ -471,8 +492,8 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
         case 'v': // verbose
             Verbose = locoptarg && *locoptarg == '-' ? false : true;
             break;
-        case 'x': // verbose
-            Remove = locoptarg && *locoptarg == '-' ? false : true;
+        case 'x':
+            Remove = locoptarg && *locoptarg == '-' ? true : false;
             break;
         case 'T': // test with the training data
             TrainTest = locoptarg && *locoptarg == '-' ? false : true;
@@ -504,6 +525,8 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
                 fprintf(stderr, "Option Q:No parameter value found.\n");
                 exit(-1);
                 }
+            break;
+            /*
         case 'q':
             if (locoptarg && *locoptarg)
                 {
@@ -519,6 +542,7 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
                 fprintf(stderr, "Option q:No parameter value found.\n");
                 exit(-1);
                 }
+                */
         }
     return GoOn;
     }
@@ -698,6 +722,11 @@ OptReturnTp optionStruct::readOptsFromFile(char * locoptarg, char * progname)
                         strcpy(poptions[lineno], optarg2);
                         bufsize += strlen(optarg2) + 1;
                         }
+                    else
+                        {
+                        poptions[lineno][0] = 0;
+                        ++bufsize;
+                        }
                     OptReturnTp res = doSwitch(line[off], poptions[lineno], progname);
                     if (res > result)
                         result = res;
@@ -719,6 +748,12 @@ void optionStruct::completeArgs()
     {
     if(b != 0)
         return;
+
+    if(!j)
+        {
+        j = dupl("tmp/");
+        }
+
     if (SuffixOnly)
         {
         if (e)
@@ -776,9 +811,20 @@ void optionStruct::completeArgs()
         {
         if (!B)
             {
-            char * tmp = new char[strlen(e) + 10];
+            char * tmp;
+            const char * best = "best";  
+            const char * exte = ".txt";  
+            if(e)
+                {
+                tmp = new char[strlen(best) + 1 + strlen(e) + strlen(exte) + 1];
+                sprintf(tmp, "%s_%s%s", best, e, exte);
+                }
+            else
+                {
+                tmp = new char[strlen(best) + strlen(exte) + 1];
+                sprintf(tmp, "%s%s", best, exte);
+                }
             B = tmp;
-            sprintf(tmp, "best_%s.txt", e);
             }
         }
 
@@ -820,14 +866,17 @@ void optionStruct::completeArgs()
 
     //const char * columns = "12634"; // Word, Lemma, LemmaClass, WordFreq, LemmaFreq
     if (!n)
-        n = dupl("FB");// Word, Lemma
+        n = dupl("FBO");// Word, Lemma, Other
 
     if (!f)
         {
-        if (!ComputeParms)
+        if (!ComputeParms && !D)
             {
-            fprintf(stderr, "Error: No competition function defined (-f option)\n");
-            getchar();
+            fprintf(stderr, "Error: No parameters provided. (-D option).\n"
+                "Add -p if you want to compute the parameters.\n"
+                "If the parameters are already computed, edit the generated parameter file\n"
+                "(e.g., parms.%s) and then run the program with\n\n\taffixtrain -@ parms.%s\n",
+                argstring(),argstring());
             exit(2);
             }
         }
@@ -845,13 +894,17 @@ void optionStruct::completeArgs()
             fprintf(stderr, "L (%f) must be <= H (%f)\n",Minfraction ,Maxfraction);
             exit(2);
             }
+        if(nD == 0)
+            {
+            detectFloatingPointNumbers("0;-0.8;0.6;0;0;0");
+            }
         }
 
 
-    FILE * f = fopen(wordList(), "r");
-    if(!f)
+    FILE * fpWrdLem = fopen(wordLemmaList(), "r");
+    if(!fpWrdLem)
         {
-        fprintf(stderr,"Input %s could not be opened for reading (-i parameter)\n",wordList());
+        fprintf(stderr,"Input %s could not be opened for reading (-i parameter)\n",wordLemmaList());
         exit(-1);
         }
     ++openfiles;
@@ -859,7 +912,7 @@ void optionStruct::completeArgs()
     Lines = 0;
     int kar = 0;
     unsigned int lineProfile = 0;
-    while ((kar = fgetc(f)) != EOF)
+    while ((kar = fgetc(fpWrdLem)) != EOF)
         {
         if (kar == '\n')
             {
@@ -898,7 +951,7 @@ void optionStruct::completeArgs()
     if (verbose())
         printf("blobs:%d lines %d\n", Blobs, Lines);
     --openfiles;
-    fclose(f);
+    fclose(fpWrdLem);
     }
 
 
@@ -957,145 +1010,138 @@ OptReturnTp optionStruct::readArgs(int argc, char * argv[])
 
 void optionStruct::print(FILE * fp) const
     {
-    fprintf(fp,"               ; verbose\n-v %s\n", Verbose ? "" : "-");
-    fprintf(fp, "               ; remove test files (%s)\n-x %s\n", Remove ? "yes" : "no", Remove ? "" : "-");
+    fprintf(fp, "               ; verbose (-v: yes -v-: no)\n-v %s\n", Verbose ? "" : "-");
+    fprintf(fp, "               ; keep intermediary files (-x: yes -x-: no)\n-x %s\n", Remove ? "-" : "");
     if (b)
         {
-        fprintf(fp, "               ; raw rules\n-b %s\n", b); if (b) fprintf(fp, "-b %s\n", b); else fprintf(fp, ";-b not specified\n");
-        fprintf(fp, "               ; (N/A) raw rules\n;-b not specified\n");
-        fprintf(fp, "               ; (N/A) word list\n-i %s\n", i ? i : "?");
-        fprintf(fp, "               ; (N/A) extra name suffix\n"); if (e) fprintf(fp, "-e %s\n", e); else fprintf(fp, ";-e not specified\n");
-        fprintf(fp, "               ; (N/A) suffix only (%s)\n-s %s\n", SuffixOnly ? "yes" : "no", SuffixOnly ? "" : "-");
-        fprintf(fp, "               ; (N/A) make rules with infixes less prevalent(%s)\n-A %s\n", ExpensiveInfix ? "yes" : "no", ExpensiveInfix ? "" : "-");
-        fprintf(fp, "               ; (N/A) columns (1=word,2=lemma,3=tags,0=other)\n-n %s\n", n ? n : "?");
-        fprintf(fp, "               ; (N/A) max recursion depth when attempting to create candidate rule\n-Q %d\n", Q);
-        if(o)
-            fprintf(fp, "               ; (N/A) flex rules\n-o %s\n", o);
+        fprintf(fp, "               ; flex rules (input file, binary format)\n-b %s\n-b %s\n", b);
+        fprintf(fp, "               ; Word list (Optional if -b is specified. Otherwise N/A) (-I filename)\n");
+        if(I)
+            {
+            fprintf(fp, "-I %s\n", I);
+            }
         else
-            fprintf(fp, "               ; (N/A) flex rules (Not specified, autogenerated)\n;-o\n");
-        fprintf(fp, "               ; (N/A) temp dir (including separator at end!)\n"); if (j) fprintf(fp, "-j %s\n", j); else fprintf(fp, ";-j not specified\n");
-        fprintf(fp, "               ; (N/A) percentage of training pairs to set aside for testing\n-q %d\n", q);
-        fprintf(fp, "               ; (N/A) penalties to decide which rule survives\n"); if (nD > 0){ fprintf(fp, "-D "); for (int i = 0; i < nD; ++i)fprintf(fp, "%f;", D[i]); fprintf(fp, "\n"); } else fprintf(fp, ";-D not specified\n");
-        fprintf(fp, "               ; (N/A) compute parms (%s)\n-p %s\n", ComputeParms ? "yes" : "no", ComputeParms ? "" : "-");
-        fprintf(fp, "               ; (N/A) expected pruning threshold\n-C %d\n", C);
-        fprintf(fp, "               ; (N/A) tree penalty (%s)\n-X %s\n"
-                , WeightFunction == econstant ? "constant" 
-                : WeightFunction == esupport ? "more support is better" 
-                : WeightFunction == eentropy ? "higher entropy is better"
-                : "Fewer pattern characters other than wildcards is better", X);
-        fprintf(fp, "               ; (N/A) current parameters\n-P %s\n", P ? P : "?");
-        fprintf(fp, "               ; (N/A) best parameters\n-B %s\n", B ? B : "?");
-        fprintf(fp, "               ; (N/A) start training with minimal fraction of training pairs\n-L %f\n", Minfraction);
-        fprintf(fp, "               ; (N/A) end training with maximal fraction of training pairs\n-H %f\n", Maxfraction);
-        fprintf(fp, "               ; (N/A) number of differently sized fractions of trainingdata\n-K %d\n",K);
-        fprintf(fp, "               ; (N/A) number of iterations of training with same fraction of training data when fraction is minimal\n-N %f\n", N);
-        fprintf(fp, "               ; (N/A) number of iterations of training with same fraction of training data when fraction is maximal\n-M %f\n", M);
-        fprintf(fp, "               ; (N/A) competition function\n-f %s\n", f ? f : "?");
-        fprintf(fp, "               ; (N/A) redo training after homographs for next round are removed (%s)\n-R %s\n", Redo ? "yes" : "no", Redo ? "" : "-");
-        fprintf(fp, "               ; (N/A) pruning threshold\n-c %d\n", c);
+            {
+            fprintf(fp, ";-I (Not specified, no lemmatisation takes place)\n");
+            }
+        fprintf(fp, "               ; Output, lemmas of words in input (-I option)\n");
+        if(I)
+            {
+            if(O)
+                fprintf(fp, "-O %s\n", O);
+            else
+                fprintf(fp, ";-O (Not specified, defaults to stdout)\n");
+            }
+        else
+            fprintf(fp, ";-O (N/A)\n");
+        fprintf(fp, "               ; word/lemma list\n;-i %s (N/A)\n", i ? i : "");
+        fprintf(fp, "               ; extra file name affix\n;-e %s (N/A)\n", e ? e : "");
+        fprintf(fp, "               ; suffix only (-s: yes -s-: no)\n;-s %s (N/A)\n", SuffixOnly ? "" : "-");
+        fprintf(fp, "               ; make rules with infixes less prevalent(-A: yes -A-: no)\n;-A %s (N/A)\n", ExpensiveInfix ? "" : "-");
+        fprintf(fp, "               ; columns (1=word,2=lemma,3=tags,0=other)\n;-n %s (N/A)\n", n ? n : "");
+        fprintf(fp, "               ; max recursion depth when attempting to create candidate rule\n;-Q %d (N/A)\n", Q);
+        fprintf(fp, "               ; flex rules (output, binary format)\n;-o %s (N/A)\n", o ? o : "");
+        fprintf(fp, "               ; temp dir (including separator at end!)\n;-j %s (N/A)\n", j ? j : "");
+//        fprintf(fp, "               ; percentage of training pairs to set aside for testing\n;-q %d (N/A)\n", q);
+        fprintf(fp, "               ; penalties to decide which rule survives (4 or 6 floating point numbers: R=>R;W=>R;R=>W;W=>W[;R=>N/A;W=>NA], where R=#right cases, W=#wrong cases, N/A=#not applicable cases, previous success state=>success state after rule application)\n"); if (nD > 0){ fprintf(fp, ";-D "); for (int i = 0; i < nD; ++i)fprintf(fp, "%f;", D[i]); fprintf(fp, " (N/A)\n"); } else fprintf(fp, ";-D (N/A)\n");
+        fprintf(fp, "               ; compute parms (-p: yes -p-: no)\n;-p %s (N/A)\n", ComputeParms ? "" : "-");
+        fprintf(fp, "               ; expected optimal pruning threshold (only effective in combination with -XW)\n;-C %d (N/A)\n", C);
+        fprintf(fp, "               ; tree penalty (-XC: constant -XD: more support is better -XE: higher entropy is better -XW: Fewer pattern characters other than wildcards is better)\n;-X %s (N/A)\n", X);
+        fprintf(fp, "               ; current parameters (-P filename)\n;-P %s (N/A)\n", P ? P : "");
+        fprintf(fp, "               ; best parameters (-B filename)\n;-B %s (N/A)\n", B ? B : "");
+        fprintf(fp, "               ; start training with minimal fraction of training pairs (-Ln: 0.0 < n <= 1.0)\n;-L %f (N/A)\n", Minfraction);
+        fprintf(fp, "               ; end training with maximal fraction of training pairs (-Hn: 0.0 < n <= 1.0)\n;-H %f (N/A)\n", Maxfraction);
+        fprintf(fp, "               ; number of differently sized fractions of trainingdata (natural number)\n;-K %d (N/A)\n",K);
+        fprintf(fp, "               ; number of iterations of training with same fraction of training data when fraction is minimal (positive number)\n;-N %f (N/A)\n", N);
+        fprintf(fp, "               ; number of iterations of training with same fraction of training data when fraction is maximal (positive number)\n;-M %f (N/A)\n", M);
+        fprintf(fp, "               ; competition function (deprecated)\n;-f %s (N/A)\n", f ? f : "");
+        fprintf(fp, "               ; redo training after homographs for next round are removed (-R: yes -R-: no)\n;-R %s (N/A)\n", Redo ? "" : "-");
+        fprintf(fp, "               ; max. pruning threshold to evaluate\n;-c %d (N/A)\n", c);
+        fprintf(fp, "               ; test with the training data (-T: yes -T-: no)\n;-T %s (N/A)\n", TrainTest ? "" : "-");
+        fprintf(fp, "               ; test with data not used for training (-t: yes -t-: no)\n;-t %s (N/A)\n", Test ? "" : "-");
+        fprintf(fp, "               ; create flexrules using full training set (-F: yes -F-: no)\n;-F %s (N/A)\n", F ? "" : "-");
         }
     else
         {
-        fprintf(fp, "               ; raw rules\n;-b not specified\n");
-        fprintf(fp, "               ; word list\n-i %s\n", i);
-        fprintf(fp, "               ; extra name suffix\n"); if (e) fprintf(fp, "-e %s\n", e); else fprintf(fp, ";-e not specified\n");
-        fprintf(fp, "               ; suffix only (%s)\n-s %s\n", SuffixOnly ? "yes" : "no", SuffixOnly ? "" : "-");
-        fprintf(fp, "               ; make rules with infixes less prevalent(%s)\n-A %s\n", ExpensiveInfix ? "yes" : "no", ExpensiveInfix ? "" : "-");
-        fprintf(fp, "               ; columns (1=word,2=lemma,3=tags,0=other)\n-n %s\n", n);
+        fprintf(fp, "               ; flex rules (input file, binary format)\n;-b (not specified, not doing actions with already created flex rules.)\n");
+        fprintf(fp, "               ; Word list (Optional if -b is specified. Otherwise N/A) (-I filename)\n;-I %s (N/A)\n",I ? I : "");
+        fprintf(fp, "               ; Output, lemmas of words in input (-I option)\n;-O %s (N/A)\n",O ? O : "");
+        fprintf(fp, "               ; word/lemma list\n-i %s\n", i);
+        fprintf(fp, "               ; extra file name affix\n-e %s\n", e ? e : "");
+        fprintf(fp, "               ; suffix only (-s: yes -s-: no)\n-s %s\n", SuffixOnly ? "" : "-");
+        fprintf(fp, "               ; make rules with infixes less prevalent(-A: yes -A-: no)\n-A %s\n", ExpensiveInfix ? "" : "-");
+        fprintf(fp, "               ; columns (1 or F or W=word,2 or B or L=lemma,3 or T=tags,0 or O=other)\n-n %s\n", n);
         fprintf(fp, "               ; max recursion depth when attempting to create candidate rule\n-Q %d\n", Q);
-        if(o)
-            fprintf(fp, "               ; flex rules\n-o %s\n", o);
-        else
-            fprintf(fp, "               ; flex rules (Not specified, autogenerated)\n;-o\n");
-        fprintf(fp, "               ; temp dir (including separator at end!)\n"); if (j) fprintf(fp, "-j %s\n", j); else fprintf(fp, ";-j not specified\n");
-        fprintf(fp, "               ; percentage of training pairs to set aside for testing\n-q %d\n", q);
-        fprintf(fp, "               ; penalties to decide which rule survives\n"); if (nD > 0){ fprintf(fp, "-D "); for (int i = 0; i < nD; ++i)fprintf(fp, "%f;", D[i]); fprintf(fp, "\n"); } else fprintf(fp, ";-D not specified\n");
-        fprintf(fp, "               ; compute parms (%s)\n-p %s\n", ComputeParms ? "yes" : "no", ComputeParms ? "" : "-");
+        fprintf(fp, "               ; flex rules (output, binary format, can be left unspecified)\n%s-o %s\n",o ? "" : ";", o ? o : "(Not specified, autogenerated)");
+        fprintf(fp, "               ; temp dir (including separator at end!)\n-j %s\n", j ? j : "");
+//        fprintf(fp, "               ; percentage of training pairs to set aside for testing\n-q %d\n", q);
+        fprintf(fp, "               ; penalties to decide which rule survives (4 or 6 floating point numbers: R=>R;W=>R;R=>W;W=>W[;R=>N/A;W=>NA], where R=#right cases, W=#wrong cases, N/A=#not applicable cases, previous success state=>success state after rule application)\n"); if (nD > 0){ fprintf(fp, "-D "); for (int i = 0; i < nD; ++i)fprintf(fp, "%f;", D[i]); fprintf(fp, "\n"); } else fprintf(fp, ";-D not specified\n");
+        fprintf(fp, "               ; compute parms (-p: yes -p-: no)\n-p %s\n", ComputeParms ? "" : "-");
         if (ComputeParms)
             {
             assert(P);
             assert(B);
-            if(WeightFunction == esupport)
-                fprintf(fp, "               ; expected optimal pruning threshold\n-C %d\n", C);
-            else
-                fprintf(fp, "               ; expected optimal pruning threshold (only effective in combination with -XW)\n-C %d\n", C);
-            fprintf(fp, "               ; tree penalty (%s)\n-X %s\n"
-                    , WeightFunction == econstant ? "constant" 
-                    : WeightFunction == esupport ? "more support is better" 
-                    : WeightFunction == eentropy ? "higher entropy is better"
-                    : "Fewer pattern characters other than wildcards is better", X);
-            fprintf(fp, "               ; current parameters\n-P %s\n", P);
-            fprintf(fp, "               ; best parameters\n-B %s\n", B);
-            fprintf(fp, "               ; start training with minimal fraction of training pairs\n-L %f\n", Minfraction);
-            fprintf(fp, "               ; end training with maximal fraction of training pairs\n-H %f\n", Maxfraction);
-            fprintf(fp, "               ; number of differently sized fractions of trainingdata\n-K %d\n",K);
-            fprintf(fp, "               ; number of iterations of training with same fraction of training data when fraction is minimal\n-N %f\n", N);
-            fprintf(fp, "               ; number of iterations of training with same fraction of training data when fraction is maximal\n-M %f\n", M);
-            fprintf(fp, "               ; (N/A) competition function\n-f %s\n", f ? f : "?");
-            fprintf(fp, "               ; (N/A) redo training after homographs for next round are removed (%s)\n-R %s\n", Redo ? "yes" : "no", Redo ? "" : "-");
-            fprintf(fp, "               ; (N/A) pruning threshold\n-c %d\n", c);
+            fprintf(fp, "               ; expected optimal pruning threshold (only effective in combination with -XW)\n-C %d\n", C);
+            fprintf(fp, "               ; tree penalty (-XC: constant -XD: more support is better -XE: higher entropy is better -XW: Fewer pattern characters other than wildcards is better)\n-X %s\n", X ? X : "C");
+            fprintf(fp, "               ; current parameters (-P filename)\n-P %s\n", P);
+            fprintf(fp, "               ; best parameters (-B filename)\n-B %s\n", B);
+            fprintf(fp, "               ; start training with minimal fraction of training pairs (-Ln: 0.0 < n <= 1.0)\n-L %f\n", Minfraction);
+            fprintf(fp, "               ; end training with maximal fraction of training pairs (-Hn: 0.0 < n <= 1.0)\n-H %f\n", Maxfraction);
+            fprintf(fp, "               ; number of differently sized fractions of trainingdata (natural number)\n-K %d\n",K);
+            fprintf(fp, "               ; number of iterations of training with same fraction of training data when fraction is minimal (positive number)\n-N %f\n", N);
+            fprintf(fp, "               ; number of iterations of training with same fraction of training data when fraction is maximal (positive number)\n-M %f\n", M);
+            fprintf(fp, "               ; competition function (deprecated)\n;-f %s (N/A)\n", f ? f : "");
+            fprintf(fp, "               ; redo training after homographs for next round are removed (-R: yes -R-: no)\n;-R %s (N/A)\n", Redo ? "" : "-");
             }
         else
             {
             assert(f);
-            fprintf(fp, "               ; (N/A) expected pruning threshold\n-C %d\n", C);
-            fprintf(fp, "               ; (N/A) tree penalty (%s)\n-X %s\n"
-                    , WeightFunction == econstant ? "constant" 
-                    : WeightFunction == esupport ? "more support is better" 
-                    : WeightFunction == eentropy ? "higher entropy is better"
-                    : "Fewer pattern characters other than wildcards is better", X);
-            fprintf(fp, "               ; (N/A) current parameters\n-P %s\n", P ? P : "?");
-            fprintf(fp, "               ; (N/A) best parameters\n-B %s\n", B ? B : "?");
-            fprintf(fp, "               ; (N/A) start training with minimal fraction of training pairs\n-L %f\n", Minfraction);
-            fprintf(fp, "               ; (N/A) end training with maximal fraction of training pairs\n-H %f\n", Maxfraction);
-            fprintf(fp, "               ; (N/A) number of differently sized fractions of trainingdata\n-K %d\n",K);
-            fprintf(fp, "               ; (N/A) number of iterations of training with same fraction of training data when fraction is minimal\n-N %f\n", N);
-            fprintf(fp, "               ; (N/A) number of iterations of training with same fraction of training data when fraction is maximal\n-M %f\n", M);
-            fprintf(fp, "               ; competition function\n-f %s\n", f);
-            fprintf(fp, "               ; redo training after homographs for next round are removed (%s)\n-R %s\n", Redo ? "yes" : "no", Redo ? "" : "-");
-            fprintf(fp, "               ; pruning threshold\n-c %d\n", c);
+            fprintf(fp, "               ; expected optimal pruning threshold (only effective in combination with -XW)\n;-C %d (N/A)\n", C);
+            fprintf(fp, "               ; tree penalty (-XC: constant -XD: more support is better -XE: higher entropy is better -XW: Fewer pattern characters other than wildcards is better)\n;-X %s (N/A)\n", X ? X : "C");
+            fprintf(fp, "               ; current parameters (-P filename)\n;-P %s (N/A)\n", P ? P : "");
+            fprintf(fp, "               ; best parameters (-B filename)\n;-B %s (N/A)\n", B ? B : "");
+            fprintf(fp, "               ; start training with minimal fraction of training pairs (-Ln: 0.0 < n <= 1.0)\n;-L %f (N/A)\n", Minfraction);
+            fprintf(fp, "               ; end training with maximal fraction of training pairs (-Hn: 0.0 < n <= 1.0)\n;-H %f (N/A)\n", Maxfraction);
+            fprintf(fp, "               ; number of differently sized fractions of trainingdata (natural number)\n;-K %d (N/A)\n",K);
+            fprintf(fp, "               ; number of iterations of training with same fraction of training data when fraction is minimal (positive number)\n;-N %f (N/A)\n", N);
+            fprintf(fp, "               ; number of iterations of training with same fraction of training data when fraction is maximal (positive number)\n;-M %f (N/A)\n", M);
+            fprintf(fp, "               ; competition function (deprecated)\n-f %s\n", f);
+            fprintf(fp, "               ; redo training after homographs for next round are removed (-R: yes -R-: no)\n-R %s\n", Redo ? "" : "-");
             }
-        fprintf(fp, "               ; test with the training data (%s)\n-T %s\n", TrainTest ? "yes" : "no", TrainTest ? "" : "-");
-        fprintf(fp, "               ; test with data not used for training (%s)\n-t %s\n", Test ? "yes" : "no", Test ? "" : "-");
-        fprintf(fp, "               ; create flexrules (%s)\n-F %s\n", F ? "yes" : "no", F ? "" : "-");
-        fprintf(fp, "               ; Number of blobs found in word list: %d whereof used for training %d\n", Blobs, FracBlobs == 0 ? Blobs : FracBlobs);
-        fprintf(fp, "               ; Number of lines found in word list: %d whereof used for training %d\n", Lines, FracLines == 0 ? Lines : FracLines);
-        /*
-        fprintf(fp, "               ; Current training size step: %d\n", Swath);
-        fprintf(fp, "               ; Current iteration in current training size step: %d\n", SwathIteration);
-        fprintf(fp, "               ; Current number of nodes: %d\n", NumberOfNodes);
-        fprintf(fp, "               ; Current number of lines: %d\n", TrainingPairsLines);
-        fprintf(fp, "               ; Nodes/line: %.*e\n", DBL_DIG+2,(double)NumberOfNodes/(double)TrainingPairsLines);
-        switch(WeightFunction)
-            {
-            case esupport:
-                fprintf(fp, "               ; Current tree-penalty-by-support: %.*e\n", DBL_DIG+2,TreePenalty);
-                break;
-            case eentropy:
-                fprintf(fp, "               ; Current tree-penalty-by-entropy: %.*e\n", DBL_DIG + 2, TreePenalty);
-                break;
-            case edepth:
-                fprintf(fp, "               ; Current tree-penalty-by-depth: %.*e\n", DBL_DIG+2,TreePenalty);
-                break;
-            case econstant:
-                break;
-            default:
-                break;
-            }
-        */
+        if(TrainTest || Test)
+            fprintf(fp, "               ; max. pruning threshold to evaluate\n-c %d\n", c);
+        else
+            fprintf(fp, "               ; max. pruning threshold to evaluate\n;-c %d (N/A)\n", c);
+        fprintf(fp, "               ; test with the training data (-T: yes -T-: no)\n-T %s\n", TrainTest ? "" : "-");
+        fprintf(fp, "               ; test with data not used for training (-t: yes -t-: no)\n-t %s\n", Test ? "" : "-");
+        fprintf(fp, "               ; create flexrules using full training set (-F: yes -F-: no)\n-F %s\n", F ? "" : "-");
+        fprintf(fp, "               ; Number of blobs found in word/lemma list: %d whereof used for training %d\n", Blobs, FracBlobs == 0 ? Blobs : FracBlobs);
+        fprintf(fp, "               ; Number of lines found in word/lemma list: %d whereof used for training %d\n", Lines, FracLines == 0 ? Lines : FracLines);
         }
     }
 
-void optionStruct::seti(const char * WordList)
+void optionStruct::seti(const char * WordLemmaList)
     {
     delete i;
-    i = dupl(WordList);
+    i = dupl(WordLemmaList);
+    }
+
+void optionStruct::setI(const char * WordList)
+    {
+    delete I;
+    I = dupl(WordList);
     }
 
 void optionStruct::seto(const char * Result)
     {
     delete o;
     o = dupl(Result);
+    }
+
+void optionStruct::setO(const char * Result)
+    {
+    delete O;
+    O = dupl(Result);
     }
 
 void optionStruct::sete(const char * Extra)
@@ -1127,7 +1173,7 @@ const char * optionStruct::argstring() const
     if(Argstring)
         delete[] Argstring;
 
-    size_t nameLength = strlen(i) + (e ? 1 + strlen(e) : 0) + (SuffixOnly ? strlen("_suf") : 0) + (ExpensiveInfix ? strlen("_inf") : 0) + (C < 0 ? 0 : strlen("_C") + 1) + (WeightFunction == esupport ? strlen("_XW") : 0) + (WeightFunction == eentropy ? strlen("_XE") : 0) + (WeightFunction == edepth ? strlen("_XD") : 0) + (Redo ? strlen("_R") : 0) + 1;
+    size_t nameLength = strlen(i) + (e ? 1 + strlen(e) : 0) + (SuffixOnly ? strlen("_suf") : 0) + (ExpensiveInfix ? strlen("_inf") : 0) + (C < 0 ? 0 : strlen("_C") + 1) + (WeightFunction == econstant ? strlen("_XE") : 0) + (WeightFunction == esupport ? strlen("_XW") : 0) + (WeightFunction == eentropy ? strlen("_XE") : 0) + (WeightFunction == edepth ? strlen("_XD") : 0) + (Redo ? strlen("_R") : 0) + 1;
     
     char * name = new char[nameLength];
     strcpy(name, i);
@@ -1153,6 +1199,9 @@ const char * optionStruct::argstring() const
         }
     switch(WeightFunction)
         {
+        case econstant:
+            strcat(name, "_XC");
+            break;
         case esupport:
             strcat(name, "_XW");
             break;

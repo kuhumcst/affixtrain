@@ -2976,7 +2976,7 @@ void computeWeight(vertex * a)
     a->wght = A;
     }
 
-// Notice that we want to sort from high to low, therefore sgn(b - a)
+// Notice that we want to sort from low penalty to high penalty, therefore sgn(a - b)
 int comp_parms(const vertex * a,const vertex * b)
     {
     if (a->wght != b->wght)
@@ -3045,72 +3045,75 @@ void setCompetitionFunction(optionStruct * options)
     if(underscore != NULL)
         langlength = (size_t)(underscore - options->extra());
 
-    for(int i = 0;funcstructs[i].number;++i)
-        if(!strcmp(options->compfunc(),funcstructs[i].number) || !strcmp(options->compfunc(),funcstructs[i].name))
-            {
-            comp = funcstructs[i].comp;
-            if(comp == comp_parms0_off)
+    if(options->compfunc())
+        {
+        for(int i = 0;funcstructs[i].number;++i)
+            if(!strcmp(options->compfunc(),funcstructs[i].number) || !strcmp(options->compfunc(),funcstructs[i].name))
                 {
-                for(unsigned int j = 0;j < sizeof(bests)/sizeof(bests[0]);++j)
+                comp = funcstructs[i].comp;
+                if(comp == comp_parms0_off)
                     {
-                    if(  bests[j].suffixonly == options->suffixOnly() 
-                      && (langlength == strlen(bests[j].langbase)) // 20130125
-                      && !strncmp(bests[j].langbase,options->extra(),strlen(bests[j].langbase))
-                      )
-                        {
-                        printf("bests[%d].suffixonly == [%s] bests[%d].langbase == [%s]\n",j,bests[j].suffixonly ? "true" : "false",j,bests[j].langbase);
-                        printf("comp = comp_parms0_off\n");
-                        comp = comp_parms0_off;
-                        printf("bests[%d].rows == [%d]\n",j,bests[j].rowss);
-                        nparms = bests[j].rowss * parms.ROWPARMS;
-                        if(nparms > NPARMS)
-                            {
-                            fprintf(stderr,"Too many rows of parameters in bestParms struct for %s (%d, max allowed %d)\n",options->extra(),nparms,NPARMS);
-                            exit(-1);
-                            }
-                        parms = bests[j].val;
-                        if(options->currentParms())
-                            {
-                            FILE * f = fopen(options->currentParms(),"w");
-                            ++openfiles;
-                            if(f)
-                                {
-                                fprintf(f,"bests[%d].suffixonly == [%s]\nbests[%d].langbase == [%s]\n",j,bests[j].suffixonly ? "true" : "false",j,bests[j].langbase);
-                                fprintf(f,"comp = comp_parms0_off\n");
-                                fprintf(f,"bests[%d].rows == [%d]\n",j,bests[j].rowss);
-                                fprintf(f,"  R->R     W->R     R->W     W->W\n");
-                                for(int k = 0;k < nparms;++k)
-                                    {
-                                    if(k % parms.ROWPARMS == 0)
-                                        fprintf(f,"\n");
-                                    fprintf(f,"%6f ",parms.Matrix[k]);
-                                    }
-                                fprintf(f,"\n");
-                                --openfiles;
-                                fclose(f);
-                                }
-                            }
-                        break;
-                        }
-                    }
-                if(nparms == 0)
-                    {
-                    fprintf(stderr,"No parameters defined for \"%s\"\nChoose one of:\n",options->extra());
                     for(unsigned int j = 0;j < sizeof(bests)/sizeof(bests[0]);++j)
                         {
-                        fprintf(stderr,"\t%s %s\n",bests[j].langbase,bests[j].suffixonly ? "suffix":"affix");
+                        if(  bests[j].suffixonly == options->suffixOnly() 
+                          && (langlength == strlen(bests[j].langbase)) // 20130125
+                          && !strncmp(bests[j].langbase,options->extra(),strlen(bests[j].langbase))
+                          )
+                            {
+                            printf("bests[%d].suffixonly == [%s] bests[%d].langbase == [%s]\n",j,bests[j].suffixonly ? "true" : "false",j,bests[j].langbase);
+                            printf("comp = comp_parms0_off\n");
+                            comp = comp_parms0_off;
+                            printf("bests[%d].rows == [%d]\n",j,bests[j].rowss);
+                            nparms = bests[j].rowss * parms.ROWPARMS;
+                            if(nparms > NPARMS)
+                                {
+                                fprintf(stderr,"Too many rows of parameters in bestParms struct for %s (%d, max allowed %d)\n",options->extra(),nparms,NPARMS);
+                                exit(-1);
+                                }
+                            parms = bests[j].val;
+                            if(options->currentParms())
+                                {
+                                FILE * f = fopen(options->currentParms(),"w");
+                                ++openfiles;
+                                if(f)
+                                    {
+                                    fprintf(f,"bests[%d].suffixonly == [%s]\nbests[%d].langbase == [%s]\n",j,bests[j].suffixonly ? "true" : "false",j,bests[j].langbase);
+                                    fprintf(f,"comp = comp_parms0_off\n");
+                                    fprintf(f,"bests[%d].rows == [%d]\n",j,bests[j].rowss);
+                                    fprintf(f,"  R->R     W->R     R->W     W->W\n");
+                                    for(int k = 0;k < nparms;++k)
+                                        {
+                                        if(k % parms.ROWPARMS == 0)
+                                            fprintf(f,"\n");
+                                        fprintf(f,"%6f ",parms.Matrix[k]);
+                                        }
+                                    fprintf(f,"\n");
+                                    --openfiles;
+                                    fclose(f);
+                                    }
+                                }
+                            break;
+                            }
                         }
-                    fprintf(stderr,"Or find optimal parameters for %s and put these in comp.cpp.\n",options->extra());
-                    getchar();
-                    exit(-1);
+                    if(nparms == 0)
+                        {
+                        fprintf(stderr,"No parameters defined for \"%s\"\nChoose one of:\n",options->extra());
+                        for(unsigned int j = 0;j < sizeof(bests)/sizeof(bests[0]);++j)
+                            {
+                            fprintf(stderr,"\t%s %s\n",bests[j].langbase,bests[j].suffixonly ? "suffix":"affix");
+                            }
+                        fprintf(stderr,"Or find optimal parameters for %s and put these in comp.cpp.\n",options->extra());
+                        getchar();
+                        exit(-1);
+                        }
+                    if(options->verbose())
+                        {
+                        printf("comp_parms0_off\n");
+                        }
                     }
-                if(options->verbose())
-                    {
-                    printf("comp_parms0_off\n");
-                    }
+                return;
                 }
-            return;
-            }
+        }
     if(options->numberOfParms() == 4 || options->numberOfParms() == 6)
         {
         comp = comp_parms0_off;

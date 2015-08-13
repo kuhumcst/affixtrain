@@ -81,6 +81,14 @@ buf+8   prefix pattern starts here
 0       padding (opt)
 0       padding (opt)
 
+Remark
+------
+Merging trees in the implemented way does not always preserve the order of the
+results. In other words, lemmatising with trees T1, T2 and T3 (in that order),
+giving results L1, L2 and L3, is not necessarily equivalent with lemmatising
+with the merged tree, which could give result e.g., L3, L1 and L2.
+The difference is more pronounced the more results are produced . 
+Even a pair of ambiguous results can be in the 'wrong' order.
 */
 
 #include "flexcombi.h"
@@ -420,7 +428,7 @@ int prettyPrint(const char * flexrulesIn)
     fileBuffer FileBuffer;
     if (!FileBuffer.readRules(flexrulesIn))
         {
-        printf("Error (prettyPrint): Cannot open %s for reading\n", flexrulesIn);
+        printf("Error (prettyPrint): Cannot open %s (flexrulesIn) for reading\n", flexrulesIn);
         return false;
         }
 
@@ -433,7 +441,7 @@ int prettyPrint(const char * flexrulesIn)
     ++openfiles;
     if (!fm)
         {
-        printf("Error (prettyPrint): Cannot open %s for writing\n", filenameOut);
+        printf("Error (prettyPrint): Cannot open %s (filenameOut) for writing\n", filenameOut);
         return false;
         }
     char start[1000] = { 0 };
@@ -628,7 +636,7 @@ int prettyPrintBracmat(const char * flexrulesIn)
     fileBuffer FileBuffer;
     if (!FileBuffer.readRules(flexrulesIn))
         {
-        printf("Error (prettyPrintBracmat): Cannot open %s for reading\n", flexrulesIn);
+        printf("Error (prettyPrintBracmat): Cannot open %s (flexrulesIn) for reading\n", flexrulesIn);
         return false;
         }
 
@@ -641,7 +649,7 @@ int prettyPrintBracmat(const char * flexrulesIn)
     ++openfiles;
     if (!fmbra)
         {
-        printf("Error (prettyPrint): Cannot open %s for writing\n", brafile);
+        printf("Error (prettyPrintBracmat): Cannot open %s (brafile) for writing\n", brafile);
         return false;
         }
 
@@ -1137,7 +1145,7 @@ bool flexcombi(const char * bestflexrules, const char * nextbestflexrules, const
         }
     --openfiles;
     fclose(f);
-	prettyPrint(combinedflexrules);
-    prettyPrintBracmat(combinedflexrules);
+	//prettyPrint(combinedflexrules);
+    //prettyPrintBracmat(combinedflexrules);
     return true;
     }

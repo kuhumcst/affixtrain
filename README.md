@@ -21,9 +21,11 @@ Training takes place in three stages:
     generalization effect. For each training set size the rules are also pruned
     a number of times. For each pruning level the precision is computed anew.
     Often, the best rules (fewest wrongly lemmatised words) are obtained by
-    pruning the rules that are supported by fewer than three examples.
+    pruning the rules that are supported by only one or two examples.
     A tabular report is added (as a comment) to a parameter file that can be
     used for future reference and re-training.
+    You can also test the rules with the training data. The unpruned rules
+    may not produce any wrong results. (If they do, tell me!)
   * In the third stage all available training words are used to produce
     production-ready rules, again in several pruning levels. It is up to the
     user to decide the pruning level to use. Unpruned rules lemmatise all
@@ -32,6 +34,11 @@ Training takes place in three stages:
     will not lemmatize all training words correctly. To cope with this
     disadvantage you should also provide a binary dictionary to the lemmatiser.
     Use cstlemma -h to see how to do that.
+  * To test that lemmatisation takes place as intended ("unit test") you can
+    provide an already generated flexrule file and a list of words, which 
+    is then lemmatised. You can also just provide an already generated flexrule
+    file to pretty print it and to convert it to Bracmat format. The latter file
+    can be read and used by the Bracmat script *lemmatize.bra*. 
     
 Empty lines in the training/testing data are interpreted as cluster separators.
 If the data has no empty lines between non-empty lines, the training and

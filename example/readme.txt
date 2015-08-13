@@ -27,7 +27,7 @@ prompt> cd 0
 prompt> affixtrain -b flexrules.short_XC
 prompt> cd ..
 prompt> bracmat
-{?} get$get$"lemmaVal.bra"
+{?} get$"lemmaVal.bra"
 {?} !r
 
 Now enter words and get lemmas and word classes in return.

@@ -1014,7 +1014,7 @@ void optionStruct::print(FILE * fp) const
     fprintf(fp, "               ; keep intermediary files (-x: yes -x-: no)\n-x %s\n", Remove ? "-" : "");
     if (b)
         {
-        fprintf(fp, "               ; flex rules (input file, binary format)\n-b %s\n-b %s\n", b);
+        fprintf(fp, "               ; flex rules (input file, binary format)\n-b %s\n-b %s\n", b, b);
         fprintf(fp, "               ; Word list (Optional if -b is specified. Otherwise N/A) (-I filename)\n");
         if(I)
             {

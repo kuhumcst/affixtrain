@@ -92,7 +92,7 @@ class optionStruct
         OptWeightFunction WeightFunction;
         OptReturnTp doSwitch(int c, char * locoptarg, char * progname);
         OptReturnTp readOptsFromFile(char * locoptarg,char * progname);
-        void detectFloatingPointNumbers(char * S);
+        void detectFloatingPointNumbers(const char * S);
     public:
         const OptWeightFunction getWeightFunction(){return WeightFunction;}
         const int blobs() const { return Blobs; }

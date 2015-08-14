@@ -168,15 +168,15 @@ optionStruct::~optionStruct()
     delete[] Argstring;
     }
 
-void optionStruct::detectFloatingPointNumbers(char * S)
+void optionStruct::detectFloatingPointNumbers(const char * S)
     {
     int n = 0;
-    char * t = 0;
+    const char * t = 0;
     double Sum2 = 0.0;
     double Sum = 0.0;
     double d;
-    char * s;
-    char * endptr = S;
+    const char * s;
+    const char * endptr = S;
     char * newendptr = 0;
     for (s = S;;s = t + 1,endptr = newendptr)
         {

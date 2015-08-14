@@ -205,8 +205,8 @@ class trainingPair
             {
             return Next;
             }
-        static void makeChains(int allPairs,trainingPair * TrainingPair,trainingPair ** train,trainingPair ** test,optionStruct * options);
-        static int makeNextTrainingSet(int allPairs,trainingPair * TrainingPair,FILE * train,FILE * done,FILE * combined, FILE * disamb,optionStruct * options);
+        static void makeChains(int allPairs,trainingPair * TrainingPair,trainingPair ** train,optionStruct * options);
+        static int makeNextTrainingSet(int allPairs,trainingPair * TrainingPair,FILE * train,optionStruct * options);
         inline void set(int bit)
             {
             bits |= bit;

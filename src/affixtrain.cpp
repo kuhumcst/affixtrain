@@ -20,7 +20,7 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "3.0"
+#define VERSION "3.01"
 
 #include "affixtrain.h"
 #include "testrules.h"
@@ -1838,7 +1838,7 @@ static int compare(const void * arg1, const void * arg2)
     return ret;
     }
 
-static int markAmbiguous(int allPairs, trainingPair * TrainingPair, FILE * famb, FILE * fallFile, optionStruct * options)
+static int markAmbiguous(int allPairs, trainingPair * TrainingPair, optionStruct * options)
     {
     if (options->verbose())
         printf("markAmbiguous\n");
@@ -1903,11 +1903,6 @@ static int markAmbiguous(int allPairs, trainingPair * TrainingPair, FILE * famb,
             int k;
 #if AMBIGUOUS
             trainingPair * pAlt = pTrainingPair[j];
-            if (famb)
-                {
-                //if(!pTrainingPair[j]->isset(b_skip))
-                pTrainingPair[j]->fprint(famb);
-                }
 #endif
             for (k = j + 1
                  ;    k < allPairs
@@ -1927,11 +1922,6 @@ static int markAmbiguous(int allPairs, trainingPair * TrainingPair, FILE * famb,
                         pTrainingPair[k]->set(b_ambiguous);
                         pAlt->Alt = pTrainingPair[k];
                         pAlt = pTrainingPair[k];
-                        if (famb)
-                            {
-                            fprintf(famb, "HOMOGRAPH:");
-                            pTrainingPair[k]->fprint(famb);
-                            }
                         }
 #else
 #if LEMMAINL
@@ -1975,13 +1965,6 @@ static int markAmbiguous(int allPairs, trainingPair * TrainingPair, FILE * famb,
 #endif
             }
         }
-
-    if(fallFile)
-        for (j = 0; j < allPairs; ++j)
-            {
-            if (!pTrainingPair[j]->isset(b_skip))
-                pTrainingPair[j]->fprintAll(fallFile);
-            }
 
     delete[] pTrainingPair; // Bart 20081008
     if (options->verbose())
@@ -2054,75 +2037,9 @@ static int markParadigms(int allPairs,trainingPair * TrainingPair,FILE * fparadi
     }
 #endif
 
-// Mark all pairs that are going to be used for testing after the training has completed. (If there is such testing.)
-static void markTest(int allPairs, trainingPair * TrainingPair, FILE * ftrain, FILE * ftestp, FILE * ftests, optionStruct * options)
-    {
-    if (options->verbose())
-        printf("markTest\n");
-    int pairs = 0;
-    for (pairs = 0; pairs < allPairs; ++pairs)
-        {
-        if (!TrainingPair[pairs].isset(
-#if !AMBIGUOUS
-            b_ambiguous|
-#endif
-            b_doublet | b_skip))
-            {
-/*            if (rand() % 100 <= options->percentageTestPairs())
-                {
-                TrainingPair[pairs].set(b_test);
-                TrainingPair[pairs].print(ftestp);
-                fprintf(ftestp, "\n");
-                fprintf(ftests, "%.*s\n", (int)(TrainingPair[pairs].itsWordlength()), TrainingPair[pairs].itsWord());
-                }
-            else*/
-                {
-                TrainingPair[pairs].print(ftrain);
-                fprintf(ftrain, "\n");
-                }
-            }
-        }
-    if (options->verbose())
-        printf("markTest DONE\n");
-    }
-
-
-
-static void writeAvailableTrainingData(int allPairs, trainingPair * TrainingPair, FILE * ftrainavailable
-#if WRITEINVERTED
-                                       ,FILE * fpinverted
-#endif
-                                       , optionStruct * options
-                                       )
-    {
-    if (options->verbose())
-        printf("writeAvailableTrainingData\n");
-    int pairs = 0;
-    for (pairs = 0; pairs < allPairs; ++pairs)
-        {
-#if AMBIGUOUS
-        if (!TrainingPair[pairs].isset(b_doublet | b_skip))
-#else
-        if(!TrainingPair[pairs].isset(b_ambiguous|b_doublet|b_skip))
-#endif
-            {
-            TrainingPair[pairs].fprintTraining(ftrainavailable
-#if WRITEINVERTED
-                                               ,fpinverted
-#endif
-                                               );
-            }
-        }
-    if (options->verbose())
-        printf("writeAvailableTrainingData DONE\n");
-    }
-
 int trainingPair::makeNextTrainingSet   ( int allPairs
                                         , trainingPair * TrainingPair
                                         , FILE * train
-                                        , FILE * done
-                                        , FILE * combined
-                                        , FILE * disamb
                                         , optionStruct * options
                                         )
     {
@@ -2142,24 +2059,14 @@ int trainingPair::makeNextTrainingSet   ( int allPairs
             if (!TrainingPair[pairs].isset(b_ambiguous))
                 {
                 TrainingPair[pairs].printMore(train);
-                TrainingPair[pairs].printMore(disamb);
-                if(combined)fprintf(combined, "\t");
-                TrainingPair[pairs].printMore(combined);
                 }
-//            else if (TrainingPair[pairs].isset(b_bench))
             else if (TrainingPair[pairs].getRes() != yes)
                 {
                 TrainingPair[pairs].printMore(train);
-                if(combined)fprintf(combined, "\t");
-                TrainingPair[pairs].printMore(combined);
                 }
             else
                 {
                 donepairs++;
-                TrainingPair[pairs].printMore(done);
-                TrainingPair[pairs].printMore(disamb);
-                if(combined)fprintf(combined, "*\t");
-                TrainingPair[pairs].printMore(combined);
                 }
             }
         }
@@ -2169,14 +2076,13 @@ int trainingPair::makeNextTrainingSet   ( int allPairs
     return donepairs;
     }
 
-void trainingPair::makeChains(int allPairs, trainingPair * TrainingPair, trainingPair ** train, trainingPair ** test, optionStruct * options)
+void trainingPair::makeChains(int allPairs, trainingPair * TrainingPair, trainingPair ** train, optionStruct * options)
     {
     if (options->verbose())
         printf("makeChains\n");
 
     int pairs = 0;
     trainingPair ** ptrain = train;
-    trainingPair ** ptest = test;
     for (pairs = 0; pairs < allPairs; ++pairs)
         {
 #if AMBIGUOUS
@@ -2185,12 +2091,6 @@ void trainingPair::makeChains(int allPairs, trainingPair * TrainingPair, trainin
         if(!TrainingPair[pairs].isset(b_ambiguous|b_doublet|b_skip))
 #endif
             {
-/*            if (TrainingPair[pairs].isset(b_test))
-                {
-                *ptest = TrainingPair + pairs;
-                ptest = &TrainingPair[pairs].Next;
-                }
-            else*/
                 {
                 *ptrain = TrainingPair + pairs;
                 ptrain = &TrainingPair[pairs].Next;
@@ -2202,14 +2102,12 @@ void trainingPair::makeChains(int allPairs, trainingPair * TrainingPair, trainin
     }
 
 static trainingPair * globTrainingPair;
-//static int globlines;
 
 static trainingPair * readTrainingPairs(aFile & afile, int & pairs, const char * columns, const char * tag, optionStruct * options)
     {
     if (options->verbose())
         printf("readTrainingPairs\n");
 
-    //    globlines = afile.lines;
     trainingPair * TrainingPair = new trainingPair[afile.lines];
     globTrainingPair = TrainingPair;
     // "123456" means Word, Lemma, Wordfreq, Lemmafreq, Wordclass, Lemmaclass
@@ -2365,29 +2263,9 @@ static trainingPair * readTrainingPairs(aFile & afile, int & pairs, const char *
     return TrainingPair;
     }
 
-static void markTheAmbiguousPairs(trainingPair * TrainingPair, const char * ext, int pairs, optionStruct * options)
+static void markTheAmbiguousPairs(trainingPair * TrainingPair, int pairs, optionStruct * options)
     {
-    /*
-    char filename[256];
-    if (256 <= sprintf(filename, "ambiguouspairs_%s.txt", ext))
-        {
-        printf("markTheAmbiguousPairs: buffer too small");
-        exit(-1);
-        }
-    FILE * famb = fopenOrExit(tempDir(filename, options), "wb", "famb");
-
-    if (256 <= sprintf(filename, "allFile_%s.txt", ext))
-        {
-        printf("markTheAmbiguousPairs: buffer too small");
-        exit(-1);
-        }
-    FILE * fallFile = fopenOrExit(tempDir(filename, options), "wb", "fallFile");*/
-
-    /*int ambi =*/ markAmbiguous(pairs, TrainingPair, 0/*famb*/, 0/*fallFile*/, options);
-    /*--openfiles;
-    fclose(famb);
-    --openfiles;
-    fclose(fallFile);*/
+    markAmbiguous(pairs, TrainingPair, options);
 
 #if PESSIMISTIC
     sprintf(filename,"paradigms_%s.txt",ext);
@@ -2401,72 +2279,6 @@ static void markTheAmbiguousPairs(trainingPair * TrainingPair, const char * ext,
 #endif
     }
 
-static void writeAllAvailablePairs(trainingPair * TrainingPair, const char * ext, int pairs, optionStruct * options)
-    {
-    return;
-    CHECK("cglobTempDir");
-    char train[256];
-    if (256 <= sprintf(train, "availabletrainingpairs_%s.txt", ext))
-        {
-        printf("writeAllAvailablePairs: buffer 2 small");
-        exit(0);
-        }
-    FILE * ftrain = fopenOrExit(tempDir(train, options), "wb", "ftrain");
-
-#if WRITEINVERTED
-    sprintf(train,"availabletrainingpairs_inverted_%s.txt",ext);
-    FILE * fpinverted = fopenOrExit(train,"wb","inverted");
-#endif
-    writeAvailableTrainingData(pairs, TrainingPair, ftrain
-#if WRITEINVERTED
-                               ,fpinverted
-#endif
-                               , options
-                               );
-    if (ftrain)
-        {
-        --openfiles;
-        fclose(ftrain);
-        ftrain = NULL;
-        }
-#if WRITEINVERTED
-    if(fpinverted)
-        {
-        --openfiles;
-        fclose(fpinverted);
-        ftrain = NULL;
-        }
-#endif
-    }
-/*
-static void writeAllTestPairs(trainingPair * TrainingPair, const char * ext, int pairs, optionStruct * options)
-    {
-    CHECK("dglobTempDir");
-    char bigbuf[10000];
-
-    sprintf(bigbuf, "trainingpairs_%s.txt", ext);
-    FILE * ftrain = fopenOrExit(tempDir(bigbuf, options), "wb", "ftrain");
-
-    sprintf(bigbuf, "testpairs_%s.txt", ext);
-    FILE * ftestp = fopenOrExit(tempDir(bigbuf, options), "wb", "ftestp");
-
-    sprintf(bigbuf, "tests_%s.txt", ext);
-    FILE * ftests = fopenOrExit(tempDir(bigbuf, options), "wb", "ftests");
-
-    markTest(pairs, TrainingPair, ftrain, ftestp, ftests, options);
-
-    if (options->verbose())
-        {
-        printf("trainingpairs_%s.txt testpairs_%s.txt tests_%s.txt written\n", ext, ext, ext);
-        }
-    --openfiles;
-    fclose(ftrain);
-    --openfiles;
-    fclose(ftestp);
-    --openfiles;
-    fclose(ftests);
-    }
-*/
 static void doTheRules(hash * Hash, trainingPair * TrainingPair, node ** top, optionStruct * options)
     {
     CHECK("eglobTempDir");
@@ -2479,7 +2291,6 @@ static void doTheRules(hash * Hash, trainingPair * TrainingPair, node ** top, op
     (*top)->init(&Right, &TrainingPair, 0, options);
     (*top) = (*top)->cleanup(NULL);
     }
-
 
 /* Create binary output */
 static void rearrange
@@ -2665,12 +2476,6 @@ static bool writeAndTest(node * tree, const char * ext, int threshold, const cha
         sprintf(filename,"rules_%d%s.txt",threshold,ext);
         foo = fopenOrExit(filename,"wb","rules");
 #endif
-        //sprintf(filename, "numberOfRules_%s_%d.txt", ext, threshold);
-        //FILE * fono = fopenOrExit(tempDir(filename, options), "wb", "writeAndTest");
-#if 0//BRACMATOUTPUT
-        sprintf(filename, "rules_%d%s.bra", threshold, ext);
-        FILE * fobra = fopenOrExit(tempDir(filename, options), "wb", "Bracmat output");
-#endif
         if (256 <= sprintf(filename, "rules_%d%s.lel", threshold, ext))
             {
             printf("writeAndTest: filename 2 small");
@@ -2685,9 +2490,6 @@ static bool writeAndTest(node * tree, const char * ext, int threshold, const cha
         if (folel
 #if RULESASTEXTINDENTED
             && foo
-#endif
-#if 0//BRACMATOUTPUT
-            && fobra
 #endif
 #if RULESASTEXT
             && foleltxt
@@ -2708,11 +2510,7 @@ static bool writeAndTest(node * tree, const char * ext, int threshold, const cha
 #if RULESASTEXTINDENTED
                 , foo // "rules_%d%s.txt"
 #endif
-#if 0//BRACMATOUTPUT
-                , fobra // "rules_%d%s.bra"
-#else
                 , 0
-#endif
                 , folel // "rules_%d%s.lel"
                 , 0
                 , &L
@@ -2720,10 +2518,6 @@ static bool writeAndTest(node * tree, const char * ext, int threshold, const cha
                 , nr
                 , options
                 );
-#if 0//BRACMATOUTPUT
-            --openfiles;
-            fclose(fobra);
-#endif
 #if RULESASTEXTINDENTED
             --openfiles;
             fclose(foo);
@@ -2781,13 +2575,6 @@ static bool writeAndTest(node * tree, const char * ext, int threshold, const cha
                 }
 
 #endif
-#if 0//BRACMATOUTPUT
-            if (fobra)
-                {
-                --openfiles;
-                fclose(fobra);
-                }
-#endif
             if (folel)
                 {
                 --openfiles;
@@ -2805,48 +2592,6 @@ static bool writeAndTest(node * tree, const char * ext, int threshold, const cha
     return false;
     }
 
-static void writeWordsGroupedByRuleName(node * top, char * wordsGroupedByRuleName, optionStruct * options)
-    {
-    if(wordsGroupedByRuleName)
-        {
-        FILE * wordsFile = fopenOrExit(tempDir(wordsGroupedByRuleName, options), "wb", "words file");
-    #if AMBIGUOUS
-        ambivalentWords = 0;
-        alternatives = 0;
-    #endif
-        allwords = 0;
-        top->printSep(wordsFile, 0);
-    #if AMBIGUOUS
-        fprintf(wordsFile
-                , "\nAll words: %d    Words with alternative lemmas: %d    Words that are not lemmatized correctly: %d\n"
-                , allwords
-                , ambivalentWords
-                , alternatives);
-    #else
-        fprintf(wordsFile
-                , "\nAll words: %d\n"
-                , allwords);
-    #endif
-        --openfiles;
-        fclose(wordsFile); /* Lists all words, grouped by the rule that creates each word's lemma. */
-        }
-    }
-
-
-static void writeTreeStatistics(node * top, char * numbersName, optionStruct * options)
-    {
-    if(numbersName)
-        {
-        FILE * fcounting = fopenOrExit(tempDir(numbersName, options), "wb", "counting");
-        fprintf(fcounting, "Bottom up left to right traversal of tree.\n");
-        fprintf(fcounting, "Nodes\tPairs\tlog(Nodes)\tlog(Pairs)\n");
-        int locnodes = 0, locpairs = 0;
-        top->Counting(locnodes, locpairs, fcounting);
-        --openfiles;
-        fclose(fcounting);
-        }
-    }
-
 static bool doTraining
 (const char * fname
 , const char * ext
@@ -2854,11 +2599,6 @@ static bool doTraining
 , const char * nflexrulesFormat
 , const char * columns
 , char * pairsToTrainInNextPassName
-, char * ingestedFractionOfAmbiguousPairsName
-, char * allPairsName
-, char * allIngestedPairsName
-, char * wordsGroupedByRuleName
-, char * numbersName
 , countAndWeight * Counts
 , const char * tag
 , int * filelines
@@ -2875,28 +2615,21 @@ static bool doTraining
 
     int pairs;
     trainingPair * TrainingPair = readTrainingPairs(afile, pairs, columns, tag, options);
-    markTheAmbiguousPairs(TrainingPair, ext, pairs, options);
-    writeAllAvailablePairs(TrainingPair, ext, pairs, options);
-/*    if (options->percentageTestPairs() > 0)
-        writeAllTestPairs(TrainingPair, ext, pairs, options);*/
+    markTheAmbiguousPairs(TrainingPair, pairs, options);
     hash Hash(10);
     trainingPair * train = NULL;
-    trainingPair * test = NULL;
     // Split list of pairs in those that are to be used for training and those
     // that are to be used for testing.
     // Pairs that are doublets are not added to either list.
     // Nor are pairs that are not well-formed (e.g. contain a ' ').
-    trainingPair::makeChains(pairs, TrainingPair, &train, &test, options);
+    trainingPair::makeChains(pairs, TrainingPair, &train, options);
     node * top;
     doTheRules(&Hash, train, &top, options);
 
     FILE * nexttrain = pairsToTrainInNextPassName ? fopenOrExit(tempDir(pairsToTrainInNextPassName, options), "wb", "nexttrain") : NULL;
-    //FILE * done = ingestedFractionOfAmbiguousPairsName ? fopenOrExit(tempDir(ingestedFractionOfAmbiguousPairsName, options), "wb", "done") : NULL;
-    //FILE * combined = allPairsName ? fopenOrExit(tempDir(allPairsName, options), "wb", "combined") : NULL;
-    //FILE * disamb = allIngestedPairsName ? fopenOrExit(tempDir(allIngestedPairsName, options), "wb", "disamb") : NULL;
-    if (nexttrain /*&& done && combined && disamb*/)
+    if (nexttrain)
         {
-        int donepairs = trainingPair::makeNextTrainingSet(pairs, TrainingPair, nexttrain, 0/*done*/, 0/*combined*/, 0/*disamb*/, options);
+        int donepairs = trainingPair::makeNextTrainingSet(pairs, TrainingPair, nexttrain, options);
         if (donepairs)
             {
             moreToDo = true;
@@ -2908,27 +2641,6 @@ static bool doTraining
         --openfiles;
         fclose(nexttrain); /* The training that still has to be done, containing all unambiguous pairs and all that remains of the ambiguous pairs. */
         }
-    /*
-    if (done)
-        {
-        --openfiles;
-        fclose(done); / * Those parts of ambiguous pairs that are done in this pass. These are typically the most regular parts of ambiguous pairs. * /
-        }*/
-    /*
-    if (combined)
-        {
-        --openfiles;
-        fclose(combined); / * The sum of the above two. * /
-        }*/
-    /*
-    if (disamb)
-        {
-        --openfiles;
-        fclose(disamb);  / * The training that has been done, containing all unambiguous pairs and all parts of ambiguous pairs that were done in this pass. * /
-        }*/
-
-    writeWordsGroupedByRuleName(top, wordsGroupedByRuleName, options);
-    writeTreeStatistics(top, numbersName, options);
 
     if (nflexrulesFormat)
         {
@@ -3178,19 +2890,6 @@ void computeParms(optionStruct * options)
                 init(options);
             else
                 copybest(); // go on with best result so far.
-            /*char wordsGroupedByRuleName[1024];
-            if (sizeof(wordsGroupedByRuleName) <= (size_t)sprintf(wordsGroupedByRuleName, "words_%s%s.txt", ext, tag))
-                {
-                printf("computeParms: wordsGroupedByRuleName 2 small");
-                exit(-1);
-                }*/
-            /*
-            char numbersName[1024];
-            if (sizeof(numbersName) <= (size_t)sprintf(numbersName, "numbers_%s%s.tab", ext, tag))
-                {
-                printf("computeParms: numbersName 2 small");
-                exit(-1);
-                }*/
             int filelines;
             doTraining
                 (/* const char *                                */  filename
@@ -3199,15 +2898,10 @@ void computeParms(optionStruct * options)
                 ,/* const char * nflexrulesFormat               */  0//options->flexrules()
                 ,/* const char *                                */  options->columns()
                 ,/* char * pairsToTrainInNextPassName           */  NULL
-                ,/* char * ingestedFractionOfAmbiguousPairsName */  NULL
-                ,/* char * allPairsName                         */  NULL
-                ,/* char * allIngestedPairsName                 */  NULL
-                ,/* char *                                      */  0//wordsGroupedByRuleName
-                ,/* char *                                      */  0//numbersName
                 ,/* countAndWeight *                            */  &Count
                 ,/* const char *                                */  tag
                 ,/* int * filelines                             */  &filelines
-                , options
+                ,                                                   options
                 ); // sets Nnodes
             if (lines == 0)
                 fraclines = lines = filelines;
@@ -3258,20 +2952,6 @@ void computeParms(optionStruct * options)
                 }
             CHECK("D2globTempDir");
 
-            /*char wordsGroupedByRuleName[1024];
-            if (sizeof(wordsGroupedByRuleName) <= (size_t)sprintf(wordsGroupedByRuleName, "words_%s%s.txt", ext, tag))
-                {
-                printf("computeParms: wordsGroupedByRuleName 2 small");
-                exit(-1);
-                }*/
-            /*
-            char numbersName[1024];
-            if (sizeof(numbersName) <= (size_t)sprintf(numbersName, "numbers_%s%s.tab", ext, tag))
-                {
-                printf("computeParms: numbersName 2 small");
-                exit(-1);
-                }*/
-
             int filelines;
             doTraining
                 (/* const char *                                */  filename
@@ -3280,17 +2960,12 @@ void computeParms(optionStruct * options)
                 ,/* const char * nflexrulesFormat               */  0//options->flexrules()
                 ,/* const char *                                */  options->columns()
                 ,/* char * pairsToTrainInNextPassName           */  NULL
-                ,/* char * ingestedFractionOfAmbiguousPairsName */  NULL
-                ,/* char * allPairsName                         */  NULL
-                ,/* char * allIngestedPairsName                 */  NULL
-                ,/* char *                                      */  0//wordsGroupedByRuleName
-                ,/* char *                                      */  0//numbersName
                 ,/* countAndWeight *                            */  &Count
                 ,/* const char *                                */  tag
                 ,/* int * filelines                             */  &filelines
-                , options
+                ,                                                   options
                 ); // sets Nnodes
-            if (lines == 0)
+            if (lines == 0)                 
                 fraclines = lines = filelines;
 
             if (options->verbose())
@@ -3432,9 +3107,6 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
     char ingestedFractionOfAmbiguousPairsName[1024];
     char allPairsName[1024];
     char allIngestedPairsName[1024];
-    //char wordsGroupedByRuleName[1024];
-    //char numbersName[1024];
-
 
     char pairsToTrainInNextPassFormat[1024];
     char ingestedFractionOfAmbiguousPairsFormat[1024];
@@ -3451,12 +3123,10 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
     char AccumulatedFlexrulePassFormat[1024];
     sprintf(FlexrulePassFormat,"%s%%s.pass%%d.cutoff%%%%d",options->tempDir());
     sprintf(AccumulatedFlexrulePassFormat,"%s%%s.pass%%d.cutoff%%%%d.accumulated",options->tempDir());
-    clock_t start = clock();
     sprintf(pairsToTrainInNextPassFormat, "pairsToTrainInNextPass.%s%s.pass%%d", options->extra(), tag);
     sprintf(ingestedFractionOfAmbiguousPairsFormat, "ingestedFractionOfAmbiguousPairs.%s%s.pass%%d", options->extra(), tag);
     sprintf(allPairsFormat, "allPairs.%s%s.pass%%d", options->extra(), tag);
     sprintf(allIngestedPairsFormat, "allIngestedPairs.%s%s.pass%%d", options->extra(), tag);
-    //sprintf(wordsGroupedByRuleFormat, "wordsGroupedByRuleName.%s%s.pass%%d", options->extra(), tag);
     sprintf(numbersFormat, "numbers.%s%s.pass%%d", options->extra(), tag);
 
 
@@ -3489,8 +3159,6 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
         sprintf(ingestedFractionOfAmbiguousPairsName, ingestedFractionOfAmbiguousPairsFormat, passes);
         sprintf(allPairsName, allPairsFormat, passes);
         sprintf(allIngestedPairsName, allIngestedPairsFormat, passes);
-        //sprintf(wordsGroupedByRuleName, wordsGroupedByRuleFormat, passes);
-        //sprintf(numbersName, numbersFormat, passes);
         char spass[10];
         if (sizeof(spass) <= (size_t)sprintf(spass, ".pass%d", passes))
             {
@@ -3511,15 +3179,10 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
             ,/* const char * nflexrulesFormat               */  flexrulesPass
             ,/* const char *                                */  passes > 1 ? "12" : options->columns()
             ,/* char * pairsToTrainInNextPassName           */  pairsToTrainInNextPassName
-            ,/* char * ingestedFractionOfAmbiguousPairsName */  ingestedFractionOfAmbiguousPairsName
-            ,/* char * allPairsName                         */  allPairsName
-            ,/* char * allIngestedPairsName                 */  allIngestedPairsName
-            ,/* char *                                      */  0//wordsGroupedByRuleName
-            ,/* char *                                      */  0//numbersName
             ,/* countAndWeight *                            */  Counts
             ,/* const char *                                */  passes > 1 ? NULL : tag
             ,/* int * filelines                             */  NULL
-            , options
+            ,                                                   options
             );
         /*
         Re-do the training, but only with those pairs that made it into
@@ -3533,8 +3196,6 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
                 {
                 printf("More training to do with file \"%s\"\n", pairsToTrainInNextPassName);
                 }
-            //sprintf(wordsGroupedByRuleName, "words_%s%s.txt", ext, tag);
-            //sprintf(numbersName, "numbers_%s%s.tab", ext, tag);
             if (doTraining
                 (/* const char *                                */  tempDir(allIngestedPairsName, options)
                 ,/* const char *                                */  ext
@@ -3542,15 +3203,10 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
                 ,/* const char * nflexrulesFormat               */  flexrulesPass
                 ,/* const char *                                */  options->columns()
                 ,/* char * pairsToTrainInNextPassName           */  NULL
-                ,/* char * ingestedFractionOfAmbiguousPairsName */  NULL
-                ,/* char * allPairsName                         */  NULL
-                ,/* char * allIngestedPairsName                 */  NULL
-                ,/* char *                                      */  0//wordsGroupedByRuleName
-                ,/* char *                                      */  0//numbersName
                 ,/* countAndWeight *                            */  Counts
                 ,/* const char *                                */  tag
                 ,/* int * filelines                             */  NULL
-                , options
+                ,                                                   options
                 )
                 ) // sets Nnodes
                 {
@@ -3566,35 +3222,6 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
             if (moreToDo)
                 printf("No retraining done on ingested pairs, although ambiguous pairs were found and may have caused noise. (Faster) \n");
             }
-        /*
-        char filename[256];
-        if (sizeof(filename) <= (size_t)sprintf(filename, "statistics_%s.txt", ext))
-            {
-            printf("trainRules: filename 2 small");
-            exit(-1);
-            }
-        FILE * fo = fopenOrExit(tempDir(filename, options), "ab", "trainRules");
-        fprintf(fo, "VertexPointerCount          %d\n", VertexPointerCount);
-        fprintf(fo, "VertexCount                 %d\n", VertexCount);
-        fprintf(fo, "TrainingPairCount           %d\n", TrainingPairCount);
-        fprintf(fo, "HashCount                   %d\n", HashCount);
-        fprintf(fo, "RulePairCount               %d\n", RulePairCount);
-        fprintf(fo, "StrngCount                  %d\n", StrngCount);
-        fprintf(fo, "RuleTemplateCount           %d\n", RuleTemplateCount);
-        fprintf(fo, "ShortRulePairCount          %d\n", ShortRulePairCount);
-
-        clock_t finish = clock();
-        double  duration = 0;
-        duration = (double)(finish - start) / CLOCKS_PER_SEC;
-
-        fprintf(fo, "%2.1f seconds\n", duration);
-        --openfiles;
-        fclose(fo);
-        if (options->verbose())
-            {
-            printf("%2.1f seconds\n", duration);
-            }
-        */
 
         char AccumulatedFlexrulesPass[256];
         char NextAccumulatedFlexrulesPassFormat[256];

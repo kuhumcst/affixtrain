@@ -50,9 +50,8 @@
 #endif
 
 static bool TAGGED;
-static bool COUNTLEMMAS;
-static bool WRITEWEIRD;
-static int NOTWEIRD; // if less than NOTWEIRD characters in the full form
+//static bool WRITEWEIRD;
+//static int NOTWEIRD; // if less than NOTWEIRD characters in the full form
               // and the lemma are the same, the word is written
               // to the file weird_xx.txt, where xx is the language code.
 
@@ -111,13 +110,6 @@ static const char * LGf(optionStruct * Options)
 static const char * lemmalistef(optionStruct * Options)
     {
     return Options->wordLemmaList();
-    }
-
-static const char * reducedlemmalistef(optionStruct * Options)
-    {
-    static char rwl[1000];
-    sprintf(rwl,"%s.reduced",Options->wordLemmaList());
-    return rwl;
     }
 
 class lineab
@@ -180,9 +172,8 @@ static char Weird[256];
 static void init(bool TrainTest,const char *& XT,const char *& TT)
     {
     TAGGED = false;
-    COUNTLEMMAS = true;
-    WRITEWEIRD = true;
-    NOTWEIRD = 2; // if less than NOTWEIRD characters at the beginning of
+    //WRITEWEIRD = true;
+    //NOTWEIRD = 2; // if less than NOTWEIRD characters at th beginning of
     // the full form and the lemma are the same, the word is written
     // to the file weird_xx.txt, where xx is the language code.
 #if N_FOLDCROSSVALIDATION
@@ -313,25 +304,6 @@ struct line
     ~line(){delete s;}
     };
 
-static int cmpamb(const void * a,const void * b)
-    {
-    line * A = *(line **)a;
-    line * B = *(line **)b;
-    char * as = A->s;
-    char * bs = B->s;
-    while(*as && *as == *bs && *as != '\t')
-        {
-        ++as;
-        ++bs;
-        }
-    if(*as == '\t' && *bs == '\t')
-        {
-        A->ambiguous = true;
-        B->ambiguous = true;
-        }
-    return strcmp(A->s,B->s);
-    }
-
 static int mystrcmp(const void * a,const void * b)
     {
     return strcmp(((line *)a)->s, ((line * )b)->s);
@@ -345,11 +317,46 @@ struct clump
     int ceil:31;
     unsigned int done:1;
 #else
-    int start;
-    int ceil;
+    line * start;
+    int linecnt;
 #endif
     };
 #endif
+
+static void countLinesAndClumps(FILE * fpi,int & linecnt,int & clumpcnt)
+    {
+    linecnt = 0;
+    clumpcnt = 0;
+    int kar;
+    int oldkar = '\n';
+	bool nonEmptyLineSeen = false;
+	bool separatorLineSeen = false;
+    while((kar = fgetc(fpi)) != EOF)
+        {
+        if(kar == '\n')
+            {
+            if(oldkar == '\n')
+				{
+				if(!separatorLineSeen && nonEmptyLineSeen)
+					{ // first empty line after clump found
+					nonEmptyLineSeen = false;
+					separatorLineSeen = true;
+					}
+				}
+            else
+                {
+				if(!nonEmptyLineSeen)
+					{
+					++clumpcnt;
+					nonEmptyLineSeen = true;
+					separatorLineSeen = false;
+					}
+                ++linecnt;
+                }
+            }
+        oldkar = kar;
+        }
+    }
 
 static int fileRead(line * lines,
 #if CLUMPSENSITIVE
@@ -357,29 +364,37 @@ static int fileRead(line * lines,
 #endif
                     FILE * fpi,int columnfull,int columnbase,int columnPOS,int sep)
     {
+    char buf[256];
+    char * pbuf = buf;
     int linecnt = 0;
 #if CLUMPSENSITIVE
     int clumpcnt = 0;
 #endif
     int kar;
     int oldkar = 0;
-    char buf[256];
-    char * pbuf = buf;
+	bool nonEmptyLineSeen = false;
+	bool separatorLineSeen = false;
     while((kar = fgetc(fpi)) != EOF)
         {
         if(kar == '\n')
             {
 #if CLUMPSENSITIVE
             if(oldkar == kar)
-                { // clump found
-                if(clumpcnt > 0)
-                    clumps[clumpcnt].start = clumps[clumpcnt-1].ceil;
-                clumps[clumpcnt].ceil = linecnt;
-#if N_FOLDCROSSVALIDATION
-                clumps[clumpcnt].done = 0;
-#endif
-                ++clumpcnt;
-                }
+				{
+				if(!separatorLineSeen)
+					{ // clump found
+					if(nonEmptyLineSeen)
+                        {
+                        assert(clumpcnt > 0);
+    					nonEmptyLineSeen = false;
+    					separatorLineSeen = true;
+    					clumps[clumpcnt-1].linecnt = lines+linecnt - clumps[clumpcnt-1].start;
+                        }
+	#if N_FOLDCROSSVALIDATION
+					clumps[clumpcnt].done = 0;
+	#endif
+					}
+				}
             else
 #endif
                 {
@@ -388,6 +403,13 @@ static int fileRead(line * lines,
                 trim(buf);
                 if(*buf)
                     {
+					if(!nonEmptyLineSeen)
+						{
+                        clumps[clumpcnt].start = lines + linecnt;
+						++clumpcnt;
+						nonEmptyLineSeen = true;
+    					separatorLineSeen = false;
+						}
                     char * col[3] = {NULL,NULL,NULL};
                     col[0] = buf;
                     col[1] = strchr(buf,sep/*'\t'*/);
@@ -408,11 +430,6 @@ static int fileRead(line * lines,
                     const char * cb = b;
                     if(f && b)
                         {
-                        if(!strcmp(b,"="))
-                            {
-                            b = f;
-                            cb = b;
-                            }
                         char * t = columnPOS ? col[columnPOS - 1] : NULL;
 #if FORCESAMECASING
                         size_t len = 0;
@@ -467,12 +484,10 @@ static int fileRead(line * lines,
                                 }
                             else
                                 {
-                                lines[linecnt].s = new char[strlen(cf+1)+strlen(cb)+2];
-                                sprintf(lines[linecnt].s,"%s\t%s",cf+1,cb);
-                                lines[linecnt].ambiguous = true;
                                 lines[linecnt].s = new char[strlen(cf)+strlen(cb)+2];
                                 sprintf(lines[linecnt].s,"%s\t%s",cf,cb);
                                 lines[linecnt].ambiguous = false;
+	//							printf("%s\n",lines[linecnt].s);
                                 ++linecnt;
                                 }
                             }
@@ -483,14 +498,21 @@ static int fileRead(line * lines,
                         return -1;
                         }
                     }
+				else
+					{
+                    printf("Line %d contains only whitespace.\n",linecnt+clumpcnt);
+                    return -1;
+					}
                 }
             }
         else
             *pbuf++ = (char)kar;
         oldkar = kar;
         }
-    line ** plines = new line * [linecnt];
+    clumps[clumpcnt-1].linecnt = lines+linecnt - clumps[clumpcnt-1].start;
+    /*
     int i;
+    line ** plines = new line * [linecnt];
     for(i = 0;i < linecnt;++i)
         {
         plines[i] = lines+i;
@@ -502,105 +524,38 @@ static int fileRead(line * lines,
         {
         if(lines[i].ambiguous)
             {
-            //printf("%s\n",lines[i].s);
             ++ambi;
             }
         }
-    //printf("%d/%d = %14.6f%%\n",ambi,linecnt,(100.0*ambi)/linecnt);
+    */
     return linecnt;
     }
 
-static int removeDuplicateLines(int linecnt,line * lines)
+static int removeDuplicateLines(clump * Clump)
     {
+    qsort(Clump->start,Clump->linecnt,sizeof(line),mystrcmp);
     int i;
     int j;
-    for(i = 0,j = i + 1;j < linecnt;++j)
+    for(i = 0,j = i + 1;j < Clump->linecnt;++j)
         {
-        if(strcmp(lines[i].s,lines[j].s))
+        if(strcmp(Clump->start[i].s,Clump->start[j].s))
             {
             ++i;
             if(i != j)
                 {
-                assert(lines[i].s == NULL);
-                lines[i] = lines[j];
-                lines[j].s = 0;
+                assert(Clump->start[i].s == NULL);
+                Clump->start[i] = Clump->start[j];
+                Clump->start[j].s = 0;
                 }
             }
         else
             {
-            //printf("lines[%d] %s == lines[%d] %s\n",i,lines[i],j,lines[j]);
-            delete lines[j].s;
-            lines[j].s = 0;
+            delete Clump->start[j].s;
+            Clump->start[j].s = 0;
             }
         }
-    return i+1;
-    }
-
-static char * trailnumber(char * s,int & number)
-/* Removes a number at the end of the line (dict_de_without_doubles_random).
-   If there are more than one number, separated by tab (STOok.txt), 
-   only the last is removed. */
-    {
-    char * pi = s + strlen(s);
-    number = 0;
-    int pos = 1;
-    while(--pi > s && '0' <= *pi && *pi <= '9')
-        {
-        number += (*pi - '0')*pos;
-        pos *= 10;
-        }
-    //assert(*pi != '\t'); //How can there be such? If the word-lemma pair consists of numbers! (res.sl/trainingpairs.txt
-    if(*pi == '\t')
-        {
-        *pi = '\0';
-        return pi;
-        }
-    return NULL;
-    }
-
-static int removeDuplicateLinesTrailingNumber(int linecnt,line * lines)
-    {
-    int i;
-    int j;
-    int numberi = 0;
-    char * pi = trailnumber(lines[0].s,numberi);
-    // pi != NULL if a tab has been removed
-    for(i = 0,j = i + 1;j < linecnt;++j)
-        {
-        int numberj = 0;
-        char * pj = trailnumber(lines[j].s,numberj);
-        if(strcmp(lines[i].s,lines[j].s))
-            {
-            if(pi)
-                {
-                *pi = '\t';
-                pi = NULL;
-                }
-            ++i;
-            if(i != j)
-                {
-                assert(lines[i].s == NULL);
-                lines[i] = lines[j];
-                lines[j].s = 0;
-                /*delete [] lines[i];
-                lines[i] = lines[j];*/
-                }
-            numberi = numberj;
-            pi = pj;
-            }
-        else //if(pi && pj)
-            {
-            if(pj)
-                *pj = '\t';
-            delete [] lines[j].s;
-            lines[j].s = 0;
-            /*lines[i] = lines[j];
-            pi = pj;*/
-            }
-        }
-    if(pi)
-        *pi = '\t';
-    return i+1;
+    Clump->linecnt = i+1;
+    return Clump->linecnt;
     }
 
 static void randomix(line * lines,int linecnt)
@@ -629,79 +584,13 @@ static void randomix(clump * clumps,int clumpcnt)
         int j = (int)((double)rand() * (double)clumpcnt / (double)RAND_MAX);
         if(j != i && j > 0 && j < clumpcnt)
             {
-            int start = clumps[i].start;
-            int ceil = clumps[i].ceil;
+            clump tmp = clumps[i];
             clumps[i] = clumps[j];
-            clumps[j].start = start;
-            clumps[j].ceil = ceil;
+            clumps[j] = tmp;
             }
         }
     }
 #endif
-
-static void countLemmas()
-    {
-    FILE * fplemma = fopen(Lemmas,"rb");
-    ++openfiles;
-    if(fplemma)
-        {
-        int kar;
-        int linecnt = 0;
-        char buf[256];
-        char * pbuf = buf;
-        while((kar = fgetc(fplemma)) != EOF)
-            {
-            if(kar == '\n')
-                ++linecnt;
-            }
-        rewind(fplemma);
-        line * lines2;
-        lines2 = new line[linecnt];
-        linecnt = 0;
-        while((kar = fgetc(fplemma)) != EOF)
-            {
-            if(kar == '\n')
-                {
-                *pbuf++ = '\0';
-                pbuf = buf;
-                trim(buf);
-                if(*buf)
-                    {
-                    lines2[linecnt].s = new char[strlen(buf)+1];
-                    strcpy(lines2[linecnt].s,buf);
-                    ++linecnt;
-                    }
-                }
-            else
-                *pbuf++ = (char)kar;
-            }
-        --openfiles;
-        fclose(fplemma);
-        qsort(lines2,linecnt,sizeof(line),mystrcmp);
-        int newlinecnt = removeDuplicateLines(linecnt,lines2);
-        if(newlinecnt != linecnt)
-            {
-            linecnt = newlinecnt;
-            }
-        fplemma = fopen(Lemmas,"wb");
-        ++openfiles;
-        if(fplemma)
-            {
-            int i;
-            for(i = 0;i < linecnt;++i)
-                {
-                fprintf(fplemma,"%s\n",lines2[i].s);
-                }
-            --openfiles;
-            fclose(fplemma);
-            fplemma = NULL;
-            }
-        delete [] lines2;
-        }
-    else
-        fprintf(stderr,"Cannot open \"%s\" for reading\n",Lemmas);
-    }
-
 
 static int readlines(int columnfull,int columnbase,int columnPOS,line *& lines,int sep
 #if CLUMPSENSITIVE
@@ -711,8 +600,7 @@ static int readlines(int columnfull,int columnbase,int columnPOS,line *& lines,i
                      )
     {
     FILE * fpi = NULL;
-    int kar;
-    int linecnt = 0;
+    int Linecnt = 0;
     fpi = fopen(lemmalistef(Options),"r");
     ++openfiles;
     if(!fpi)
@@ -721,34 +609,11 @@ static int readlines(int columnfull,int columnbase,int columnPOS,line *& lines,i
         return 0;
         }
 
-    //srand( (unsigned)time( NULL ) );
-    srand(1); // 20090513, makes results independent of the order in which the languages are processed
-    int oldkar = 0;
-    while((kar = fgetc(fpi)) != EOF)
-        {
-        if(kar == '\n')
-            {
-            if(oldkar == '\n')
-                {
-#if CLUMPSENSITIVE
-                ++clumpcnt;
-#endif
-                }
-            else
-                ++linecnt;
-            }
-        oldkar = kar;
-        }
+    srand(1);
+    countLinesAndClumps(fpi,Linecnt,clumpcnt);
     assert(!lines);
     rewind(fpi);
-    /*
-#if CLUMPSENSITIVE
-    printf("lines %d clumps %d\n",linecnt,clumpcnt);
-#else
-    printf("lines %d\n",linecnt);
-#endif
-    */
-    lines = new line[linecnt];
+    lines = new line[Linecnt];
 #if CLUMPSENSITIVE
     if(clumpcnt)
         {
@@ -758,193 +623,39 @@ static int readlines(int columnfull,int columnbase,int columnPOS,line *& lines,i
     else
         clumps = NULL;
 #endif
-    //printf("fileRead. Open files:%d\n",::openfiles);
 
-    linecnt = fileRead(lines,
+    Linecnt = fileRead(lines,
 #if CLUMPSENSITIVE
         clumps,
 #endif
         fpi,columnfull,columnbase,columnPOS,sep);
-    if(linecnt < 0)
+    if(Linecnt < 0)
         {
         printf("Error in file \"%s\"\n",lemmalistef(Options));
         exit(-1);
         }
-    //printf("fileRead DONE\n");
     --openfiles;
     fclose(fpi);
 #if CLUMPSENSITIVE
     if(clumpcnt < 2)
 #endif
         {
-        //printf("clumpcnt < 2\n");
-        /*
-        FILE * ff = fopen("liste.wri","wb");
-        ++openfiles;
-        if(ff)
-            {
-            for(int h = 0;h < linecnt;++h)
-                {
-                fprintf(ff,"%s\n",lines[h].s ? lines[h].s : "NULLLL");
-                }
-            --openfiles;
-            fclose(ff);
-            }
-        else
-            printf("Cannot open %s for writing\n","liste.wri");
-        */
-        qsort(lines,linecnt,sizeof(line),mystrcmp);
-        //printf("linecnt %d\n",linecnt);
-        int newlinecnt = removeDuplicateLines(linecnt,lines);
-        if(newlinecnt != linecnt)
-            {
-            linecnt = newlinecnt;
-            //printf(" After removing duplicate lines linecnt = %d\n",linecnt);
-            }
-
-        newlinecnt = removeDuplicateLinesTrailingNumber(linecnt,lines);
-        assert(newlinecnt == linecnt);
-        if(newlinecnt != linecnt)
-            {
-            linecnt = newlinecnt;
-            //printf(" After removing duplicate lines followed by number linecnt = %d\n",linecnt);
-            }
-        FILE * fplemma = NULL;
-        if(COUNTLEMMAS)
-            {
-            fplemma = fopen(Lemmas,"wb");
-            ++openfiles;
-            if(!fplemma)
-                COUNTLEMMAS = false;
-            }
-
-        FILE * fpweird = NULL;
-        if(WRITEWEIRD)
-            {
-            fpweird = fopen(Weird,"wb");
-            ++openfiles;
-            if(!fpweird)
-                WRITEWEIRD = false;
-            }
-            
-        FILE * fpo = fopen(reducedlemmalistef(Options),"wb");
-        ++openfiles;
-        if(fpo)
-            {
-            int i;
-            for(i = 0;i < linecnt;++i)
-                {
-                fprintf(fpo,"%s\n",lines[i].s);
-#if ENSURELEMMAPRESENTASFULLFORM
-                char * ptab = strchr(lines[i].s,'\t');
-                assert(ptab);
-                fprintf(fpo,"%s%s\n",ptab+1,ptab);
-#endif
-                if(WRITEWEIRD)
-                    {
-                    if(columnfull > 0 && columnbase > 0)
-                        {
-                        char * col[3];
-                        col[0] = lines[i].s;
-                        col[1] = strchr(lines[i].s,'\t');
-                        assert(col[1]);
-                        //if(col[1])
-                            {
-                            ++col[1];
-                            if(columnfull > 2 || columnbase > 2)
-                                {
-                                col[2] = strchr(col[1],'\t');
-                                if(col[2])
-                                    {
-                                    ++col[2];
-                                    }
-                                }
-                            char * b = col[columnbase - 1];
-                            char * f = col[columnfull - 1];
-                            assert(f < b);
-                            int j = 0;
-
-                            while(*b && *b == *f)
-                                {
-                                ++j;
-                                ++b;
-                                ++f;
-                                }
-                            if(j < NOTWEIRD)
-                                fprintf(fpweird,"%s\n",lines[i].s);
-                            
-                            }
-                        //else 
-                          //  fprintf(fpweird,"%s\n",lines[i].s);
-                        }
-                    }
-                if(COUNTLEMMAS)
-                    {
-                    char * tab1 = strchr(lines[i].s,'\t');
-                    if(tab1)
-                        {
-                        ++tab1;
-                        char * tab2 = strchr(tab1,'\t');
-                        if(tab2)
-                            {
-                            *tab2 = '\0';
-                            fprintf(fplemma,"%s\n",tab1);
-                            *tab2 = '\t';
-                            }
-                        else
-                            fprintf(fplemma,"%s\n",tab1);
-                        }
-                    }
-                
-                }
-            --openfiles;
-            fclose(fpo);
-            fpo = NULL;
-            if(WRITEWEIRD)
-                {
-                --openfiles;
-                fclose(fpweird);
-                fpweird = NULL;
-                }
-            if(COUNTLEMMAS)
-                {
-                assert(fplemma);
-                //if(fplemma)
-                --openfiles;
-                fclose(fplemma);
-                fplemma = NULL;
-                countLemmas();
-                }   
-            }
-    //    getchar();
-        if(fplemma)
-            {
-            --openfiles;
-            fclose(fplemma);
-            fplemma = NULL;
-            }
-        if(fpweird)
-            {
-            --openfiles;
-            fclose(fpweird);
-            fpweird = NULL;
-            }
-
-        randomix(lines,linecnt);
-        assert(fplemma == NULL);
-        //if(fplemma)
-          //  fclose(fplemma);
-        assert(fpweird == NULL);
-        //if(fpweird)
-          //  fclose(fpweird);
+        clump Clump = {lines,Linecnt};
+        removeDuplicateLines(&Clump);
+        randomix(Clump.start,Clump.linecnt);
+        lines = Clump.start;
+        Linecnt = Clump.linecnt;
         }
 #if CLUMPSENSITIVE
     else
         {
+        for(int m = 0; m < clumpcnt;++m)
+            removeDuplicateLines(clumps+m);
+
         randomix(clumps,clumpcnt);
         }
 #endif
-    return linecnt;
+    return Linecnt;
     }
 
 
@@ -956,7 +667,6 @@ static bool IsSpace(int k)
 static void writeTestAndControl(line * Line,FILE * ftest,FILE * fcontrol,int columntest, int columncontrol, int columntag)
     {
     bool slashprinted = false;
-    bool printstop = false;
     int kar;
     int m = 0;
     int col = 1;
@@ -968,13 +678,8 @@ static void writeTestAndControl(line * Line,FILE * ftest,FILE * fcontrol,int col
         if(kar == '\t')
             {
             ++col;
-            printstop = false;
             }
-        else if(kar == ',')
-            {
-            printstop = true;
-            }
-        else if(!printstop)
+        else
             {
             if(col == columntest)
                 fputc(kar,ftest);
@@ -1027,7 +732,6 @@ static int splitLemmaliste
                    ,int fraction
                    ,char * traintest,char * traincontrol
                    ,clump * clumps
-                   ,line * lines
                    ) // 0 <= fraction <= 10000
     {
     FILE * fptrain = NULL;
@@ -1065,6 +769,7 @@ static int splitLemmaliste
                 while(k < clumpcnt && (testclumps > 0 || trainclumps > 0))
                     {
                     int rd = rand();
+					int L = 0;
                     if(  testclumps == 0 
                       || (  trainclumps > 0
 #if N_FOLDCROSSVALIDATION
@@ -1075,9 +780,9 @@ static int splitLemmaliste
                       ) // write to training file
                         {
                         assert(trainclumps > 0);
-                        for(int L = clumps[k].start;L < clumps[k].ceil;++L)
-                            printTrain(lines+L,fptrain,fptraintest,fptraincontrol,columntest,columncontrol,columntag);
-                        trainlines += clumps[k].ceil - clumps[k].start;
+                        for(;L < clumps[k].linecnt;++L)
+                            printTrain(clumps[k].start+L,fptrain,fptraintest,fptraincontrol,columntest,columncontrol,columntag);
+                        trainlines += clumps[k].linecnt;
 #if N_FOLDCROSSVALIDATION
                         clumps[k].done = 1;
 #endif
@@ -1085,8 +790,8 @@ static int splitLemmaliste
                         }
                     else
                         {
-                        for(int L = clumps[k].start;L < clumps[k].ceil;++L)
-                            writeTestAndControl(lines+L,fptest,fpcontrol,columntest,columncontrol,columntag);
+                        for(;L < clumps[k].linecnt;++L)
+                            writeTestAndControl(clumps[k].start+L,fptest,fpcontrol,columntest,columncontrol,columntag);
                         --testclumps;
                         }
                     ++k;
@@ -1282,15 +987,8 @@ static void compare(const char * output, const char * control, int & same, int &
             char * hash;
             char * s;
             bool found;
-            char * komma = strchr(pb2,',');
             char * tab;
-            if(komma && komma[1])
-                *komma = '\0';
-            else
-                {
-                trim(pb2);
-                }
-
+            trim(pb2);
             trim(b1);
             trim(b4);
 
@@ -1399,9 +1097,6 @@ static void compare(const char * output, const char * control, int & same, int &
                 else
                     Decision.true_not_amb++;
                 }
-
-            if(komma)
-                *komma = ',';
             }
         }
     else
@@ -2063,7 +1758,7 @@ void trainAndTest
             int trainlines = 0;
 #if CLUMPSENSITIVE
             if(clumpcnt > 1)
-                trainlines = splitLemmaliste(clumpcnt,Ttraining,test,Tcontrol,1,2,3,fraction,traintest,Ttraincontrol,clumps,lines);
+                trainlines = splitLemmaliste(clumpcnt,Ttraining,test,Tcontrol,1,2,3,fraction,traintest,Ttraincontrol,clumps);
             else
 #endif
                 trainlines = splitLemmaliste(linecnt,Ttraining,test,Tcontrol,1,2,3,fraction,traintest,Ttraincontrol,lines);

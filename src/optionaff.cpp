@@ -620,6 +620,8 @@ OptReturnTp optionStruct::readOptsFromFile(char * locoptarg, char * progname)
                         {
                         bufsize += strlen(optarg2) + 1;
                         }
+					else
+						++bufsize;
                     char * optpos = strchr(opts, line[off]);
                     if (optpos)
                         {
@@ -650,7 +652,7 @@ OptReturnTp optionStruct::readOptsFromFile(char * locoptarg, char * progname)
         char ** tmpPoptions = new char *[optionSets];
         int g;
         for (g = 0; g < optionSets - 1; ++g)
-            {
+			{
             tmpPpoptions[g] = Ppoptions[g];
             tmpPoptions[g] = Poptions[g];
             }
@@ -968,7 +970,7 @@ OptReturnTp optionStruct::readArgs(int argc, char * argv[])
         }
     if(result != Leave)
         {
-        if (!i && !c && !o && !e && !n && !f)
+        if (!i && !c && !o && !e && !n)
             {
             while (optind < argc)
                 {
@@ -988,15 +990,13 @@ OptReturnTp optionStruct::readArgs(int argc, char * argv[])
                     e = dupl(argv[optind++]);
                 else if (!n)
                     n = dupl(argv[optind++]);
-                else if (!f)
-                    f = dupl(argv[optind++]);
                 else
                     printf("Too many arguments:%s\n", argv[optind]);
                 }
             }
         else if (optind < argc)
             {
-            if (i && c && o && e && n && f)
+            if (i && c && o && e && n)
                 printf("Too many arguments:%s\n", argv[optind]);
             else
                 printf("You cannot have a command line with both option-style arguments and option-less-fixed-position arguments:%s\n", argv[optind]);
@@ -1095,7 +1095,7 @@ void optionStruct::print(FILE * fp) const
             }
         else
             {
-            assert(f);
+//            assert(f);
             fprintf(fp, "               ; expected optimal pruning threshold (only effective in combination with -XW)\n;-C %d (N/A)\n", C);
             fprintf(fp, "               ; tree penalty (-XC: constant -XD: more support is better -XE: higher entropy is better -XW: Fewer pattern characters other than wildcards is better)\n;-X %s (N/A)\n", X ? X : "C");
             fprintf(fp, "               ; current parameters (-P filename)\n;-P %s (N/A)\n", P ? P : "");
@@ -1105,7 +1105,7 @@ void optionStruct::print(FILE * fp) const
             fprintf(fp, "               ; number of differently sized fractions of trainingdata (natural number)\n;-K %d (N/A)\n",K);
             fprintf(fp, "               ; number of iterations of training with same fraction of training data when fraction is minimal (positive number)\n;-N %f (N/A)\n", N);
             fprintf(fp, "               ; number of iterations of training with same fraction of training data when fraction is maximal (positive number)\n;-M %f (N/A)\n", M);
-            fprintf(fp, "               ; competition function (deprecated)\n-f %s\n", f);
+			fprintf(fp, "               ; competition function (deprecated)\n%s-f %s\n",f ? "" : ";", f ? f : "");
             fprintf(fp, "               ; redo training after homographs for next round are removed (-R: yes -R-: no)\n-R %s\n", Redo ? "" : "-");
             }
         if(TrainTest || Test)

@@ -378,31 +378,31 @@ Read word class from file.
 #define REFER(v)
 #endif
 
-#define ANY ':' // '*'
-#define START '^'
-#define END '$'
+#define ANY   4 //':'
+#define START 5 //'^'
+#define END   6 //'$'
 
 #if defined _WIN64 || defined _WIN32
 /*Microsoft*/
-#define LONG long long
-#define LONGU "%llu"
-#define LONGD "%lld"
-#define LONG0D "%0lld"
-#define LONGX "%llX"
+#define LONG    long long
+#define LONGU   "%llu"
+#define LONGD   "%lld"
+#define LONG0D  "%0lld"
+#define LONGX   "%llX"
 #define STRTOUL _strtoui64
-#define STRTOL _strtoi64
-#define FSEEK _fseeki64
-#define FTELL _ftelli64
+#define STRTOL  _strtoi64
+#define FSEEK   _fseeki64
+#define FTELL   _ftelli64
 #else
-#define LONG long
-#define LONGU "%lu"
-#define LONGD "%ld"
-#define LONG0D "%0ld"
-#define LONGX "%lX"
+#define LONG    long
+#define LONGU   "%lu"
+#define LONGD   "%ld"
+#define LONG0D  "%0ld"
+#define LONGX   "%lX"
 #define STRTOUL strtoul
-#define STRTOL strtol
-#define FSEEK fseek
-#define FTELL ftell
+#define STRTOL  strtol
+#define FSEEK   fseek
+#define FTELL   ftell
 #endif
 
 

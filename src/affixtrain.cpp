@@ -20,7 +20,7 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "3.02"
+#define VERSION "3.03"
 
 #include "affixtrain.h"
 #include "testrules.h"
@@ -3512,9 +3512,9 @@ int main(int argc, char **argv)
 
         if (options.verbose())
             {
+            printf("\nAffixTrain OK\n");
             if (argc < 3)
                 getchar();
-            printf("\nAffixTrain OK\n");
             }
         }
     cleanUpOptions();

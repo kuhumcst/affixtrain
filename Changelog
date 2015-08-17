@@ -1,3 +1,14 @@
+Version 3.03 - 2015.08.17
+-------------------------
+When testing with clumped test data (i.e. homographs and/or unrelated words
+with same looking lemma combined in clusters, using empty lines between
+clusters) lines that have same full form and same lemma (but e.g.,
+different word classes) are reduced to a single line. (Only full form and
+lemma are taken into account when testting.) This reduction already happened
+in previous versions for unclustered test data. This change can have some
+influence on the evaluation, because duplicates often are 'easy' cases,
+so the reported precision is expected to be somewhat lower than previously.
+
 Version 3.00 - 2015.08.13
 -------------------------
 Improved user interface, fewer files in temporary directory. Defaults

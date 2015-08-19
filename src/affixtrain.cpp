@@ -20,7 +20,7 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "3.03"
+#define VERSION "3.04"
 
 #include "affixtrain.h"
 #include "testrules.h"

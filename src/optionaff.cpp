@@ -1224,9 +1224,9 @@ const char * optionStruct::argstring() const
 void optionStruct::printArgFile() const
     {
     const char * Args = argstring();
-    char * name = new char[strlen("parms.")+strlen(Args)+1];
-    strcpy(name, "parms.");
-    strcat(name, Args);
+    char * name = new char[strlen(".parms")+strlen(Args)+1];
+    strcpy(name, Args);
+    strcat(name, ".parms");
     FILE * fp = fopen(name, "wb");
     ++openfiles;
     print(fp);
@@ -1240,9 +1240,9 @@ void optionStruct::printEvaluation(const char * introduction,char * evaluation,c
     if(evaluation)
         {
         const char * Args = argstring();
-        char * name = new char[strlen("parms.")+strlen(Args)+1];
-        strcpy(name, "parms.");
-        strcat(name, Args);
+        char * name = new char[strlen(".parms")+strlen(Args)+1];
+        strcpy(name, Args);
+        strcat(name, ".parms");
         FILE * fp = fopen(name, "ab");
         ++openfiles;
         fprintf(fp,"\n; Evaluation:\n; -----------\n%s\n%s",introduction,evaluation);
@@ -1261,9 +1261,9 @@ const char * optionStruct::flexrules()
     if (o == NULL)
         {
         const char * Args = argstring();
-        char * name = new char[strlen("flexrules.")+strlen(Args)+1];
-        strcpy(name, "flexrules.");
-        strcat(name, Args);
+        char * name = new char[strlen(".flexrules")+strlen(Args)+1];
+        strcpy(name, Args);
+        strcat(name, ".flexrules");
         o = name;
         }
     return o;

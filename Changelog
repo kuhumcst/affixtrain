@@ -1,3 +1,8 @@
+Version 3.05 - 2015.08.19
+-------------------------
+Undid last changes. Solved problem bu cutting path part off before
+constructing file names.
+
 Version 3.04 - 2015.08.19
 -------------------------
 Generated parameter file is named with ".parms" suffix. Before, the name

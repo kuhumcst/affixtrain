@@ -151,7 +151,9 @@ class optionStruct
         void setP(const char * ParamFile);
         void setc(int cutoff){c = cutoff;}
 
-        const char * argstring() const;
+        const char * argstring() const { return Argstring; }
+        const char * argstring_no_path() const;
+        void setArgstring();
         void print(FILE * fp) const;
         void printArgFile() const;
         void printEvaluation(const char * introduction,char * evaluation,char * postScriptum) const;        

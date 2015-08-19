@@ -878,7 +878,7 @@ void optionStruct::completeArgs()
                 "Add -p if you want to compute the parameters.\n"
                 "If the parameters are already computed, edit the generated parameter file\n"
                 "(e.g., parms.%s) and then run the program with\n\n\taffixtrain -@ parms.%s\n",
-                argstring(),argstring());
+                argstring_no_path(),argstring_no_path());
             exit(2);
             }
         }
@@ -1003,6 +1003,7 @@ OptReturnTp optionStruct::readArgs(int argc, char * argv[])
             }
 
         completeArgs();
+        setArgstring();
         }
 
     return result;
@@ -1168,65 +1169,88 @@ void optionStruct::setP(const char * ParamFile)
     P = dupl(ParamFile);
     }
 
-const char * optionStruct::argstring() const
+void optionStruct::setArgstring()
     {
     if(Argstring)
         delete[] Argstring;
 
     size_t nameLength = strlen(i) + (e ? 1 + strlen(e) : 0) + (SuffixOnly ? strlen("_suf") : 0) + (ExpensiveInfix ? strlen("_inf") : 0) + (C < 0 ? 0 : strlen("_C") + 1) + (WeightFunction == econstant ? strlen("_XE") : 0) + (WeightFunction == esupport ? strlen("_XW") : 0) + (WeightFunction == eentropy ? strlen("_XE") : 0) + (WeightFunction == edepth ? strlen("_XD") : 0) + (Redo ? strlen("_R") : 0) + 1;
     
-    char * name = new char[nameLength];
-    strcpy(name, i);
+    Argstring = new char[nameLength];
+    strcpy(Argstring, i);
     if (e)
         {
-        strcat(name, "_");
-        strcat(name, e);
+        strcat(Argstring, "_");
+        strcat(Argstring, e);
         }
     if (SuffixOnly)
         {
-        strcat(name, "_suf");
+        strcat(Argstring, "_suf");
         }
     if (ExpensiveInfix)
         {
-        strcat(name, "_inf");
+        strcat(Argstring, "_inf");
         }
     if (C >= 0)
         {
-        strcat(name, "_C");
-        int L = strlen(name);
-        name[L] = (char)(C + '0');
-        name[L + 1] = 0;
+        strcat(Argstring, "_C");
+        int L = strlen(Argstring);
+        Argstring[L] = (char)(C + '0');
+        Argstring[L + 1] = 0;
         }
     switch(WeightFunction)
         {
         case econstant:
-            strcat(name, "_XC");
+            strcat(Argstring, "_XC");
             break;
         case esupport:
-            strcat(name, "_XW");
+            strcat(Argstring, "_XW");
             break;
         case eentropy:
-            strcat(name, "_XE");
+            strcat(Argstring, "_XE");
             break;
         case edepth:
-            strcat(name, "_XD");
+            strcat(Argstring, "_XD");
             break;
         default:
             break;
         }
     if (Redo)
         {
-        strcat(name, "_R");
+        strcat(Argstring, "_R");
         }
-    return name;
     }
+
+const char * optionStruct::argstring_no_path() const
+    {
+    assert(Argstring);
+    const char * fw_slash = strrchr(Argstring,'/');
+    const char * back_slash = strrchr(Argstring,'\\');
+    if(fw_slash != 0)
+        {
+        if(back_slash != 0)
+            {
+            if(back_slash < fw_slash)
+                return fw_slash + 1;
+            else
+                return back_slash + 1;
+            }
+        else
+            return fw_slash + 1;
+        }
+    else if(back_slash != 0)
+        return back_slash + 1;
+    else
+        return 0;
+    }
+
 
 void optionStruct::printArgFile() const
     {
-    const char * Args = argstring();
-    char * name = new char[strlen(".parms")+strlen(Args)+1];
-    strcpy(name, Args);
-    strcat(name, ".parms");
+    const char * Args = argstring_no_path();
+    char * name = new char[strlen("parms.")+strlen(Args)+1];
+    strcpy(name, "parms.");
+    strcat(name, Args);
     FILE * fp = fopen(name, "wb");
     ++openfiles;
     print(fp);
@@ -1239,10 +1263,10 @@ void optionStruct::printEvaluation(const char * introduction,char * evaluation,c
     {
     if(evaluation)
         {
-        const char * Args = argstring();
-        char * name = new char[strlen(".parms")+strlen(Args)+1];
-        strcpy(name, Args);
-        strcat(name, ".parms");
+        const char * Args = argstring_no_path();
+        char * name = new char[strlen("parms.")+strlen(Args)+1];
+        strcpy(name, "parms.");
+        strcat(name, Args);
         FILE * fp = fopen(name, "ab");
         ++openfiles;
         fprintf(fp,"\n; Evaluation:\n; -----------\n%s\n%s",introduction,evaluation);
@@ -1260,10 +1284,10 @@ const char * optionStruct::flexrules()
     {
     if (o == NULL)
         {
-        const char * Args = argstring();
-        char * name = new char[strlen(".flexrules")+strlen(Args)+1];
-        strcpy(name, Args);
-        strcat(name, ".flexrules");
+        const char * Args = argstring_no_path();
+        char * name = new char[strlen("flexrules.")+strlen(Args)+1];
+        strcpy(name, "flexrules.");
+        strcat(name, Args);
         o = name;
         }
     return o;

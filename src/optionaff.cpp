@@ -1116,8 +1116,8 @@ void optionStruct::print(FILE * fp) const
         fprintf(fp, "               ; test with the training data (-T: yes -T-: no)\n-T %s\n", TrainTest ? "" : "-");
         fprintf(fp, "               ; test with data not used for training (-t: yes -t-: no)\n-t %s\n", Test ? "" : "-");
         fprintf(fp, "               ; create flexrules using full training set (-F: yes -F-: no)\n-F %s\n", F ? "" : "-");
-        fprintf(fp, "               ; Number of blobs found in word/lemma list: %d whereof used for training %d\n", Blobs, FracBlobs == 0 ? Blobs : FracBlobs);
-        fprintf(fp, "               ; Number of lines found in word/lemma list: %d whereof used for training %d\n", Lines, FracLines == 0 ? Lines : FracLines);
+        fprintf(fp, "               ; Number of clusters found in word/lemma list: %d\n", Blobs);
+        fprintf(fp, "               ; Number of lines found in word/lemma list:    %d\n", Lines);
         }
     }
 
@@ -1241,7 +1241,7 @@ const char * optionStruct::argstring_no_path() const
     else if(back_slash != 0)
         return back_slash + 1;
     else
-        return 0;
+        return Argstring;
     }
 
 

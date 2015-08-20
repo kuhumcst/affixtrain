@@ -304,6 +304,25 @@ struct line
     ~line(){delete s;}
     };
 
+static int cmpamb(const void * a,const void * b)
+    {
+    line * A = *(line **)a;
+    line * B = *(line **)b;
+    char * as = A->s;
+    char * bs = B->s;
+    while(*as && *as == *bs && *as != '\t')
+        {
+        ++as;
+        ++bs;
+        }
+    if(*as == '\t' && *bs == '\t')
+        {
+        A->ambiguous = true;
+        B->ambiguous = true;
+        }
+    return strcmp(A->s,B->s);
+    }
+
 static int mystrcmp(const void * a,const void * b)
     {
     return strcmp(((line *)a)->s, ((line * )b)->s);
@@ -510,7 +529,7 @@ static int fileRead(line * lines,
         oldkar = kar;
         }
     clumps[clumpcnt-1].linecnt = lines+linecnt - clumps[clumpcnt-1].start;
-    /*
+    
     int i;
     line ** plines = new line * [linecnt];
     for(i = 0;i < linecnt;++i)
@@ -527,7 +546,7 @@ static int fileRead(line * lines,
             ++ambi;
             }
         }
-    */
+    
     return linecnt;
     }
 
@@ -1488,14 +1507,20 @@ void createReport(counting c[CUTOFFS],int maxcount,int ttrainlines,lineab AffixL
         "ambi2%stdev    ",
         "ambi3%stdev    ",
         "diff%stdev     ",
-        "amb.rules%     ",
+        "\n"
+        ";Evaluation of prediction of ambiguity (whether a word has more than one possible lemma)\n"
+        ";---------------------------------------------------------------------------------------\n"
+        ";amb.rules%     ",
         "false_amb%     ",
         "false_not_amb% ",
         "true_amb%      ",
         "true_not_amb%  ",
         "precision      ",
         "recall         ",
-        "#rules =       "
+        "\n"
+        ";Power law relating the number of rules in the decision tree to the number of examples in the training data\n"
+        ";----------------------------------------------------------------------------------------------------------\n"
+        ";#rules =       "
         };
     int nocol = 7;
     int norow = sizeof(texts)/sizeof(texts[0]);

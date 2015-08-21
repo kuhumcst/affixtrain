@@ -304,25 +304,6 @@ struct line
     ~line(){delete s;}
     };
 
-static int cmpamb(const void * a,const void * b)
-    {
-    line * A = *(line **)a;
-    line * B = *(line **)b;
-    char * as = A->s;
-    char * bs = B->s;
-    while(*as && *as == *bs && *as != '\t')
-        {
-        ++as;
-        ++bs;
-        }
-    if(*as == '\t' && *bs == '\t')
-        {
-        A->ambiguous = true;
-        B->ambiguous = true;
-        }
-    return strcmp(A->s,B->s);
-    }
-
 static int mystrcmp(const void * a,const void * b)
     {
     return strcmp(((line *)a)->s, ((line * )b)->s);
@@ -529,24 +510,7 @@ static int fileRead(line * lines,
         oldkar = kar;
         }
     clumps[clumpcnt-1].linecnt = lines+linecnt - clumps[clumpcnt-1].start;
-    
-    int i;
-    line ** plines = new line * [linecnt];
-    for(i = 0;i < linecnt;++i)
-        {
-        plines[i] = lines+i;
-        }
-    qsort(plines,linecnt,sizeof(line *),cmpamb);
-    delete [] plines;
-    int ambi = 0;
-    for(i = 0;i < linecnt;++i)
-        {
-        if(lines[i].ambiguous)
-            {
-            ++ambi;
-            }
-        }
-    
+
     return linecnt;
     }
 
@@ -574,6 +538,33 @@ static int removeDuplicateLines(clump * Clump)
             }
         }
     Clump->linecnt = i+1;
+    for(int j = 0;j < Clump->linecnt - 1;++j)
+        {
+        line * A = Clump->start+j;
+        line * B = Clump->start+j+1;
+        char * as = A->s;
+        char * bs = B->s;
+        while(*as && *as == *bs && *as != '\t')
+            {
+            ++as;
+            ++bs;
+            }
+        if(*as == '\t' && *bs == '\t')
+            {
+            ++as;
+            ++bs;
+            while(*as && (*as != '\t') && (*as != '\r') && (*as != '\n') && (*as == *bs))
+                {
+                ++as;
+                ++bs;
+                }
+            if(*as != *bs)
+                {
+                A->ambiguous = true;
+                B->ambiguous = true;
+                }
+            }
+        }
     return Clump->linecnt;
     }
 

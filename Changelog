@@ -1,6 +1,10 @@
+Version 3.08 - 2015.08.21
+-------------------------
+Fixed correct marking of ambiguous examples.
+
 Version 3.07 - 2015.08.21
 -------------------------
-Fized option -b, which was broken due to previous changes.
+Fixed option -b, which was broken due to previous changes.
 
 Version 3.06 - 2015.08.20
 -------------------------

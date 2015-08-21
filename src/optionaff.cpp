@@ -1171,9 +1171,12 @@ void optionStruct::setP(const char * ParamFile)
 
 void optionStruct::setArgstring()
     {
+    if(!i)
+        return;
+
     if(Argstring)
         delete[] Argstring;
-
+    
     size_t nameLength = strlen(i) + (e ? 1 + strlen(e) : 0) + (SuffixOnly ? strlen("_suf") : 0) + (ExpensiveInfix ? strlen("_inf") : 0) + (C < 0 ? 0 : strlen("_C") + 1) + (WeightFunction == econstant ? strlen("_XE") : 0) + (WeightFunction == esupport ? strlen("_XW") : 0) + (WeightFunction == eentropy ? strlen("_XE") : 0) + (WeightFunction == edepth ? strlen("_XD") : 0) + (Redo ? strlen("_R") : 0) + 1;
     
     Argstring = new char[nameLength];

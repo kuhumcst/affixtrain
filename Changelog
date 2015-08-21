@@ -1,3 +1,7 @@
+Version 3.07 - 2015.08.21
+-------------------------
+Fized option -b, which was broken due to previous changes.
+
 Version 3.06 - 2015.08.20
 -------------------------
 Removed "whereof used for training <number>" in report + other improvements.

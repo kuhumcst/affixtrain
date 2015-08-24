@@ -930,7 +930,7 @@ struct evaluation
     decision Decision;
     evaluation(): same(0),different(0),ambiguousRules(0)
         {
-        for(int j=0;j < sizeof(ambiguous)/sizeof(ambiguous[0]);++j)
+        for(size_t j=0;j < sizeof(ambiguous)/sizeof(ambiguous[0]);++j)
             ambiguous[j] = 0;
         }
     };
@@ -1282,7 +1282,7 @@ typedef struct countStruct
     countStruct()
         {
         tflexcount = tsame = tdifferent = tambiguousRules = 0;
-        for(int i = 0;i < sizeof(tambiguous)/sizeof(tambiguous[0]);++i)
+        for(size_t i = 0;i < sizeof(tambiguous)/sizeof(tambiguous[0]);++i)
             {
             tambiguous[i] = 0;
             }
@@ -1330,7 +1330,7 @@ class counting
             this->StandardDev.datum(n.Evaluation.same,n.Evaluation.ambiguous,n.Evaluation.different);
             n.tsame += n.Evaluation.same;
             n.tdifferent += n.Evaluation.different;
-            for(int j = 0;j < sizeof(n.tambiguous)/sizeof(n.tambiguous[0]);++j)
+            for(size_t j = 0;j < sizeof(n.tambiguous)/sizeof(n.tambiguous[0]);++j)
                 {
                 n.tambiguous[j] += n.Evaluation.ambiguous[j];
                 }

@@ -36,24 +36,18 @@
 
 
 #define ISO 0
-#define OnCE 0
 #define ENSURELEMMAPRESENTASFULLFORM 0 // If set to 1 creates doublets! Set to 0 and run again on output from first run to remove doublets.
 #define FORCESAMECASING 0
 #if FORCESAMECASING
 #include "utf8func.h"
 #endif
-#define CLUMPSENSITIVE 1
 
-#define N_FOLDCROSSVALIDATION 0//1
+#define N_FOLDCROSSVALIDATION 0
 #if N_FOLDCROSSVALIDATION
 #define N_ 10
 #endif
 
 static bool TAGGED;
-//static bool WRITEWEIRD;
-//static int NOTWEIRD; // if less than NOTWEIRD characters in the full form
-              // and the lemma are the same, the word is written
-              // to the file weird_xx.txt, where xx is the language code.
 
 static int FRACTION_LOW; // min 0
 static int FRACTION_HIGH; // max 10000
@@ -61,8 +55,6 @@ static int CUTOFF_LOW;
 static int CUTOFF_HIGH;
 static int MAXCOUNT;
 static const int STEPSIZE = 100;
-
-static bool TRAINTEST;// = false;// Set to true if the lemmatisation test has to be done on the training data
 
 static int globmaxcount = 0;
 
@@ -128,8 +120,6 @@ class lineab
             {
             double drules = log(rules);
             double dtrainsize = log(trainsize);
-           // if(dtrainsize == 0.0)
-               // fprintf(stderr,"add(rules %f,trainsize %f); dtrainsize %f\n",rules,trainsize,dtrainsize);
             Sx += dtrainsize;
             Sx2 += dtrainsize*dtrainsize;
             Sy += drules;
@@ -143,7 +133,6 @@ class lineab
                 return ((double)N*Sxy-Sy*Sx)/((double)N*Sx2-Sx*Sx);
             else
                 {
-                //fprintf(stderr,"N %d Sx2 %f Sx %f N*Sx2 - Sx*Sx %f\n",N,Sx2,Sx,(double)N*Sx2-Sx*Sx);
                 return 0;
                 }
             }
@@ -172,10 +161,6 @@ static char Weird[256];
 static void init(bool TrainTest,const char *& XT,const char *& TT)
     {
     TAGGED = false;
-    //WRITEWEIRD = true;
-    //NOTWEIRD = 2; // if less than NOTWEIRD characters at th beginning of
-    // the full form and the lemma are the same, the word is written
-    // to the file weird_xx.txt, where xx is the language code.
 #if N_FOLDCROSSVALIDATION
     FRACTION_LOW = 10000 - 10000/N_;
     FRACTION_HIGH = FRACTION_LOW;
@@ -183,8 +168,7 @@ static void init(bool TrainTest,const char *& XT,const char *& TT)
     switch(STEPSIZE)
         {
         case 100:
-            FRACTION_LOW  = 154;//9856;//9000;//9856;//154;//154;//9700;//9000;//9900; // min 0
-            //FRACTION_LOW  =       9856;//9000;//9856;//154;//154;//9700;//9000;//9900; // min 0
+            FRACTION_LOW  = 154;
             break;
         case 25:
             FRACTION_LOW  = 171;
@@ -194,17 +178,13 @@ static void init(bool TrainTest,const char *& XT,const char *& TT)
             ;
         }
 
-    FRACTION_HIGH = 10000;//9900; // max 10000
+    FRACTION_HIGH = 10000;
 #endif
     CUTOFF_LOW = 0;
     CUTOFF_HIGH = 5;
     MAXCOUNT = 100;
 
-
-    // Set to 0 if the lemmatisation test has to be done with words that are not in the training data
-    TRAINTEST = TrainTest;
-    
-    if(TRAINTEST)
+    if(TrainTest)
         {
         XT = "_train";
         FRACTION_LOW = 10000;
@@ -309,19 +289,14 @@ static int mystrcmp(const void * a,const void * b)
     return strcmp(((line *)a)->s, ((line * )b)->s);
     }
 
-#if CLUMPSENSITIVE
 struct clump
     {
-#if N_FOLDCROSSVALIDATION
-    int start;
-    int ceil:31;
-    unsigned int done:1;
-#else
     line * start;
     int linecnt;
+#if N_FOLDCROSSVALIDATION
+    bool done;
 #endif
     };
-#endif
 
 static void countLinesAndClumps(FILE * fpi,int & linecnt,int & clumpcnt)
     {
@@ -359,17 +334,13 @@ static void countLinesAndClumps(FILE * fpi,int & linecnt,int & clumpcnt)
     }
 
 static int fileRead(line * lines,
-#if CLUMPSENSITIVE
                     clump clumps[],
-#endif
                     FILE * fpi,int columnfull,int columnbase,int columnPOS,int sep)
     {
     char buf[256];
     char * pbuf = buf;
     int linecnt = 0;
-#if CLUMPSENSITIVE
     int clumpcnt = 0;
-#endif
     int kar;
     int oldkar = 0;
 	bool nonEmptyLineSeen = false;
@@ -378,7 +349,6 @@ static int fileRead(line * lines,
         {
         if(kar == '\n')
             {
-#if CLUMPSENSITIVE
             if(oldkar == kar)
 				{
 				if(!separatorLineSeen)
@@ -390,13 +360,12 @@ static int fileRead(line * lines,
     					separatorLineSeen = true;
     					clumps[clumpcnt-1].linecnt = lines+linecnt - clumps[clumpcnt-1].start;
                         }
-	#if N_FOLDCROSSVALIDATION
-					clumps[clumpcnt].done = 0;
-	#endif
+#if N_FOLDCROSSVALIDATION
+					clumps[clumpcnt].done = false;
+#endif
 					}
 				}
             else
-#endif
                 {
                 *pbuf++ = '\0';
                 pbuf = buf;
@@ -487,7 +456,6 @@ static int fileRead(line * lines,
                                 lines[linecnt].s = new char[strlen(cf)+strlen(cb)+2];
                                 sprintf(lines[linecnt].s,"%s\t%s",cf,cb);
                                 lines[linecnt].ambiguous = false;
-	//							printf("%s\n",lines[linecnt].s);
                                 ++linecnt;
                                 }
                             }
@@ -510,7 +478,7 @@ static int fileRead(line * lines,
         oldkar = kar;
         }
     clumps[clumpcnt-1].linecnt = lines+linecnt - clumps[clumpcnt-1].start;
-
+    
     return linecnt;
     }
 
@@ -585,7 +553,6 @@ static void randomix(line * lines,int linecnt)
     tmp.s = NULL;
     }
 
-#if CLUMPSENSITIVE
 static void randomix(clump * clumps,int clumpcnt)
     {
     int i;
@@ -600,12 +567,9 @@ static void randomix(clump * clumps,int clumpcnt)
             }
         }
     }
-#endif
 
 static int readlines(int columnfull,int columnbase,int columnPOS,line *& lines,int sep
-#if CLUMPSENSITIVE
                      ,clump *& clumps,int & clumpcnt
-#endif
                      ,optionStruct * Options
                      )
     {
@@ -624,7 +588,6 @@ static int readlines(int columnfull,int columnbase,int columnPOS,line *& lines,i
     assert(!lines);
     rewind(fpi);
     lines = new line[Linecnt];
-#if CLUMPSENSITIVE
     if(clumpcnt)
         {
         clumps = new clump[clumpcnt];
@@ -632,13 +595,8 @@ static int readlines(int columnfull,int columnbase,int columnPOS,line *& lines,i
         }
     else
         clumps = NULL;
-#endif
 
-    Linecnt = fileRead(lines,
-#if CLUMPSENSITIVE
-        clumps,
-#endif
-        fpi,columnfull,columnbase,columnPOS,sep);
+    Linecnt = fileRead(lines,clumps,fpi,columnfull,columnbase,columnPOS,sep);
     if(Linecnt < 0)
         {
         printf("Error in file \"%s\"\n",lemmalistef(Options));
@@ -646,9 +604,7 @@ static int readlines(int columnfull,int columnbase,int columnPOS,line *& lines,i
         }
     --openfiles;
     fclose(fpi);
-#if CLUMPSENSITIVE
     if(clumpcnt < 2)
-#endif
         {
         clump Clump = {lines,Linecnt};
         removeDuplicateLines(&Clump);
@@ -656,7 +612,6 @@ static int readlines(int columnfull,int columnbase,int columnPOS,line *& lines,i
         lines = Clump.start;
         Linecnt = Clump.linecnt;
         }
-#if CLUMPSENSITIVE
     else
         {
         for(int m = 0; m < clumpcnt;++m)
@@ -664,7 +619,6 @@ static int readlines(int columnfull,int columnbase,int columnPOS,line *& lines,i
 
         randomix(clumps,clumpcnt);
         }
-#endif
     return Linecnt;
     }
 
@@ -713,12 +667,12 @@ static void writeTestAndControl(line * Line,FILE * ftest,FILE * fcontrol,int col
     }
 
 
-static void printTrain(line * Line,FILE * fptrain,FILE * fptraintest,FILE * fptraincontrol,int columntest,int columncontrol,int columntag)
+static void printTrain(line * Line,FILE * fptrain,FILE * fptraintest,FILE * fptraincontrol,int columntest,int columncontrol,int columntag,bool TrainTest)
     {
     if(!IsSpace(Line->s[0]))
         {
         fprintf(fptrain,"%s\n",Line->s);
-        if(TRAINTEST)
+        if(TrainTest)
             {
             writeTestAndControl(Line,fptraintest,fptraincontrol,columntest,columncontrol,columntag);
             }
@@ -730,7 +684,6 @@ static void printTrain(line * Line,FILE * fptrain,FILE * fptraintest,FILE * fptr
     }
 
 
-#if CLUMPSENSITIVE
 static int splitLemmaliste
                    (int clumpcnt
                    ,char * training
@@ -742,6 +695,7 @@ static int splitLemmaliste
                    ,int fraction
                    ,char * traintest,char * traincontrol
                    ,clump * clumps
+                   ,bool TrainTest
                    ) // 0 <= fraction <= 10000
     {
     FILE * fptrain = NULL;
@@ -757,7 +711,7 @@ static int splitLemmaliste
     trainclumps = (int)((double)clumpcnt * (double)fraction / 10000.0);
 
     testclumps = clumpcnt - trainclumps;
-    if(TRAINTEST)
+    if(TrainTest)
         {
         fptraintest = fopen(traintest,"wb");
         ++openfiles;
@@ -771,7 +725,7 @@ static int splitLemmaliste
         ++openfiles;
         fpcontrol = fopen(control,"wb");
         ++openfiles;
-        if(fptest && fpcontrol && (!TRAINTEST || (fptraintest && fptraincontrol)))
+        if(fptest && fpcontrol && (!TrainTest || (fptraintest && fptraincontrol)))
             {
             while(testclumps > 0 || trainclumps > 0)
                 {
@@ -791,10 +745,10 @@ static int splitLemmaliste
                         {
                         assert(trainclumps > 0);
                         for(;L < clumps[k].linecnt;++L)
-                            printTrain(clumps[k].start+L,fptrain,fptraintest,fptraincontrol,columntest,columncontrol,columntag);
+                            printTrain(clumps[k].start+L,fptrain,fptraintest,fptraincontrol,columntest,columncontrol,columntag,TrainTest);
                         trainlines += clumps[k].linecnt;
 #if N_FOLDCROSSVALIDATION
-                        clumps[k].done = 1;
+                        clumps[k].done = true;
 #endif
                         --trainclumps;
                         }
@@ -820,7 +774,6 @@ static int splitLemmaliste
     if(fptrain){--openfiles;fclose(fptrain);}
     return trainlines;
     }
-#endif
 
 static int splitLemmaliste
                    (int linecnt
@@ -833,6 +786,7 @@ static int splitLemmaliste
                    ,int fraction
                    ,char * traintest,char * traincontrol
                    ,line * lines
+                   ,bool TrainTest
                    ) // 0 <= fraction <= 10000
     {
     FILE * fptrain = NULL;
@@ -853,7 +807,7 @@ static int splitLemmaliste
 
     testlines = linecnt - trainlines;
     ret = trainlines;
-    if(TRAINTEST)
+    if(TrainTest)
         {
         fptraintest = fopen(traintest,"wb");
         ++openfiles;
@@ -869,7 +823,7 @@ static int splitLemmaliste
             ++openfiles;
             fpcontrol = fopen(control,"wb");
             ++openfiles;
-            if(fptest && fpcontrol && (!TRAINTEST || (fptraintest && fptraincontrol)))
+            if(fptest && fpcontrol && (!TrainTest || (fptraintest && fptraincontrol)))
                 {
                 while(testlines > 0 || trainlines > 0)
                     {
@@ -885,7 +839,7 @@ static int splitLemmaliste
                           ) // write to training file
                             {
                             assert(trainlines > 0);
-                            printTrain(lines+k,fptrain,fptraintest,fptraincontrol,columntest,columncontrol,columntag);
+                            printTrain(lines+k,fptrain,fptraintest,fptraincontrol,columntest,columncontrol,columntag,TrainTest);
                             trainlines--;
                             }
                         else
@@ -911,7 +865,7 @@ static int splitLemmaliste
             int k = 0;
             while(k < linecnt)
                 {
-                printTrain(lines+k,fptrain,fptraintest,fptraincontrol,columntest,columncontrol,columntag);
+                printTrain(lines+k,fptrain,fptraintest,fptraincontrol,columntest,columncontrol,columntag,TrainTest);
                 ++k;
                 }
             }
@@ -967,8 +921,23 @@ struct decision
         }
     };
 
-static void compare(const char * output, const char * control, int & same, int & different, ambty & ambiguous, const char * controlResult, const char * test, int & ambiguousRules, decision & Decision, optionStruct * options)
+struct evaluation
     {
+    int same;
+    int different;
+    int ambiguousRules;
+    ambty ambiguous;
+    decision Decision;
+    evaluation(): same(0),different(0),ambiguousRules(0)
+        {
+        for(int j=0;j < sizeof(ambiguous)/sizeof(ambiguous[0]);++j)
+            ambiguous[j] = 0;
+        }
+    };
+
+static evaluation compare(const char * output, const char * control, const char * controlResult, const char * test, optionStruct * options)
+    {
+    evaluation Evaluation;
     FILE * f1 = fopen(output,"r");
     ++openfiles;
     FILE * f2 = fopen(control,"r");
@@ -1070,7 +1039,7 @@ static void compare(const char * output, const char * control, int & same, int &
                     assert(ambiguousRule);
                     if(c > 2)
                         c = 2;
-                    ++ambiguous[c];
+                    ++Evaluation.ambiguous[c];
                     Correct(Ref);
                     if(f3)
                         fprintf(f3,"|\t%ld\t%s\t%s\t%s\n",Ref,b4,b1,b2);
@@ -1078,7 +1047,7 @@ static void compare(const char * output, const char * control, int & same, int &
                 else
                     {
                     assert(!ambiguousRule);
-                    ++same;
+                    ++Evaluation.same;
                     Correct(Ref);
                     if(f3)
                         fprintf(f3,"+\t%ld\t%s\t%s\t%s\n",Ref,b4,b1,b2);
@@ -1086,7 +1055,7 @@ static void compare(const char * output, const char * control, int & same, int &
                 }
             else
                 {
-                ++different;
+                ++Evaluation.different;
                 Wrong(Ref);
                 if(f3)
                     fprintf(f3,"-\t%ld\t%s\t%s\t%s\n",Ref,b4,b1,b2);
@@ -1094,18 +1063,18 @@ static void compare(const char * output, const char * control, int & same, int &
 
             if(ambiguousRule)
                 {
-                ++ambiguousRules;
+                ++Evaluation.ambiguousRules;
                 if(bambiguous)
-                    Decision.true_amb++;
+                    Evaluation.Decision.true_amb++;
                 else
-                    Decision.false_amb++;
+                    Evaluation.Decision.false_amb++;
                 }
             else
                 {
                 if(bambiguous)
-                    Decision.false_not_amb++;
+                    Evaluation.Decision.false_not_amb++;
                 else
-                    Decision.true_not_amb++;
+                    Evaluation.Decision.true_not_amb++;
                 }
             }
         }
@@ -1157,9 +1126,10 @@ static void compare(const char * output, const char * control, int & same, int &
         remove(output);
         remove(controlResult);
         }
+    return Evaluation;
     }
 
-static void doTheTest
+static evaluation doTheTest
     (const char * traintest
     ,const char * test
     ,const char * output
@@ -1167,30 +1137,22 @@ static void doTheTest
     ,const char * controlResult
     ,const char * control
     ,const char * flexrules
-    ,int & same
-    ,int & different
-    ,ambty & ambiguous
-    ,int & ambiguousRules
-    ,decision & Decision
     ,optionStruct * options
+    ,bool TrainTest
     )
     {
-    lemmatiseFile(TRAINTEST ? traintest : test,flexrules,output);
+    lemmatiseFile(TrainTest ? traintest : test,flexrules,output);
     if (options->remove())
         {
         remove(flexrules);
         }
-    same = 0;
-    different = 0;
-    ambiguous[0] = ambiguous[1] = ambiguous[2] = 0;
-    ambiguousRules = 0;
-    if(TRAINTEST)
+    if(TrainTest)
         {
-        compare(output,traincontrol,same,different,ambiguous,controlResult,traintest,ambiguousRules,Decision,options);
+        return compare(output,traincontrol,controlResult,traintest,options);
         }
     else
         {
-        compare(output,control,same,different,ambiguous,controlResult,test,ambiguousRules,Decision,options);
+        return compare(output,control,controlResult,test,options);
         }
     }
 
@@ -1276,19 +1238,36 @@ class stddev // standard deviations
             }
     };
 
-static void printResults(FILE * fptally,int flexcount,int same,ambty ambiguous,int different,int ambiguousRules)
+static void printResults(FILE * fptally,int flexcount,evaluation Evaluation)
     {
-    int iall = same + ambiguous[0] + ambiguous[1] + ambiguous[2] +  different;
+    int iall = Evaluation.same + Evaluation.ambiguous[0] + Evaluation.ambiguous[1] + Evaluation.ambiguous[2] +  Evaluation.different;
     if(iall > 0)
         {
         double all = 0.01*iall;
         assert(all > 0);
-        fprintf(fptally,"#rules:%d #same:%d #ambiguous:%d %d %d #different:%d %14.6f %14.6f %14.6f %14.6f %14.6f (amb %d all %d amb%% %14.6f)\n"
-            ,flexcount,same,ambiguous[0],ambiguous[1],ambiguous[2],different,(double)same/all,(double)ambiguous[0]/all,(double)ambiguous[1]/all,(double)ambiguous[2]/all,(double)different/all,ambiguousRules,iall,(double)ambiguousRules/all);
+        fprintf
+            (fptally,"#rules:%d #same:%d #ambiguous:%d %d %d #different:%d %14.6f %14.6f %14.6f %14.6f %14.6f (amb %d all %d amb%% %14.6f)\n"
+            ,flexcount
+            ,Evaluation.same
+            ,Evaluation.ambiguous[0]
+            ,Evaluation.ambiguous[1]
+            ,Evaluation.ambiguous[2]
+            ,Evaluation.different
+            ,(double)Evaluation.same/all
+            ,(double)Evaluation.ambiguous[0]/all
+            ,(double)Evaluation.ambiguous[1]/all
+            ,(double)Evaluation.ambiguous[2]/all
+            ,(double)Evaluation.different/all
+            ,Evaluation.ambiguousRules
+            ,iall
+            ,(double)Evaluation.ambiguousRules/all
+            );
         }
     else
-        fprintf(fptally,"same + ambiguous[0] + ambiguous[1] + ambiguous[2] +  different = %d\n"
-            ,same + ambiguous[0] + ambiguous[1] + ambiguous[2] +  different);
+        fprintf
+            (fptally,"same + ambiguous[0] + ambiguous[1] + ambiguous[2] +  different = %d\n"
+            ,Evaluation.same + Evaluation.ambiguous[0] + Evaluation.ambiguous[1] + Evaluation.ambiguous[2] +  Evaluation.different
+            );
     fflush(fptally);
     }
 
@@ -1298,19 +1277,14 @@ typedef struct countStruct
     int tsame;
     int tdifferent;
     ambty tambiguous;
-    int same;
-    ambty ambiguous;
-    int different;
-    int ambiguousRules;
+    evaluation Evaluation;
     int tambiguousRules;
-    decision Decision;
     countStruct()
         {
-        tflexcount = tsame = tdifferent = same = different = ambiguousRules = tambiguousRules = 0;
-        for(int i = 0;i < 3;++i)
+        tflexcount = tsame = tdifferent = tambiguousRules = 0;
+        for(int i = 0;i < sizeof(tambiguous)/sizeof(tambiguous[0]);++i)
             {
             tambiguous[i] = 0;
-            ambiguous[i] = 0;
             }
         }
     } countStruct;
@@ -1331,41 +1305,38 @@ class counting
             , const char * traintest
             , const char * test
             , const char * traincontrol
-            , const char * controlResultN
+            , const char * controlResult
             , const char * control
             , FILE * fptally
             , countAndWeight * Counts
             , optionStruct * Options
+            , bool TrainTest
             )
             {
             long nflexcount = 0;
             nflexcount = Counts[cutoff].getNnodes();
             n.tflexcount += nflexcount;
-            doTheTest
+            n.Evaluation = doTheTest
                 (traintest
                 ,test
                 ,output
                 ,traincontrol
-                ,controlResultN
+                ,controlResult
                 ,control
                 ,Affixrules
-                ,n.same
-                ,n.different
-                ,n.ambiguous
-                ,n.ambiguousRules
-                ,n.Decision
                 ,Options
+                ,TrainTest
                 );
-            this->StandardDev.datum(n.same,n.ambiguous,n.different);
-            n.tsame += n.same;
-            n.tdifferent += n.different;
-            for(int j = 0;j < 3;++j)
+            this->StandardDev.datum(n.Evaluation.same,n.Evaluation.ambiguous,n.Evaluation.different);
+            n.tsame += n.Evaluation.same;
+            n.tdifferent += n.Evaluation.different;
+            for(int j = 0;j < sizeof(n.tambiguous)/sizeof(n.tambiguous[0]);++j)
                 {
-                n.tambiguous[j] += n.ambiguous[j];
+                n.tambiguous[j] += n.Evaluation.ambiguous[j];
                 }
-            n.tambiguousRules += n.ambiguousRules;
+            n.tambiguousRules += n.Evaluation.ambiguousRules;
             fprintf(fptally,"cutoff:%d ",cutoff);
-            printResults(fptally,nflexcount,n.same,n.ambiguous,n.different,n.ambiguousRules);
+            printResults(fptally,nflexcount,n.Evaluation);
             fflush(fptally);
             if(counts)
                 {
@@ -1406,14 +1377,14 @@ class counting
                 ,ntot > 0 ? 100.0*(double)n.tambiguousRules/ntot : 0
                 );
             fprintf(fptab,  "%14.6f %14.6f %14.6f %14.6f "
-                ,ntot > 0 ? 100.0*(double)this->n.Decision.false_amb/ntot : 0
-                ,ntot > 0 ? 100.0*(double)this->n.Decision.false_not_amb/ntot : 0
-                ,ntot > 0 ? 100.0*(double)this->n.Decision.true_amb/ntot : 0
-                ,ntot > 0 ? 100.0*(double)this->n.Decision.true_not_amb/ntot : 0
+                ,ntot > 0 ? 100.0*(double)this->n.Evaluation.Decision.false_amb/ntot : 0
+                ,ntot > 0 ? 100.0*(double)this->n.Evaluation.Decision.false_not_amb/ntot : 0
+                ,ntot > 0 ? 100.0*(double)this->n.Evaluation.Decision.true_amb/ntot : 0
+                ,ntot > 0 ? 100.0*(double)this->n.Evaluation.Decision.true_not_amb/ntot : 0
                 );
             fprintf(fptab,  "%14.6f %14.6f\n"
-                ,this->n.Decision.precision()
-                ,this->n.Decision.recall()
+                ,this->n.Evaluation.Decision.precision()
+                ,this->n.Evaluation.Decision.recall()
                 );
             fflush(fptab);
             }
@@ -1439,12 +1410,12 @@ class counting
             sprintf(ell[11],f2,ntot > 0 ? 100.0*this->StandardDev.calculate(eamb2) : 0.0);
             sprintf(ell[12],f2,ntot > 0 ? 100.0*this->StandardDev.calculate(edif) : 0.0);
             sprintf(ell[13],f2,ntot > 0 ? 100.0*(double)n.tambiguousRules/ntot : 0.0);
-            sprintf(ell[14],f2,ntot > 0 ? 100.0*(double)this->n.Decision.false_amb/ntot : 0.0);
-            sprintf(ell[15],f2,ntot > 0 ? 100.0*(double)this->n.Decision.false_not_amb/ntot : 0.0);
-            sprintf(ell[16],f2,ntot > 0 ? 100.0*(double)this->n.Decision.true_amb/ntot : 0.0);
-            sprintf(ell[17],f2,ntot > 0 ? 100.0*(double)this->n.Decision.true_not_amb/ntot : 0.0);
-            sprintf(ell[18],f2,this->n.Decision.precision());
-            sprintf(ell[19],f2,this->n.Decision.recall());
+            sprintf(ell[14],f2,ntot > 0 ? 100.0*(double)this->n.Evaluation.Decision.false_amb/ntot : 0.0);
+            sprintf(ell[15],f2,ntot > 0 ? 100.0*(double)this->n.Evaluation.Decision.false_not_amb/ntot : 0.0);
+            sprintf(ell[16],f2,ntot > 0 ? 100.0*(double)this->n.Evaluation.Decision.true_amb/ntot : 0.0);
+            sprintf(ell[17],f2,ntot > 0 ? 100.0*(double)this->n.Evaluation.Decision.true_not_amb/ntot : 0.0);
+            sprintf(ell[18],f2,this->n.Evaluation.Decision.precision());
+            sprintf(ell[19],f2,this->n.Evaluation.Decision.recall());
             sprintf(ell[20],"%6.3f*N^%4.3f ", exp(AffixLine->a()), AffixLine->b());//0.056414*N^0.799693
             delete[]ell;
             }
@@ -1471,12 +1442,12 @@ class counting
             fprintf(fptab,"ambi3%%         %14.6f\n",ntot > 0 ? 100.0*(double)n.tambiguous[2]/ntot : 0.0);
             fprintf(fptab,"diff%%          %14.6f\n",ntot > 0 ? 100.0*(double)n.tdifferent/ntot : 0.0);
             fprintf(fptab,"amb.rules%%     %14.6f\n",ntot > 0 ? 100.0*(double)n.tambiguousRules/ntot : 0.0);
-            fprintf(fptab,"false_amb%%     %14.6f\n",ntot > 0 ? 100.0*(double)this->n.Decision.false_amb/ntot : 0.0);
-            fprintf(fptab,"false_not_amb%% %14.6f\n",ntot > 0 ? 100.0*(double)this->n.Decision.false_not_amb/ntot : 0.0);
-            fprintf(fptab,"true_amb%%      %14.6f\n",ntot > 0 ? 100.0*(double)this->n.Decision.true_amb/ntot : 0.0);
-            fprintf(fptab,"true_not_amb%%  %14.6f\n",ntot > 0 ? 100.0*(double)this->n.Decision.true_not_amb/ntot : 0.0);
-            fprintf(fptab,"precision      %14.6f\n",this->n.Decision.precision());
-            fprintf(fptab,"recall         %14.6f\n",this->n.Decision.recall());
+            fprintf(fptab,"false_amb%%     %14.6f\n",ntot > 0 ? 100.0*(double)this->n.Evaluation.Decision.false_amb/ntot : 0.0);
+            fprintf(fptab,"false_not_amb%% %14.6f\n",ntot > 0 ? 100.0*(double)this->n.Evaluation.Decision.false_not_amb/ntot : 0.0);
+            fprintf(fptab,"true_amb%%      %14.6f\n",ntot > 0 ? 100.0*(double)this->n.Evaluation.Decision.true_amb/ntot : 0.0);
+            fprintf(fptab,"true_not_amb%%  %14.6f\n",ntot > 0 ? 100.0*(double)this->n.Evaluation.Decision.true_not_amb/ntot : 0.0);
+            fprintf(fptab,"precision      %14.6f\n",this->n.Evaluation.Decision.precision());
+            fprintf(fptab,"recall         %14.6f\n",this->n.Evaluation.Decision.recall());
             fflush(fptab);
             }
     };
@@ -1501,7 +1472,7 @@ void createReport(counting c[CUTOFFS],int maxcount,int ttrainlines,lineab AffixL
         "\n"
         ";Evaluation of prediction of ambiguity (whether a word has more than one possible lemma)\n"
         ";---------------------------------------------------------------------------------------\n"
-        ";amb.rules%     ",
+        "; amb.rules%     ",
         "false_amb%     ",
         "false_not_amb% ",
         "true_amb%      ",
@@ -1509,9 +1480,9 @@ void createReport(counting c[CUTOFFS],int maxcount,int ttrainlines,lineab AffixL
         "precision      ",
         "recall         ",
         "\n"
-        ";Power law relating the number of rules in the decision tree to the number of examples in the training data\n"
+        "; Power law relating the number of rules in the decision tree to the number of examples in the training data\n"
         ";----------------------------------------------------------------------------------------------------------\n"
-        ";#rules =       "
+        "; #rules =       "
         };
     int nocol = 7;
     int norow = sizeof(texts)/sizeof(texts[0]);
@@ -1624,16 +1595,13 @@ int nextFraction(int fraction)
 
 void trainAndTest
         (int linecnt
-#if CLUMPSENSITIVE
         ,int clumpcnt
-#endif
         ,const char * XT
         ,const char * TT
         ,line * lines
-#if CLUMPSENSITIVE
         ,clump * clumps
-#endif
-         ,optionStruct * Options
+        ,optionStruct * Options
+        ,bool TrainTest
         )
     {
     lineab AffixLine[CUTOFFS];
@@ -1649,9 +1617,8 @@ void trainAndTest
     char formatFlexrules[256]       ;sprintf(formatFlexrules,       formatprefix,"flex"         ,"%d_%d");
     char formatSOutput[256]         ;sprintf(formatSOutput,         formatprefix,"sout"         ,"%d_%d_%d");
     char formatOutput[256]          ;sprintf(formatOutput,          formatprefix,"out"          ,"%d_%d_%d");
-    char formatControlResult[256]   ;sprintf(formatControlResult,   formatprefix,"resultSuffix" ,"%d_%d_cutoff_%d");
 
-    char formatControlResultN[256]  ;sprintf(formatControlResultN,  formatprefix,"resultAffix"  ,"%d_%d_cutoff_%d");
+    char formatcontrolResult[256]  ;sprintf(formatcontrolResult,  formatprefix,"resultAffix"  ,"%d_%d_cutoff_%d");
 
     char formatLemmas[256]          ;sprintf(formatLemmas,          formatprefix,"lemmas"       ,"");
     char formatWeird[256]           ;sprintf(formatWeird,           formatprefix,"weird"        ,"");
@@ -1738,7 +1705,6 @@ void trainAndTest
             char Ttraincontrol[256];
             char traintest[256];
             char controlResult[256];
-            char controlResultN[256];
             char Soutput[256];
             char output[256];
 
@@ -1763,7 +1729,7 @@ void trainAndTest
             sprintf(Ttraining,formatTraining,fraction,count);
             sprintf(test,formatTest,fraction,count);
             sprintf(Tcontrol,formatControl,fraction,count);
-            if(TRAINTEST )
+            if(TrainTest )
                 {
                 sprintf(traintest,formatTrainTest,fraction,count);
                 sprintf(Ttraincontrol,formatTrainControl,fraction,count);
@@ -1772,12 +1738,10 @@ void trainAndTest
             sprintf(suffixrulesArr,formatFlexrules,fraction,count);
 
             int trainlines = 0;
-#if CLUMPSENSITIVE
             if(clumpcnt > 1)
-                trainlines = splitLemmaliste(clumpcnt,Ttraining,test,Tcontrol,1,2,3,fraction,traintest,Ttraincontrol,clumps);
+                trainlines = splitLemmaliste(clumpcnt,Ttraining,test,Tcontrol,1,2,3,fraction,traintest,Ttraincontrol,clumps,TrainTest);
             else
-#endif
-                trainlines = splitLemmaliste(linecnt,Ttraining,test,Tcontrol,1,2,3,fraction,traintest,Ttraincontrol,lines);
+                trainlines = splitLemmaliste(linecnt,Ttraining,test,Tcontrol,1,2,3,fraction,traintest,Ttraincontrol,lines,TrainTest);
             if(trainlines > 0)
                 {
                 ttrainlines += trainlines;
@@ -1785,7 +1749,6 @@ void trainAndTest
                 optionStruct testOptions(*Options);
                 testOptions.seti(Ttraining);
                 testOptions.setc(CUTOFF_HIGH);
-                //testOptions.seto(newStyleRulesf(Options));
                 testOptions.seto(Options->flexrules());
                 testOptions.sete(LGf(Options));
                 testOptions.setn("123");
@@ -1804,21 +1767,17 @@ void trainAndTest
                 {
                 for(int cutoff = CUTOFF_LOW;cutoff <= CUTOFF_HIGH;++cutoff)
                     {
-                    sprintf(controlResult,formatControlResult,fraction,count,cutoff);
-                    sprintf(controlResultN,formatControlResultN,fraction,count,cutoff);
+                    sprintf(controlResult,formatcontrolResult,fraction,count,cutoff);
                     char Affixrules[250];
-                    //const char * lastslash = strrchr(newStyleRulesf(Options),*SLASH);
                     const char * lastslash = strrchr(Options->flexrules(),*SLASH);
                     const char * filename;
                     if(lastslash)
                         {
                         filename = lastslash + 1;
-                        //sprintf(Affixrules,"%.*s%d%s%s",(int)(filename - newStyleRulesf(Options)),newStyleRulesf(Options),cutoff,SLASH,filename);
                         sprintf(Affixrules,"%.*s%d%s%s",(int)(filename - Options->flexrules()),Options->flexrules(),cutoff,SLASH,filename);
                         }
                     else
                         sprintf(Affixrules,"%d%c%s",cutoff,DIRSEP,Options->flexrules());
-                        //sprintf(Affixrules,"%d%c%s",cutoff,DIRSEP,newStyleRulesf(Options));
                     
 
                     sprintf(Soutput,formatSOutput,cutoff,fraction,count);
@@ -1828,7 +1787,7 @@ void trainAndTest
                     if(fptally)
                         {
                         c[cutoff].testing(cutoff,Affixrules,output,traintest,
-                            test,Ttraincontrol,controlResultN,Tcontrol,fptally,Counts,Options);
+                            test,Ttraincontrol,controlResult,Tcontrol,fptally,Counts,Options,TrainTest);
                         --openfiles;
                         fclose(fptally);
                         }
@@ -1836,24 +1795,18 @@ void trainAndTest
                         {
                         fprintf(stderr,"Cannot open \"%s\" for appending. No testing is done.\n",tally);
                         }
-#if OnCE
-                    break;
-#endif
                     }
                 }
             if (Options->remove())
                 {
                 remove(test);
-                if(TRAINTEST)
+                if(TrainTest)
                     {
                     remove(traintest);
                     remove(Ttraincontrol);
                     }
                 remove(Tcontrol);
                 }
-#if OnCE
-            break; // STOP after after first results
-#endif
             }
         if(ttrainlines > 0)
             {
@@ -1909,29 +1862,19 @@ void trainAndTest
             }
        
         delete [] Counts;
-#if OnCE
-        break; // STOP after after first results
-#endif
         }
     }
 
 
 static int readFile
         (line *& lines
-#if CLUMPSENSITIVE
         ,clump *& clumps
         ,int & clumpcnt
-#endif
         ,int sep
         ,optionStruct * Options
         )
     {
-    return readlines(1,2,3,lines,sep
-#if CLUMPSENSITIVE
-        ,clumps,clumpcnt
-#endif
-        ,Options
-        );
+    return readlines(1,2,3,lines,sep,clumps,clumpcnt,Options);
     }
 
 
@@ -1949,18 +1892,12 @@ static int doit(optionStruct * Options,bool TrainTest)
         }
     
     line * lines = NULL;
-#if CLUMPSENSITIVE
     clump * clumps = NULL;
     int clumpcnt = 0;
-#endif
     int linecnt = readFile
         (lines
-#if CLUMPSENSITIVE
         ,clumps
-#endif
-#if CLUMPSENSITIVE
         ,clumpcnt
-#endif
         ,sep
         ,Options
         );
@@ -1968,22 +1905,18 @@ static int doit(optionStruct * Options,bool TrainTest)
         {
         trainAndTest
             (linecnt
-#if CLUMPSENSITIVE
             ,clumpcnt
-#endif
             ,XT
             ,TT
             ,lines
-#if CLUMPSENSITIVE
             ,clumps
-#endif
             ,Options
+            ,TrainTest
             );
 
         delete [] lines;
         lines = NULL;
         }
-//    newStyleRulesf(0);// cleanup static local variable pointing to memory allocated on the heap.
     return 0;
     }
 

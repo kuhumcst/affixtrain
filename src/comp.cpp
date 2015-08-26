@@ -2798,7 +2798,7 @@ struct rotation goodParms[] =
     {
         {{0.077239,-0.693010,0.706529,-0.090215,0.077546,0.020876},6}
     };
-int goodParmsIndex = 0;
+size_t goodParmsIndex = 0;
 
 void brown()
     {

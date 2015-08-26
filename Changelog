@@ -1,3 +1,15 @@
+Version 3.09 - 2015.08.26
+-------------------------
+Changes to approximation algorithm for finding optimal penalty parameters:
+1) Use ziggurat method to compute normal distribution for delta vector
+   coordinates.
+2) Recompute minimal fraction by setting minumum number of examples to 10000
+   or 1% of available training examples, whichever is largest, arbitrarily
+   regarding less as not representative.
+3) An array of good parameter sets that are returned during the first calls to
+   brown(), so the algorithm doesn't have to search a too big parameter space.
+4) Setting default parameters to 0.0;-0.7;0.7;-0.1;0.1;0.0
+
 Version 3.08 - 2015.08.21
 -------------------------
 Fixed correct marking of ambiguous examples.

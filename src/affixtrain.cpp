@@ -20,7 +20,7 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "3.07"
+#define VERSION "3.09"
 
 #include "affixtrain.h"
 #include "testrules.h"
@@ -2761,7 +2761,7 @@ const int partOfFile(const char * fbuf, const double fraction, optionStruct * op
             }
         if(li > 0)
             ++blbs;
-        printf("li %d blbs %d\n",li,blbs);
+        printf("%d of %d lines, %d of %d clusters\n",li,options->lines(),bl,blbs);
         if (options->currentParms() && !flog)
             {
             flog = fopenOrExit(options->currentParms(), "a", "log file");
@@ -3038,7 +3038,9 @@ void computeParms(optionStruct * options)
                     betterfound(currentNo, currentweight, swath, iterations, blobs, lines, fraction, fraclines, improvement, options);
                     }
                 else
+                    {
                     worsefound();
+                    }
                 }
             }
         if (options->verbose())

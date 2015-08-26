@@ -898,7 +898,8 @@ void optionStruct::completeArgs()
             }
         if(nD == 0)
             {
-            detectFloatingPointNumbers("0;-0.8;0.6;0;0;0");
+            detectFloatingPointNumbers("0;-0.7;0.7;-0.1;0.1;0");
+            //detectFloatingPointNumbers("0.088468;-0.685320;0.711931;-0.083827;0.090956;0.019069");
             }
         }
 
@@ -954,6 +955,10 @@ void optionStruct::completeArgs()
         printf("blobs:%d lines %d\n", Blobs, Lines);
     --openfiles;
     fclose(fpWrdLem);
+    if(Minfraction < 10000.0/(double)Lines)
+        Minfraction = 10000.0/(double)Lines;
+    if(Maxfraction < Minfraction)
+        Maxfraction = Minfraction;
     }
 
 

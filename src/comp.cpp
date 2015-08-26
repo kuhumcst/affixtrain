@@ -25,7 +25,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "graph.h"
 #include "optionaff.h"
 #include <float.h>
-#define PARMS3 0
+
+#define ZIGGURAT 1
+
+#if ZIGGURAT
+#include "rnorrexp.c"
+#endif
+
+
 #define NPARMS parms.ROWPARMS
 
 /*
@@ -1607,102 +1614,7 @@ static bestParms best_da3 =
         }}
     };
 
-
-static bestParms best_en3 = // English, ambiguous training pairs in training set derived from CELEX, PARMS3 == 1
-    {
-    false,
-    "en3",
-    1,
-/*
-0	0.985600	14	77169.000000	14451.285714	10509.142857	18.726802	13.618348	935.285714	5.428571	15.500000	0.000000	171.785714	935.785714	8.928571	12.000000	0.000000	171.285714	1.122684	0.142160	0.476458	0.000000	1.182352	0.853999	0.261289	0.260213	0.000000	0.861224	82.915400	0.481256	1.374113	0.000000	15.229230	1.994681	82.959726	0.791540	1.063830	0.000000	15.184904	2.039007	1.956687	4.951874	0.037994	93.053445	0.009615	0.007614	2.001013	4.951874	0.037994	93.009119	0.009404	0.007614
-1	0.985600	14	77169.000000	2563.357143	5908.285714	3.321745	7.656294	975.428571	0.000000	0.000000	0.000000	152.571429	954.857143	8.428571	11.142857	0.000000	153.571429	1.082261	0.000000	0.000000	0.000000	1.082261	0.931651	0.176328	0.380685	0.000000	0.987630	86.474164	0.000000	0.000000	0.000000	13.525836	0.000000	84.650456	0.747214	0.987842	0.000000	13.614488	1.956687	0.000000	4.989868	0.000000	95.010132	0.000000	0.000000	1.342452	4.375633	0.614235	93.667680	0.186180	0.123096
-2	0.985600	14	77169.000000	1454.357143	1715.142857	1.884639	2.222580	971.785714	0.000000	0.000000	0.000000	156.214286	976.071429	5.428571	4.714286	0.000000	141.785714	1.146528	0.000000	0.000000	0.000000	1.146528	1.012267	0.254847	0.178760	0.000000	1.062225	86.151216	0.000000	0.000000	0.000000	13.848784	0.000000	86.531155	0.481256	0.417933	0.000000	12.569656	1.038501	0.000000	4.989868	0.000000	95.010132	0.000000	0.000000	0.854863	4.806231	0.183637	94.155268	0.096990	0.036802
-3	0.985600	14	77169.000000	1004.857143	856.642857	1.302151	1.110087	965.928571	0.000000	0.000000	0.000000	162.071429	979.142857	3.214286	2.857143	0.000000	142.785714	1.079324	0.000000	0.000000	0.000000	1.079324	1.024964	0.167409	0.134030	0.000000	0.983006	85.631966	0.000000	0.000000	0.000000	14.368034	0.000000	86.803445	0.284954	0.253293	0.000000	12.658308	0.671226	0.000000	4.989868	0.000000	95.010132	0.000000	0.000000	0.563576	4.882219	0.107649	94.446555	0.087179	0.021574
-4	0.985600	14	77169.000000	782.785714	600.214286	1.014378	0.777792	962.642857	0.000000	0.000000	0.000000	165.357143	978.857143	3.000000	2.357143	0.000000	143.785714	0.977102	0.000000	0.000000	0.000000	0.977102	0.823494	0.202756	0.137371	0.000000	0.838280	85.340679	0.000000	0.000000	0.000000	14.659321	0.000000	86.778116	0.265957	0.208967	0.000000	12.746960	0.607903	0.000000	4.989868	0.000000	95.010132	0.000000	0.000000	0.525583	4.907548	0.082320	94.484549	0.072626	0.016497
-5	0.985600	14	77169.000000	653.928571	443.000000	0.847398	0.574065	960.142857	0.000000	0.000000	0.000000	167.857143	977.285714	3.071429	2.357143	0.000000	145.285714	1.007113	0.000000	0.000000	0.000000	1.007113	0.720576	0.195049	0.145908	0.000000	0.722252	85.119048	0.000000	0.000000	0.000000	14.880952	0.000000	86.638804	0.272290	0.208967	0.000000	12.879939	0.550912	0.000000	4.989868	0.000000	95.010132	0.000000	0.000000	0.474924	4.913880	0.075988	94.535208	0.074074	0.015228
-cutoff 0	Affix a -0.665350 b 0.883583
-        	Suffix a -1.386611 b 0.965747
-cutoff 1	Affix a -0.987021 b 0.860609
-        	Suffix a -2.548348 b 0.910826
-cutoff 2	Affix a -2.162211 b 0.853021
-        	Suffix a -2.774658 b 0.877415
-cutoff 3	Affix a -2.441679 b 0.817312
-        	Suffix a -2.982081 b 0.866045
-cutoff 4	Affix a -2.697628 b 0.807711
-        	Suffix a -3.164283 b 0.861559
-cutoff 5	Affix a -2.781215 b 0.792206
-        	Suffix a -3.194672 b 0.847348
-
-New (old) algorithm, least wrongly lemmatised (MIN(diff)).
-Suffix only     no
-cutoff          2
-fraction        9856.000000
-iterations      14
-trainlines      77169.000000
-rules           1715.142857 (1454.357143)
-rules%         2.222580 (1.884639)
-same%stdev     1.012267
-ambi1%stdev    0.254847
-ambi2%stdev    0.178760
-ambi3%stdev    0.000000
-diff%stdev     1.062225
-same%          86.531155 (86.151216)
-ambi1%         0.481256 (0.000000)
-ambi2%         0.417933 (0.000000)
-ambi3%         0.000000 (0.000000)
-diff%          12.569656 (13.848784)
-amb.rules%     1.038501 (0.000000)
-false_amb%     0.854863 (0.000000)
-false_not_amb% 4.806231 (4.989868)
-true_amb%      0.183637 (0.000000)
-true_not_amb%  94.155268 (95.010132)
-precision       0.096990 (0.000000)
-recall          0.036802 (0.000000)
-
-bests[6].suffixonly == [false]
-bests[6].langbase == [en3]
-comp = comp_parms0_off
-bests[6].rows == [1]
-  R->R     W->R     R->W     W->W
-
-0.000000 0.780505 -0.543960 0.308090 
-*/
-//iteration:20.9
-/*weight (not  used): 1.05518609635120429e+04 suffix only: no */
-/* number of nodes: 11217, nodes/line: 1.43262193953791334e-01 weight (not  used): 1.05518609635120429e+04 blobs 1 lines 78297 * fraction 1.00000000000000000e+00 = 78297 lines*/
-        {{
-        0.00000000000000000e+00,	7.80504869708012139e-01,	-5.43959942196694413e-01,	3.08090456923689693e-01
-        }}
-    };
-
-static bestParms best_en3_suffix = // English, ambiguous training pairs in training set derived from CELEX, PARMS3 == 1, lowest fraction 0.01
-    {
-    true,
-    "en3",
-    1,
-//iteration:20.8
-/*weight (not  used): 1.25926437193262009e+04 suffix only: yes */
-/* number of nodes: 13451, nodes/line: 1.71794577059146580e-01 weight (not  used): 1.25926437193262009e+04 blobs 1 lines 78297 * fraction 1.00000000000000000e+00 = 78297 lines*/
-/*        { LOWEST FRACTION 0.01
-        0.00000000000000000e+00,        7.37871477730652203e-01,        -6.64729936801612187e-01,       1.16960649242848158e-01
-        } */
-//iteration:20.9
-/*weight (not  used): 1.26246596701543367e+04 suffix only: yes */
-/* number of nodes: 13472, nodes/line: 1.72062786569089493e-01 weight (not  used): 1.26246596701543367e+04 blobs 1 lines 78297 * fraction 1.00000000000000000e+00 = 78297 lines*/
-/*
-        { // LOWEST FRACTION 0.05
-        0.00000000000000000e+00,        7.28882948244000684e-01,        -6.79739746492379560e-01,       8.17528274594168380e-02
-        }*/
-//iteration:20.0
-/*weight (not  used): 1.20213934796043850e+04 suffix only: yes */
-/* number of nodes: 12826, nodes/line: 1.63812151167988557e-01 weight (not  used): 1.20213934796043850e+04 blobs 1 lines 78297 * fraction 1.00000000000000000e+00 = 78297 lines*/
-        {{// LOWEST FRACTION 0.1
-        0.00000000000000000e+00,        7.05993374083430658e-01,        -7.06014238094235580e-01,       5.58323504655617309e-02
-        }}
-
-    };
-
-static bestParms best_en4 = // English, ambiguous training pairs in training set derived from CELEX, PARMS3 == 0
+static bestParms best_en4 = // English, ambiguous training pairs in training set derived from CELEX
     {
     false,
     "en4",
@@ -1715,7 +1627,7 @@ static bestParms best_en4 = // English, ambiguous training pairs in training set
         }}
     };
 
-static bestParms best_en4_suffix = // English, ambiguous training pairs in training set derived from CELEX, PARMS3 == 0
+static bestParms best_en4_suffix = // English, ambiguous training pairs in training set derived from CELEX
     {
     true,
     "en4",
@@ -2634,8 +2546,6 @@ static struct bestParms bests[] =
     ,best_elC0
     ,best_elC1
     ,best_elC2
-    ,best_en3
-    ,best_en3_suffix
     ,best_en4
     ,best_en4_suffix
     ,best_en4W
@@ -2695,6 +2605,7 @@ static void plus(double * dest, double * term,int cols)
 
 
 static int improvements = 0;
+static double previous[6] = {0,0,0,0,0,0};
 
 void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,int lines,double fraction,int fraclines,bool improvement,optionStruct * options)
     {
@@ -2707,6 +2618,12 @@ void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,int
         fprintf(f,"//-> IMPROVEMENT #%d\n",improvements);
         --openfiles;
         fclose(f);
+        }
+    else
+        {/*
+        times(previous,-1.0);
+        plus(parms.Matrix,previous,parms.ROWPARMS);
+        normalise(parms.Matrix);*/
         }
     best = parms;
     parms.better(options);
@@ -2877,6 +2794,12 @@ void testAngle()
     getchar();
     }
 
+struct rotation goodParms[] = 
+    {
+        {{0.077239,-0.693010,0.706529,-0.090215,0.077546,0.020876},6}
+    };
+int goodParmsIndex = 0;
+
 void brown()
     {
     static int it = 0;
@@ -2885,42 +2808,78 @@ void brown()
         normalise(parms.Matrix);
         return;
         }
-    double tangens = 1.0*pow(0.995,it);
-    //printf("tangens %f\n",tangens);
+
+    if(goodParmsIndex < sizeof(goodParms)/sizeof(goodParms[0]))
+        {
+        printf("goodParmsIndex %d\n",goodParmsIndex);
+        parms = goodParms[goodParmsIndex++];
+        normalise(parms.Matrix);
+        return;
+        }
+
     double vector[6];
+    size_t i;
+    double tangens = 0.5*pow(0.995,it);
+    /*
+    Compute a randomly directed vector in 6 dimensional space.
+    */
+#if ZIGGURAT
+    for(i = 0;i < sizeof(vector)/sizeof(vector[0]);++i)
+        {
+        vector[i] = RNOR; // Use Ziggurat algorithm (rnorrexp.c)
+        }
+#else
     double radius2 = 0.0;
     do
         {
         int i;
         radius2 = 0.0;
-#if PARMS3
-        vector[0] = 0; // R__R seems to be irrelevant
-        for(i = 1;i < parms.ROWPARMS;++i)
-#else
         for(i = 0;i < parms.ROWPARMS;++i)
-#endif
             {
             vector[i] = rand() - (RAND_MAX/2);
             radius2 += vector[i]*vector[i]; 
             }
         }
     while(radius2 > ((double)RAND_MAX/2.0)*((double)RAND_MAX/2.0));
+#endif
     normalise(vector);
     double inproduct = inner(parms.Matrix,vector); // Only first row. Ignore the rest.
     struct rotation diff = parms;
     times(diff.Matrix,-inproduct);
     plus(vector,diff.Matrix,parms.ROWPARMS);
     normalise(vector);
+
+    /*
+    We require that the delta is not only perpendicular to the currently best
+    vector, but also to the previous delta. This could be extended to comprise
+    even earlier delta's, up to three. (Though there are six values to define,
+    there are only five degrees of freedom, because we look at a vector
+    sweeping the unit sphere in six dimensional space. So we can require delta
+    to be perpendicular to the current vector and to three previous delta's
+    and still have one degree of freedom.)
+    */
+    inproduct = inner(previous,vector);
+    times(previous,-inproduct);
+    plus(vector,previous,parms.ROWPARMS);
+    normalise(vector);
+
     times(vector,tangens);
+
+    for(i = 0;i < sizeof(vector)/sizeof(vector[0]);++i)
+        {
+        previous[i] = vector[i];
+        }
+
     plus(parms.Matrix,vector,parms.ROWPARMS);
     normalise(parms.Matrix);
-    //printvector("parms3",parms.Matrix,parms.ROWPARMS);
     }
 
 bool init(optionStruct * options)
     {
+#if ZIGGURAT
+    zigset(86947731);
+#endif
     parms.init(options);
-    //parms = best;
     return true;
     }
 

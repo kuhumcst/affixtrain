@@ -2811,7 +2811,7 @@ void brown()
 
     if(goodParmsIndex < sizeof(goodParms)/sizeof(goodParms[0]))
         {
-        printf("goodParmsIndex %d\n",goodParmsIndex);
+        //printf("goodParmsIndex %d\n",goodParmsIndex);
         parms = goodParms[goodParmsIndex++];
         normalise(parms.Matrix);
         return;

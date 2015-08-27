@@ -2804,6 +2804,9 @@ struct rotation goodParms[] =
         {{-0.005696,-0.563334, 0.773168, 0.190243, 0.002000, 0.220540},6}, // Slovene (-XE)
         {{-0.002807,-0.748938, 0.628884,-0.204355,-0.000636, 0.042753},6}, // Danish  (-XC)
         {{-0.010943,-0.756421, 0.639771,-0.106260,-0.004888, 0.084177},6}, // Danish  (-XE)
+        {{ 0.005600,-0.438006, 0.891624, 0.072352, 0.006273, 0.088605},6}, // Greek   (-XC)
+        {{ 0.060123,-0.583150, 0.781200, 0.096034, 0.060101, 0.182246},6}, // French  (-XC)
+        {{ 0.051583,-0.564670, 0.769960, 0.131552, 0.059553, 0.254550},6}, // French  (-XE)
 
     };
 size_t goodParmsIndex = 0;
@@ -2819,7 +2822,6 @@ void brown()
 
     if(goodParmsIndex < sizeof(goodParms)/sizeof(goodParms[0]))
         {
-        //printf("goodParmsIndex %d\n",goodParmsIndex);
         parms = goodParms[goodParmsIndex++];
         normalise(parms.Matrix);
         return;

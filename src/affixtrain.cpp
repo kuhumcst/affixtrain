@@ -20,7 +20,7 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "3.09"
+#define VERSION "3.10"
 
 #include "affixtrain.h"
 #include "testrules.h"
@@ -2753,7 +2753,8 @@ const int partOfFile(const char * fbuf, const double fraction, optionStruct * op
                 if (bucket >= 1.0)
                     fputc(kar, f2);
                 }
-            prevkar = kar;
+            if(kar != '\r')
+                prevkar = kar;
             }
         if(lineProfile & 4)
             { // last line was not finished off with newline

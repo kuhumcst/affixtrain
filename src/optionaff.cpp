@@ -955,8 +955,10 @@ void optionStruct::completeArgs()
         printf("blobs:%d lines %d\n", Blobs, Lines);
     --openfiles;
     fclose(fpWrdLem);
-    if(Minfraction < 10000.0/(double)Lines)
-        Minfraction = 10000.0/(double)Lines;
+    if(Minfraction < 20000.0/(double)Lines)
+        Minfraction = 20000.0/(double)Lines;
+    if(Minfraction > 1.0)
+        Minfraction = 1.0;
     if(Maxfraction < Minfraction)
         Maxfraction = Minfraction;
     }

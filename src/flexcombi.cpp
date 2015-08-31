@@ -225,12 +225,12 @@ struct fileBuffer
         {
         fseek(flexrulefile, 0, SEEK_END);
         long length = ftell(flexrulefile);
-		if(length > 4)
-			{
-			rewind(flexrulefile);
+        if(length > 4)
+            {
+            rewind(flexrulefile);
 
-			char V[5] = "";
-			V[4] = 0;
+            char V[5] = "";
+            V[4] = 0;
             if (4 == fread(V, 1, 4, flexrulefile))
                 {
                 if ((V[0] & 1) && (V[3] & 1))
@@ -246,15 +246,15 @@ struct fileBuffer
                     }
                 }
 
-			Length = length;
-			while (Length & 3) ++Length;
-			buf = new char[Length];
-			if (length == (long int)fread(buf, 1, length, flexrulefile))
-				{
-				return true;
-				}
-			}
-		return false;
+            Length = length;
+            while (Length & 3) ++Length;
+            buf = new char[Length];
+            if (length == (long int)fread(buf, 1, length, flexrulefile))
+                {
+                return true;
+                }
+            }
+        return false;
         }
 
     bool readRules(const char * filename)
@@ -263,9 +263,9 @@ struct fileBuffer
         ++openfiles;
         if (f)
             {
-			bool read = readRules(f);
+            bool read = readRules(f);
             --openfiles;
-			fclose(f);
+            fclose(f);
             return read;
             }
         return false;
@@ -292,54 +292,54 @@ static char * printChain
                 , char * start
                 , char * end
                 , FILE * fm
-				, const char * msg
+                , const char * msg
                 )
     {
-	int index = *(int *)p;
+    int index = *(int *)p;
     assert(!(index & 3));
-	if(index > 0)
-		{
-		fprintf(fm,"%*s( %s\n",indent,"",msg);
-		for(;;)
-			{
-			fprintf(fm,"%*s%s",indent,"","ALT\n");
-			if(index == 4 || index == -4)
-				fprintf(fm,"%*s",indent,"[parent]\n");
-			else
-				printrules
-					( p + sizeof(int)
-					, (index == 0) ? e : (p + index)
-					, start
-					, end
-					, fm
-					, indent
-					);
+    if(index > 0)
+        {
+        fprintf(fm,"%*s( %s\n",indent,"",msg);
+        for(;;)
+            {
+            fprintf(fm,"%*s%s",indent,"","ALT\n");
+            if(index == 4 || index == -4)
+                fprintf(fm,"%*s",indent,"[parent]\n");
+            else
+                printrules
+                    ( p + sizeof(int)
+                    , (index == 0) ? e : (p + index)
+                    , start
+                    , end
+                    , fm
+                    , indent
+                    );
 
-			if(index > 0)
-				{
-				p += index;
-				index = *(int *)p;
+            if(index > 0)
+                {
+                p += index;
+                index = *(int *)p;
                 assert(!(index & 3));
                 }
-			else
-				break;
-			}
-		fprintf(fm,"%*s) END %s\n",indent,"",msg);
-		}
+            else
+                break;
+            }
+        fprintf(fm,"%*s) END %s\n",indent,"",msg);
+        }
     return e;
     }
 
 static char * printrules
-                ( char * rules
-                , char * max
-                , char * start
-                , char * end
-                , FILE * fm
-                , int indent
-                )
+( char * rules
+ , char * max
+ , char * start
+ , char * end
+ , FILE * fm
+ , int indent
+ )
     {
-	if(max <= rules)
-		return rules;
+    if(max <= rules)
+        return rules;
     ptrdiff_t index = *(int *)rules;
     assert(!(index & 3));
     if(index == 0)
@@ -347,9 +347,9 @@ static char * printrules
     assert(!(index & 3));
     char * p = rules + sizeof(int);
     typetype type = *(typetype*)p;
-	if(type > 3)
-		type = 0;
-	else
+    if(type > 3)
+        type = 0;
+    else
         p += sizeof(typetype);
     size_t slen = strlen(start);
     size_t elen = strlen(end);
@@ -372,54 +372,54 @@ static char * printrules
     nxt *= sizeof(int);
     p = rules+nxt;
     if(type & 2)
-		{ // several chains of children ahead
-		p = printChain
+        { // several chains of children ahead
+        p = printChain
             ( p
             , rules + index
             , indent + 2
             , start
             , end
             , fm
-			, " ambiguous children"
+            , " ambiguous children"
             );
-		}
-	else
-		{
-		p = printrules
-			( p
-			, rules + index
-			, start
-			, end
-			, fm
-			, indent + 2
-			);
-		}
+        }
+    else
+        {
+        p = printrules
+            ( p
+            , rules + index
+            , start
+            , end
+            , fm
+            , indent + 2
+            );
+        }
     start[slen] = '\0';
     Strrev(end);
     end[elen] = 0;
     Strrev(end);
-	if(type & 1)
-		{
-		p = printChain
+    if(type & 1)
+        {
+        p = printChain
             ( rules + index
             , max
             , indent+1
             , start
             , end
             , fm
-			, " ambiguous tails of children"
+            , " ambiguous tails of children"
             );
-		}
-	else
-		p = printrules
-			( rules + index
-			, max
-			, start
-			, end
-			, fm
-			, indent
-			);
-	assert(p == max);
+        }
+    else
+        p = printrules
+            ( rules + index
+            , max
+            , start
+            , end
+            , fm
+            , indent
+            );
+    assert(p == max);
     return p;
     }
 
@@ -454,16 +454,16 @@ int prettyPrint(const char * flexrulesIn)
 
 
 static void printChainBracmat
-(char * p
-, char * e
-, int indent
-, char * start
-, char * end
-, FILE * fmbra
-, strng * L
-, strng * R
-, int & nr
-)
+        ( char * p
+        , char * e
+        , int indent
+        , char * start
+        , char * end
+        , FILE * fmbra
+        , strng * L
+        , strng * R
+        , int & nr
+        )
     {
     int index = *(int *)p;
     assert(!(index & 3));
@@ -477,14 +477,14 @@ static void printChainBracmat
                 fprintf(fmbra, "%*s", indent, " parent\n");
             else
                 printrulesBracmat
-					( p + sizeof(int)
-					, (index == 0) ? e : (p + index)
-					, start
-					, end
-					, fmbra
-					, L, R, nr
-					, indent
-					);
+                    ( p + sizeof(int)
+                    , (index == 0) ? e : (p + index)
+                    , start
+                    , end
+                    , fmbra
+                    , L, R, nr
+                    , indent
+                    );
             fprintf(fmbra, "%*s )\n", indent, "");
 
             if (index > 0)
@@ -532,7 +532,7 @@ static void printrulesBracmat
         size_t elen = strlen(end);
         fprintf(fmbra,"\n%*s",indent*2,"(\n");
         ++parens;
-	    char * fields[44];
+        char * fields[44];
         fields[0] = p;
         int findex = 1;
         while(*p != '\n')
@@ -573,38 +573,38 @@ static void printrulesBracmat
 
         if (type & 2)
             { // several chains of children ahead
-		    if(p < rules + index)
-			    {
-			    fprintf(fmbra,",");
-			    printChainBracmat
-					    (p
-					    , rules + index
-					    , indent + 2
-					    , start
-					    , end
-					    , fmbra
-					    , &nL, &nR, nr
-					    //, " ambiguous children"
-					    );
-			    }
+            if(p < rules + index)
+                {
+                fprintf(fmbra,",");
+                printChainBracmat
+                    ( p
+                    , rules + index
+                    , indent + 2
+                    , start
+                    , end
+                    , fmbra
+                    , &nL, &nR, nr
+                    //, " ambiguous children"
+                    );
+                }
             }
         else
             {
-		    if(p < rules + index)
-			    {
-			    fprintf(fmbra,",");
-			    printrulesBracmat
-					    (p
-					    , rules + index
-					    , start
-					    , end
-					    , fmbra
-					    , &nL, &nR, nr
-					    , indent + 2
-					    );
-			    }
+            if(p < rules + index)
+                {
+                fprintf(fmbra,",");
+                printrulesBracmat
+                    ( p
+                    , rules + index
+                    , start
+                    , end
+                    , fmbra
+                    , &nL, &nR, nr
+                    , indent + 2
+                    );
+                }
             }
-	    fprintf(fmbra," ) ");
+        fprintf(fmbra," ) ");
         start[slen] = '\0';
         Strrev(end);
         end[elen] = 0;
@@ -613,15 +613,15 @@ static void printrulesBracmat
         if (type & 1)
             {
             printChainBracmat
-				    (rules
-				    , max
-				    , indent + 1
-				    , start
-				    , end
-				    , fmbra
-				    , L, R, nr
-				    //, " ambiguous tails of children"
-				    );
+                ( rules
+                , max
+                , indent + 1
+                , start
+                , end
+                , fmbra
+                , L, R, nr
+                //, " ambiguous tails of children"
+                );
             break;
             }
         }
@@ -997,10 +997,10 @@ treenode * treenodeFactory(char * buf,char * end)
             type = 0;
         else
             buf += sizeof(typetype);
-		char * ChildEnd = end;
+        char * ChildEnd = end;
         if (OnFail)
             {
-			ChildEnd = Fail + OnFail;
+            ChildEnd = Fail + OnFail;
             if (type & 1)
                 ASibling = new chain(Fail + OnFail, end);
             else
@@ -1126,7 +1126,7 @@ bool flexcombi(const char * bestflexrules, const char * nextbestflexrules, const
         printf("Error (flexcombi): Cannot open %s for writing\n",combinedflexrules);
         return false;
         }
-	fprintf(f,"\r%.2s\r","V31");
+    fprintf(f,"\r%.2s\r","V31");
     treenode * TreeNode = treenodeFactory(FileBuffer.buf, FileBuffer.buf+FileBuffer.Length);
     if (TreeNode)
         {
@@ -1141,11 +1141,11 @@ bool flexcombi(const char * bestflexrules, const char * nextbestflexrules, const
         int length = TreeNode->copy(arr, 0);
         *(int*)arr = 0;
         for(int i = 0;i < length;++i)
-			fputc(arr[i],f);
+            fputc(arr[i],f);
         }
     --openfiles;
     fclose(f);
-	//prettyPrint(combinedflexrules);
+    //prettyPrint(combinedflexrules);
     //prettyPrintBracmat(combinedflexrules);
     return true;
     }

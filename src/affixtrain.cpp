@@ -2711,6 +2711,8 @@ const int partOfFile(const char * fbuf, const double fraction, optionStruct * op
         unsigned int lineProfile = 0;
         while ((kar = fgetc(f)) != EOF)
             {
+            if(kar == '\r')
+                continue;
             if (kar == '\n')
                 {
                 if(lineProfile > 1)
@@ -2740,21 +2742,17 @@ const int partOfFile(const char * fbuf, const double fraction, optionStruct * op
                 }
             else
                 {
-                if(kar != '\r')
+                if(lineProfile == 1)
                     {
-                    if(lineProfile == 1)
-                        {
-                        // previous line was empty. Before that, there was a 
-                        // non-empty line. Blob boundary detected!
-                        ++blbs;
-                        }
-                    lineProfile |= 4; // set third bit when making non-empty line
+                    // previous line was empty. Before that, there was a 
+                    // non-empty line. Blob boundary detected!
+                    ++blbs;
                     }
+                lineProfile |= 4; // set third bit when making non-empty line
                 if (bucket >= 1.0)
                     fputc(kar, f2);
                 }
-            if(kar != '\r')
-                prevkar = kar;
+            prevkar = kar;
             }
         if(lineProfile & 4)
             { // last line was not finished off with newline

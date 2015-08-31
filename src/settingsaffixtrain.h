@@ -57,23 +57,23 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 produce human readable tree:
 
 threshold 0
-|	{^*$	^*$}
-		R+	Buffalo	Buffalo,semi-metro	semi-metro,pornofoto	pornofoto, ...
- |	{^*n$	^*n$}
-		R+	mandarijn	mandarijn,waslijn	waslijn, ...
-  |	{^*en$	^*en$}
-		R+	overhebben	overhebben
-   |	{^*gen$	^*g$}
-		R+	boterbergen	boterberg
-    |	{^*ngen$	^*ng$}
-		R+	lammergangen	lammergang
-     |	{^*ingen$	^*ing$}
-		R+	plaatspanningen	plaatspanning,stukkenrekeningen	stukkenrekening, ...
-      |	{^*elingen$	^*eling$}
-		R+	omwisselingen	omwisseling,wildelingen	wildeling,loonregelingen	loonregeling
+|    {^*$    ^*$}
+        R+    Buffalo    Buffalo,semi-metro    semi-metro,pornofoto    pornofoto, ...
+ |    {^*n$    ^*n$}
+        R+    mandarijn    mandarijn,waslijn    waslijn, ...
+  |    {^*en$    ^*en$}
+        R+    overhebben    overhebben
+   |    {^*gen$    ^*g$}
+        R+    boterbergen    boterberg
+    |    {^*ngen$    ^*ng$}
+        R+    lammergangen    lammergang
+     |    {^*ingen$    ^*ing$}
+        R+    plaatspanningen    plaatspanning,stukkenrekeningen    stukkenrekening, ...
+      |    {^*elingen$    ^*eling$}
+        R+    omwisselingen    omwisseling,wildelingen    wildeling,loonregelingen    loonregeling
 ...
- |	{^k*u$	^k*uen$}
-		R	keu	keuen
+ |    {^k*u$    ^k*uen$}
+        R    keu    keuen
 threshold 0:3309 words 1553 nodes 1322 nodes with words
 */
 
@@ -299,12 +299,12 @@ Bracmat function to lemmatise a word, given the structure stored in 'brafile'
     )
 & ;
 
-	How to lemmatise the word 'acculadestationerne':
+    How to lemmatise the word 'acculadestationerne':
 
-	  get$"pretty.bra":?tree
-	& lemmatise$(!tree.acculadestationerne):(?lemma.?rulenr) (|(?lemma2.?rulenr2))
+      get$"pretty.bra":?tree
+    & lemmatise$(!tree.acculadestationerne):(?lemma.?rulenr) (|(?lemma2.?rulenr2))
 
-	Go to https://github.com/BartJongejan/Bracmat.
+    Go to https://github.com/BartJongejan/Bracmat.
 
 */
 
@@ -313,23 +313,23 @@ Bracmat function to lemmatise a word, given the structure stored in 'brafile'
 Produce output as text. This format is close to the binary format, only made 
 "readable".
 
-0			
-6416		n	n
+0            
+6416        n    n
 
 
-6260		e	en
+6260        e    en
 
-500		g	g
+500        g    g
 
 
-132		n	ng
+132        n    ng
 
-84		i	ing
-56		el	eling
+84        i    ing
+56        el    eling
 
 ...
 
-0k	k	u	uen
+0k    k    u    uen
 */
 
 #define WRITEINVERTED 0

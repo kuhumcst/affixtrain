@@ -304,28 +304,28 @@ static void countLinesAndClumps(FILE * fpi,int & linecnt,int & clumpcnt)
     clumpcnt = 0;
     int kar;
     int oldkar = '\n';
-	bool nonEmptyLineSeen = false;
-	bool separatorLineSeen = false;
+    bool nonEmptyLineSeen = false;
+    bool separatorLineSeen = false;
     while((kar = fgetc(fpi)) != EOF)
         {
         if(kar == '\n')
             {
             if(oldkar == '\n')
-				{
-				if(!separatorLineSeen && nonEmptyLineSeen)
-					{ // first empty line after clump found
-					nonEmptyLineSeen = false;
-					separatorLineSeen = true;
-					}
-				}
+                {
+                if(!separatorLineSeen && nonEmptyLineSeen)
+                    { // first empty line after clump found
+                    nonEmptyLineSeen = false;
+                    separatorLineSeen = true;
+                    }
+                }
             else
                 {
-				if(!nonEmptyLineSeen)
-					{
-					++clumpcnt;
-					nonEmptyLineSeen = true;
-					separatorLineSeen = false;
-					}
+                if(!nonEmptyLineSeen)
+                    {
+                    ++clumpcnt;
+                    nonEmptyLineSeen = true;
+                    separatorLineSeen = false;
+                    }
                 ++linecnt;
                 }
             }
@@ -343,28 +343,30 @@ static int fileRead(line * lines,
     int clumpcnt = 0;
     int kar;
     int oldkar = 0;
-	bool nonEmptyLineSeen = false;
-	bool separatorLineSeen = false;
+    bool nonEmptyLineSeen = false;
+    bool separatorLineSeen = false;
     while((kar = fgetc(fpi)) != EOF)
         {
+        if(kar == '\r')
+            continue; // DOS file. Ignore CR. (Under Windows, CR is ignored per default.)
         if(kar == '\n')
             {
             if(oldkar == kar)
-				{
-				if(!separatorLineSeen)
-					{ // clump found
-					if(nonEmptyLineSeen)
+                {
+                if(!separatorLineSeen)
+                    { // clump found
+                    if(nonEmptyLineSeen)
                         {
                         assert(clumpcnt > 0);
-    					nonEmptyLineSeen = false;
-    					separatorLineSeen = true;
-    					clumps[clumpcnt-1].linecnt = lines+linecnt - clumps[clumpcnt-1].start;
+                        nonEmptyLineSeen = false;
+                        separatorLineSeen = true;
+                        clumps[clumpcnt-1].linecnt = lines+linecnt - clumps[clumpcnt-1].start;
                         }
 #if N_FOLDCROSSVALIDATION
-					clumps[clumpcnt].done = false;
+                    clumps[clumpcnt].done = false;
 #endif
-					}
-				}
+                    }
+                }
             else
                 {
                 *pbuf++ = '\0';
@@ -372,13 +374,13 @@ static int fileRead(line * lines,
                 trim(buf);
                 if(*buf)
                     {
-					if(!nonEmptyLineSeen)
-						{
+                    if(!nonEmptyLineSeen)
+                        {
                         clumps[clumpcnt].start = lines + linecnt;
-						++clumpcnt;
-						nonEmptyLineSeen = true;
-    					separatorLineSeen = false;
-						}
+                        ++clumpcnt;
+                        nonEmptyLineSeen = true;
+                        separatorLineSeen = false;
+                        }
                     char * col[3] = {NULL,NULL,NULL};
                     col[0] = buf;
                     col[1] = strchr(buf,sep/*'\t'*/);
@@ -466,11 +468,11 @@ static int fileRead(line * lines,
                         return -1;
                         }
                     }
-				else
-					{
+                else
+                    {
                     printf("Line %d contains only whitespace.\n",linecnt+clumpcnt);
                     return -1;
-					}
+                    }
                 }
             }
         else
@@ -478,7 +480,7 @@ static int fileRead(line * lines,
         oldkar = kar;
         }
     clumps[clumpcnt-1].linecnt = lines+linecnt - clumps[clumpcnt-1].start;
-    
+
     return linecnt;
     }
 
@@ -733,7 +735,7 @@ static int splitLemmaliste
                 while(k < clumpcnt && (testclumps > 0 || trainclumps > 0))
                     {
                     int rd = rand();
-					int L = 0;
+                    int L = 0;
                     if(  testclumps == 0 
                       || (  trainclumps > 0
 #if N_FOLDCROSSVALIDATION

@@ -20,7 +20,7 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "3.10"
+#define VERSION "3.11"
 
 #include "affixtrain.h"
 #include "testrules.h"
@@ -2699,7 +2699,7 @@ const int partOfFile(const char * fbuf, const double fraction, optionStruct * op
     FILE * f2 = fopenOrExit(fbuf, "w", "computeParms");
     double bucket = fraction;
     int kar;
-    FILE * f = fopen(options->wordLemmaList(), "r");
+    FILE * f = fopen(options->wordLemmaList(), "rb");
     ++openfiles;
     if ((double)options->blobs() * fraction > 1.0)
         {

@@ -308,6 +308,8 @@ static void countLinesAndClumps(FILE * fpi,int & linecnt,int & clumpcnt)
     bool separatorLineSeen = false;
     while((kar = fgetc(fpi)) != EOF)
         {
+        if(kar == '\r')
+            continue;
         if(kar == '\n')
             {
             if(oldkar == '\n')
@@ -577,7 +579,8 @@ static int readlines(int columnfull,int columnbase,int columnPOS,line *& lines,i
     {
     FILE * fpi = NULL;
     int Linecnt = 0;
-    fpi = fopen(lemmalistef(Options),"r");
+    //fpi = fopen(lemmalistef(Options),"r");
+    fpi = fopen(lemmalistef(Options),"rb");
     ++openfiles;
     if(!fpi)
         {

@@ -1,8 +1,14 @@
-Version 3.10 - 2015.08.26
+Version 3.10 - 2015.09.01
+-------------------------
+Fixed bug having to do with reading training data in DOS format (CR LF line
+endings) under Linux.
+
+Version 3.10 - 2015.08.31
 -------------------------
 Show 10 decimal digits of training parameters (-D option). (Previously 6)
 Ignore CR in input.
-Replaced tab by four spaces in source code
+Replaced tab by four spaces in source code.
+Use Unicode.txt 09-Feb-2015 20:08 and CaseFolding-8.0.0.txt (11-Feb-2015 12:34)
 
 Version 3.09 - 2015.08.26
 -------------------------

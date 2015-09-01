@@ -904,7 +904,7 @@ void optionStruct::completeArgs()
         }
 
 
-    FILE * fpWrdLem = fopen(wordLemmaList(), "r");
+    FILE * fpWrdLem = fopen(wordLemmaList(), "rb");
     if(!fpWrdLem)
         {
         fprintf(stderr,"Input %s could not be opened for reading (-i parameter)\n",wordLemmaList());
@@ -942,6 +942,8 @@ void optionStruct::completeArgs()
                     }
                 lineProfile |= 4; // set third bit when making non-empty line
                 }
+            else
+                ;
             }
         }
     if(lineProfile & 4)

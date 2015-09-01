@@ -88,6 +88,12 @@ static const char * XTRf(optionStruct * Options)
                 ,Options->suffixOnly() ? "S" : ""
                 );
             break;
+        case esize:
+            sprintf(xtr,"%s%sXS"
+                ,Options->redo() ? "R" : ""
+                ,Options->suffixOnly() ? "S" : ""
+                );
+            break;
         default:
             *xtr = 0;
         }

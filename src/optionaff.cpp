@@ -370,6 +370,7 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
             printf("  D Rules deeper in the tree contribute more than rules near the root. Or: a rule's contribution is proportional with number of non-wildcard characters in the rule pattern.\n");
             printf("  E Trees evenly distributing examples over the nodes have lowest penalty. (Strive for max entropy)\n");
             printf("  W Rules with one less supporting examples than the expected pruning threshold. Set expected pruning threshold with -C parameter.\n");
+            printf("  S Rules with longer patterns contribute more. Or: a rule's contribution is proportional with number of characters in the rule pattern, including wildcards.\n");
             printf("-P: write parameters to file (default parms.txt if -p or -f0, otherwise no parameter file)\n");
             printf("-t: test the rules with data not used for training\n");
             printf("-T: test the rules with the training data\n");
@@ -842,6 +843,10 @@ void optionStruct::completeArgs()
             {
             WeightFunction = edepth;
             }
+        else if(!strcmp(X,"S"))
+            {
+            WeightFunction = esize;
+            }
         else if(!strcmp(X,"C"))
             {
             WeightFunction = econstant;
@@ -1186,7 +1191,7 @@ void optionStruct::setArgstring()
     if(Argstring)
         delete[] Argstring;
     
-    size_t nameLength = strlen(i) + (e ? 1 + strlen(e) : 0) + (SuffixOnly ? strlen("_suf") : 0) + (ExpensiveInfix ? strlen("_inf") : 0) + (C < 0 ? 0 : strlen("_C") + 1) + (WeightFunction == econstant ? strlen("_XE") : 0) + (WeightFunction == esupport ? strlen("_XW") : 0) + (WeightFunction == eentropy ? strlen("_XE") : 0) + (WeightFunction == edepth ? strlen("_XD") : 0) + (Redo ? strlen("_R") : 0) + 1;
+    size_t nameLength = strlen(i) + (e ? 1 + strlen(e) : 0) + (SuffixOnly ? strlen("_suf") : 0) + (ExpensiveInfix ? strlen("_inf") : 0) + (C < 0 ? 0 : strlen("_C") + 1) + (WeightFunction == econstant ? strlen("_XE") : 0) + (WeightFunction == esupport ? strlen("_XW") : 0) + (WeightFunction == eentropy ? strlen("_XE") : 0) + (WeightFunction == edepth ? strlen("_XD") : 0) + (WeightFunction == esize ? strlen("_XS") : 0) + (Redo ? strlen("_R") : 0) + 1;
     
     Argstring = new char[nameLength];
     strcpy(Argstring, i);
@@ -1223,6 +1228,9 @@ void optionStruct::setArgstring()
             break;
         case edepth:
             strcat(Argstring, "_XD");
+            break;
+        case esize:
+            strcat(Argstring, "_XS");
             break;
         default:
             break;

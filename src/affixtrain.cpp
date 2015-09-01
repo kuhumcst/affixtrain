@@ -20,7 +20,7 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "3.11"
+#define VERSION "3.12"
 
 #include "affixtrain.h"
 #include "testrules.h"
@@ -2452,6 +2452,10 @@ static void countNodes(node * tree, countAndWeight * Count, optionStruct * optio
             Count->setWeight(0.0);
             Count->setWeight(tree->entropy(Count->getNnodes()) / log((double)(Count->getNnodes())));
             break;
+        case esize:
+            Count->setCountBySize(0);
+            Count->setCountBySize(tree->countBySize());
+            break;
         }
     }
 
@@ -2916,6 +2920,9 @@ void computeParms(optionStruct * options)
                 case edepth:
                     brownweight = (double)Count.getCountByDepth();
                     break;
+                case esize:
+                    brownweight = (double)Count.getCountBySize();
+                    break;
                 default:
                     brownweight = 0.0;
                 }
@@ -2938,6 +2945,7 @@ void computeParms(optionStruct * options)
                     , options->getWeightFunction() == esupport ? "weights" 
                     : options->getWeightFunction() == eentropy ? "entropy"
                     : options->getWeightFunction() == edepth ? "depth"
+                    : options->getWeightFunction() == esize ? "size"
                     : "count");
                 CHECK("D2eglobTempDir");
                 --openfiles;
@@ -2984,6 +2992,9 @@ void computeParms(optionStruct * options)
                     case edepth:
                         currentweight = (double)Count.getCountByDepth();
                         break;
+                    case esize:
+                        currentweight = (double)Count.getCountBySize();
+                        break;
                     default:
                         ;
                     }
@@ -3001,6 +3012,9 @@ void computeParms(optionStruct * options)
                     case edepth:
                         brownweight = (double)Count.getCountByDepth();
                         break;
+                    case esize:
+                        brownweight = (double)Count.getCountBySize();
+                        break;
                     default:
                         brownweight = 0.0;
                     }
@@ -3016,6 +3030,7 @@ void computeParms(optionStruct * options)
                       && (  options->getWeightFunction() == esupport 
                          || options->getWeightFunction() == eentropy
                          || options->getWeightFunction() == edepth
+                         || options->getWeightFunction() == esize
                          )
                       )
                    )
@@ -3027,6 +3042,7 @@ void computeParms(optionStruct * options)
                                            && (  options->getWeightFunction() == esupport
                                               || options->getWeightFunction() == eentropy
                                               || options->getWeightFunction() == edepth
+                                              || options->getWeightFunction() == esize
                                               ) 
                                            )
                                         );

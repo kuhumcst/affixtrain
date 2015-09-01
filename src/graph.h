@@ -566,6 +566,24 @@ class vertexPointer
                     }
                 return ret;
                 }
+            LONG countBySize()
+                {
+                LONG ret = 0;
+                for ( node * n = this
+                    ; n
+                    ; n = n->IfPatternFails
+                    )
+                    {
+                    if(n->Right)
+                        {
+                        ret += V->Pattern.length();
+                        }
+                    
+                    if(n->IfPatternSucceeds)
+                        ret += n->IfPatternSucceeds->countBySize();
+                    }
+                return ret;
+                }
             double weightedcount()
                 {
                 double ret = 0.0;

@@ -1,4 +1,10 @@
-Version 3.10 - 2015.09.01
+Version 3.12 - 2015.09.01
+-------------------------
+Option -XS: penalty increases with the number of characters (including
+wildcards) in the pattern.
+
+
+Version 3.11 - 2015.09.01
 -------------------------
 Fixed bug having to do with reading training data in DOS format (CR LF line
 endings) under Linux.

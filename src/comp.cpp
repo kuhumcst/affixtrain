@@ -2794,10 +2794,11 @@ void testAngle()
     getchar();
     }
 
-struct rotation goodParms[] = 
+static struct rotation goodParms[] = 
     {
         {{ 0.139452,-0.511179, 0.830374, 0.027272, 0.139112, 0.098139},6}, // Dutch     (-XC) (better)
         {{-0.011390,-0.594109, 0.774997, 0.030348,-0.001950, 0.212978},6}, // Dutch     (-XE)
+        {{ 0.024488,-0.495293, 0.826486, 0.149246, 0.024359, 0.219404},6}, // Dutch     (-XD) (best)
         {{ 0.019251,-0.695989, 0.716994,-0.004158, 0.020397, 0.026733},6}, // English   (-XC)
            
         {{ 0.072141,-0.562967, 0.815173,-0.043071, 0.073552, 0.078053},6}, // German    (-XC) (better)
@@ -2825,7 +2826,8 @@ struct rotation goodParms[] =
         {{ 0.008000,-0.238492, 0.876932, 0.278726, 0.008168, 0.310311},6}, // Ukrainian (-XC) (better)
         {{ 0.038750,-0.441348, 0.888120, 0.065188, 0.043326, 0.093945},6}, // Ukrainian (-XE)
     };
-size_t goodParmsIndex = 0;
+static size_t goodParmsIndex = 0;
+static double InitialDelta = 0.5;
 
 void brown()
     {
@@ -2845,7 +2847,7 @@ void brown()
 
     double vector[6];
     size_t i;
-    double tangens = 0.5*pow(0.995,it);
+    double tangens = InitialDelta*pow(0.995,it);
     /*
     Compute a randomly directed vector in 6 dimensional space.
     */
@@ -2906,6 +2908,20 @@ bool init(optionStruct * options)
     zigset(86947731);
 #endif
     parms.init(options);
+    double MinInnerProduct = 1.0;
+    for(size_t i = 0;i < sizeof(goodParms)/sizeof(goodParms[0]) - 1;++i)
+        for(size_t j = i+1;j < sizeof(goodParms)/sizeof(goodParms[0]);++j)
+            {
+            double InnerProduct = inner(goodParms[i].Matrix,goodParms[j].Matrix);
+            if(InnerProduct < MinInnerProduct)
+                {
+                MinInnerProduct = InnerProduct;
+//                printf("%d %d\n",i,j);
+                }
+            }
+    /* Take half the distance between the most separated vectors as the 
+       initial headroom for changing a vector. */
+    InitialDelta = 0.5*sqrt(1.0 - MinInnerProduct * MinInnerProduct);
     return true;
     }
 
@@ -2918,7 +2934,12 @@ void printparms(int Nnodes,double weight,optionStruct * options)
     fprintf(f
            ,"/*#nodes in tree: %d weight (%s used): %.*e , Suffix only: %s */\n"
            ,Nnodes
-           , (options->getWeightFunction() == esupport || options->getWeightFunction() == eentropy) ? "more support is better" : options->getWeightFunction() == edepth ? "fewer non-wildcard characters is better" : "not used"
+           ,   (  options->getWeightFunction() == esupport 
+               || options->getWeightFunction() == eentropy
+               )                                      ? "more support is better" 
+             : options->getWeightFunction() == edepth ? "fewer non-wildcard characters is better" 
+             : options->getWeightFunction() == esize  ? "fewer characters is better" 
+             :                                          "not used"
            ,DBL_DIG+2
            ,weight
            ,options->suffixOnly() ? "yes" : "no"

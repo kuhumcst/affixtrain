@@ -1,3 +1,9 @@
+Version 3.13 - 2015.09.02
+-------------------------
+Set delta to distance between the most outlying parameter vector and its
+closest neighbour. Added two parameter lines for Dutch and Hungarian
+both with -XS. (Which gave remarkably small counts of rules.)
+
 Version 3.12 - 2015.09.01
 -------------------------
 Option -XS: penalty increases with the number of characters (including

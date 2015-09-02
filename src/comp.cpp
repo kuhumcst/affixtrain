@@ -2796,35 +2796,34 @@ void testAngle()
 
 static struct rotation goodParms[] = 
     {
-        {{ 0.139452,-0.511179, 0.830374, 0.027272, 0.139112, 0.098139},6}, // Dutch     (-XC) (better)
-        {{-0.011390,-0.594109, 0.774997, 0.030348,-0.001950, 0.212978},6}, // Dutch     (-XE)
-        {{ 0.024488,-0.495293, 0.826486, 0.149246, 0.024359, 0.219404},6}, // Dutch     (-XD) (best)
-        {{ 0.019251,-0.695989, 0.716994,-0.004158, 0.020397, 0.026733},6}, // English   (-XC)
-           
-        {{ 0.072141,-0.562967, 0.815173,-0.043071, 0.073552, 0.078053},6}, // German    (-XC) (better)
-        {{-0.006618,-0.584949, 0.803968,-0.026080, 0.000991, 0.103662},6}, // German    (-XE)
-        {{ 0.016221,-0.408998, 0.765411, 0.330531, 0.016203, 0.370256},6}, // Slovene   (-XC) (better)
-        {{-0.005696,-0.563334, 0.773168, 0.190243, 0.002000, 0.220540},6}, // Slovene   (-XE)
-        {{-0.002807,-0.748938, 0.628884,-0.204355,-0.000636, 0.042753},6}, // Danish    (-XC) (better)
-        {{-0.010943,-0.756421, 0.639771,-0.106260,-0.004888, 0.084177},6}, // Danish    (-XE)
-        {{ 0.005600,-0.438006, 0.891624, 0.072352, 0.006273, 0.088605},6}, // Greek     (-XC)
-
-        {{-0.001161,-0.739382, 0.661059,-0.127638,-0.000914,-0.004777},6}, // French    (-XC) (better)
-        {{ 0.051583,-0.564670, 0.769960, 0.131552, 0.059553, 0.254550},6}, // French    (-XE)
-        {{ 0.013192,-0.681737, 0.722663,-0.108477, 0.015373, 0.028548},6}, // Bulgarian (-XC) (better)
-        {{-0.029092,-0.729701, 0.679400,-0.062773,-0.005901, 0.033617},6}, // Bulgarian (-XE)
-        {{ 0.014974,-0.603475, 0.774494, 0.070238, 0.018401, 0.174589},6}, // Czech     (-XC) (better)
-        {{ 0.119333,-0.433123, 0.815527, 0.168871, 0.139466, 0.291738},6}, // Czech     (-XE)
-        {{ 0.012820,-0.706711, 0.698674,-0.034104, 0.011938, 0.104611},6}, // Estonian  (-XC) (better)
-        {{-0.033463,-0.750747, 0.652380,-0.072970,-0.006969, 0.065474},6}, // Estonian  (-XE)
-        {{ 0.042048,-0.682636, 0.724419,-0.001560, 0.043343, 0.074674},6}, // Hungarian (-XC)
-        {{-0.032724,-0.547237, 0.728254, 0.212133,-0.015476, 0.351947},6}, // Hungarian (-XE) (better!)
-        {{ 0.129777,-0.588471, 0.779661, 0.038950, 0.129759, 0.103123},6}, // Romanian  (-XC)
-        {{-0.021046,-0.659149, 0.741112,-0.011371,-0.005483, 0.125192},6}, // Romanian  (-XE) (better!)
-        {{ 0.021767,-0.480966, 0.778614, 0.266345, 0.021757, 0.300908},6}, // Slovak    (-XC)
-
-        {{ 0.008000,-0.238492, 0.876932, 0.278726, 0.008168, 0.310311},6}, // Ukrainian (-XC) (better)
-        {{ 0.038750,-0.441348, 0.888120, 0.065188, 0.043326, 0.093945},6}, // Ukrainian (-XE)
+        {{ 0.139452    ,-0.511179    , 0.830374    , 0.027272    , 0.139112    , 0.098139    },6}, // Dutch     (-XC) (better)
+        {{-0.011390    ,-0.594109    , 0.774997    , 0.030348    ,-0.001950    , 0.212978    },6}, // Dutch     (-XE)
+        {{ 0.024488    ,-0.495293    , 0.826486    , 0.149246    , 0.024359    , 0.219404    },6}, // Dutch     (-XD) (best)
+        {{ 0.1069193225,-0.6193738021, 0.7649522686,-0.0790680200, 0.1081691280, 0.0428959952},6}, // Dutch     (-XS)
+        {{ 0.019251    ,-0.695989    , 0.716994    ,-0.004158    , 0.020397    , 0.026733    },6}, // English   (-XC)
+        {{ 0.072141    ,-0.562967    , 0.815173    ,-0.043071    , 0.073552    , 0.078053    },6}, // German    (-XC) (better)
+        {{-0.006618    ,-0.584949    , 0.803968    ,-0.026080    , 0.000991    , 0.103662    },6}, // German    (-XE)
+        {{ 0.016221    ,-0.408998    , 0.765411    , 0.330531    , 0.016203    , 0.370256    },6}, // Slovene   (-XC) (better)
+        {{-0.005696    ,-0.563334    , 0.773168    , 0.190243    , 0.002000    , 0.220540    },6}, // Slovene   (-XE)
+        {{-0.002807    ,-0.748938    , 0.628884    ,-0.204355    ,-0.000636    , 0.042753    },6}, // Danish    (-XC) (better)
+        {{-0.010943    ,-0.756421    , 0.639771    ,-0.106260    ,-0.004888    , 0.084177    },6}, // Danish    (-XE)
+        {{ 0.005600    ,-0.438006    , 0.891624    , 0.072352    , 0.006273    , 0.088605    },6}, // Greek     (-XC)
+        {{-0.001161    ,-0.739382    , 0.661059    ,-0.127638    ,-0.000914    ,-0.004777    },6}, // French    (-XC) (better)
+        {{ 0.051583    ,-0.564670    , 0.769960    , 0.131552    , 0.059553    , 0.254550    },6}, // French    (-XE)
+        {{ 0.013192    ,-0.681737    , 0.722663    ,-0.108477    , 0.015373    , 0.028548    },6}, // Bulgarian (-XC) (better)
+        {{-0.029092    ,-0.729701    , 0.679400    ,-0.062773    ,-0.005901    , 0.033617    },6}, // Bulgarian (-XE)
+        {{ 0.014974    ,-0.603475    , 0.774494    , 0.070238    , 0.018401    , 0.174589    },6}, // Czech     (-XC) (better)
+        {{ 0.119333    ,-0.433123    , 0.815527    , 0.168871    , 0.139466    , 0.291738    },6}, // Czech     (-XE)
+        {{ 0.012820    ,-0.706711    , 0.698674    ,-0.034104    , 0.011938    , 0.104611    },6}, // Estonian  (-XC) (better)
+        {{-0.033463    ,-0.750747    , 0.652380    ,-0.072970    ,-0.006969    , 0.065474    },6}, // Estonian  (-XE)
+        {{ 0.042048    ,-0.682636    , 0.724419    ,-0.001560    , 0.043343    , 0.074674    },6}, // Hungarian (-XC)
+        {{-0.032724    ,-0.547237    , 0.728254    , 0.212133    ,-0.015476    , 0.351947    },6}, // Hungarian (-XE) (better!)
+        {{ 0.0334409657,-0.6849089134, 0.7240905990,-0.0096012049, 0.0336626711, 0.0651838026},6}, // Hungarian (-XS)
+        {{ 0.129777    ,-0.588471    , 0.779661    , 0.038950    , 0.129759    , 0.103123    },6}, // Romanian  (-XC)
+        {{-0.021046    ,-0.659149    , 0.741112    ,-0.011371    ,-0.005483    , 0.125192    },6}, // Romanian  (-XE) (better!)
+        {{ 0.021767    ,-0.480966    , 0.778614    , 0.266345    , 0.021757    , 0.300908    },6}, // Slovak    (-XC)
+        {{ 0.008000    ,-0.238492    , 0.876932    , 0.278726    , 0.008168    , 0.310311    },6}, // Ukrainian (-XC) (better)
+        {{ 0.038750    ,-0.441348    , 0.888120    , 0.065188    , 0.043326    , 0.093945    },6}, // Ukrainian (-XE)
     };
 static size_t goodParmsIndex = 0;
 static double InitialDelta = 0.5;
@@ -2908,20 +2907,50 @@ bool init(optionStruct * options)
     zigset(86947731);
 #endif
     parms.init(options);
+    double MinMaxInnerProduct = 1.0;
+/*
     double MinInnerProduct = 1.0;
-    for(size_t i = 0;i < sizeof(goodParms)/sizeof(goodParms[0]) - 1;++i)
-        for(size_t j = i+1;j < sizeof(goodParms)/sizeof(goodParms[0]);++j)
+    size_t outlier = 1000000;
+    size_t neighbour = 1000000;
+    size_t furthest1 = 1000000;
+    size_t furthest2 = 1000000;
+*/
+    for(size_t i = 0;i < sizeof(goodParms)/sizeof(goodParms[0]);++i)
+        {
+        double MaxInnerProduct = -1.0;
+        for(size_t j = 0;j < sizeof(goodParms)/sizeof(goodParms[0]);++j)
             {
-            double InnerProduct = inner(goodParms[i].Matrix,goodParms[j].Matrix);
-            if(InnerProduct < MinInnerProduct)
+            if(i != j)
                 {
-                MinInnerProduct = InnerProduct;
-//                printf("%d %d\n",i,j);
+                double InnerProduct = inner(goodParms[i].Matrix,goodParms[j].Matrix);
+                if(InnerProduct > MaxInnerProduct) // Find closest meighbour of i
+                    {
+                    MaxInnerProduct = InnerProduct;
+//                    neighbour = j;
+                    }
+/*
+                if(InnerProduct < MinInnerProduct)
+                    {
+                    furthest1 = i;
+                    furthest2 = j;
+                    MinInnerProduct = InnerProduct;
+                    }
+*/
                 }
             }
-    /* Take half the distance between the most separated vectors as the 
-       initial headroom for changing a vector. */
-    InitialDelta = 0.5*sqrt(1.0 - MinInnerProduct * MinInnerProduct);
+        if(MaxInnerProduct < MinMaxInnerProduct)
+            {
+            MinMaxInnerProduct = MaxInnerProduct;
+//            outlier = i;
+            }
+        }
+    /* Take the distance between the most outlying vector and its closest
+       neighbour as the initial headroom for changing a vector. */
+    InitialDelta = sqrt(1.0 - MinMaxInnerProduct * MinMaxInnerProduct); 
+/*
+    printf("InitialDelta %f outlier %d closest to %d\n",InitialDelta,outlier,neighbour);
+    printf("Furthest distance %f between %d and %d\n",sqrt(1.0 - MinInnerProduct * MinInnerProduct),furthest1,furthest2);
+*/
     return true;
     }
 

@@ -1,3 +1,8 @@
+Version 3.17 - 2015.09.08
+-------------------------
+Added vectors for Portuguese. Set minimum number of lines to start
+determination of "best" parameters with at 50000 (up from 20000).
+
 Version 3.16 - 2015.09.07
 -------------------------
 Added several some more vectors to try.

@@ -43,6 +43,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // Set this number as high as possible. A high value entails very heavy use 
 // of memory!
 
+#define MINLINES 50000.0 
+// Start determination of optimal parameters with minimally MINLINES lines (double)
+
 #define AMBIGUOUS 1
 // AMBIGUOUS 1
 // Handle ambiguous data by redoing training a second time without the

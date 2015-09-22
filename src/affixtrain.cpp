@@ -2889,10 +2889,10 @@ void computeParms(optionStruct * options)
                 {
                 filename = fbuf;
                 if (options->verbose())
-                    printf("Computing parameters: take a sample of training data\n",swath, maxswath);
+                    printf("Computing parameters: take a sample of training data\n");
                 fraclines = partOfFile(fbuf, fraction, options);
                 if (options->verbose())
-                    printf("Computing parameters: take a sample of training data DONE\n",swath, maxswath);
+                    printf("Computing parameters: take a sample of training data DONE\n");
                 }
             CHECK("D1globTempDir");
             brown(); // until not all parms are zero
@@ -2904,7 +2904,7 @@ void computeParms(optionStruct * options)
             int filelines;
 
             if (options->verbose())
-                printf("Computing parameters: initial training\n",swath, maxswath);
+                printf("Computing parameters: initial training\n");
 
             doTraining
                 (/* const char *                                */  filename
@@ -2945,7 +2945,7 @@ void computeParms(optionStruct * options)
         int looplimit = (int)(maxiterations*pow(iterationsfactor, -swath));
 
         if (options->verbose())
-            printf("Computing parameters: iterate and train, improve parameters by trial and error.\n",swath, maxswath);
+            printf("Computing parameters: iterate and train, improve parameters by trial and error.\n");
 
         for (int iterations = 0; iterations < looplimit; ++iterations)
             {

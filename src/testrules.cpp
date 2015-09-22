@@ -485,7 +485,7 @@ static int fileRead(line * lines,
             }
         else
             {
-            if(pbuf - buf > sizeof(buf) - 2)
+            if((size_t)(pbuf - buf + 2) > sizeof(buf))
                 {
                 *pbuf = 0;
                 printf("Buffer buf too small for line starting with [%s] in function fileRead in file testrules.c\n",buf);

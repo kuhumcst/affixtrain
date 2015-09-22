@@ -595,18 +595,26 @@ static int readlines(int columnfull,int columnbase,int columnPOS,line *& lines,i
         }
 
     srand(1);
+    if (Options->verbose())
+        printf("readlines countLinesAndClumps\n");
     countLinesAndClumps(fpi,Linecnt,clumpcnt);
+    if (Options->verbose())
+        printf("readlines countLinesAndClumps: %d lines\n",lines);
     assert(!lines);
     rewind(fpi);
     lines = new line[Linecnt];
     if(clumpcnt)
         {
+        if (Options->verbose())
+            printf("readlines countLinesAndClumps: %d clumps\n",clumpcnt);
         clumps = new clump[clumpcnt];
         clumps[0].start = 0;
         }
     else
         clumps = NULL;
 
+    if (Options->verbose())
+        printf("readlines fileRead\n");
     Linecnt = fileRead(lines,clumps,fpi,columnfull,columnbase,columnPOS,sep);
     if(Linecnt < 0)
         {
@@ -618,18 +626,28 @@ static int readlines(int columnfull,int columnbase,int columnPOS,line *& lines,i
     if(clumpcnt < 2)
         {
         clump Clump = {lines,Linecnt};
+        if (Options->verbose())
+            printf("readlines removeDuplicateLines\n");
         removeDuplicateLines(&Clump);
+        if (Options->verbose())
+            printf("readlines randomix\n");
         randomix(Clump.start,Clump.linecnt);
         lines = Clump.start;
         Linecnt = Clump.linecnt;
         }
     else
         {
+        if (Options->verbose())
+            printf("readlines removeDuplicateLines in %d clumps\n",clumpcnt);
         for(int m = 0; m < clumpcnt;++m)
             removeDuplicateLines(clumps+m);
 
+        if (Options->verbose())
+            printf("readlines randomix\n");
         randomix(clumps,clumpcnt);
         }
+    if (Options->verbose())
+        printf("readlines DONE\n");
     return Linecnt;
     }
 

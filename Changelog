@@ -1,3 +1,8 @@
+Version 3.20 - 2015.09.21
+-------------------------
+Increased buffer size. Morphological info for some (Polish) words can be
+enormous.
+
 Version 3.19 - 2015.09.21
 -------------------------
 Added vector for Russian based on turglem data (1.6 million pairs).

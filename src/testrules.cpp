@@ -345,7 +345,7 @@ static int fileRead(line * lines,
                     clump clumps[],
                     FILE * fpi,int columnfull,int columnbase,int columnPOS,int sep)
     {
-    char buf[256];
+    char buf[8192];
     char * pbuf = buf;
     int linecnt = 0;
     int clumpcnt = 0;
@@ -484,7 +484,15 @@ static int fileRead(line * lines,
                 }
             }
         else
+            {
+            if(pbuf - buf > sizeof(buf) - 2)
+                {
+                *pbuf = 0;
+                printf("Buffer buf too small for line starting with [%s] in function fileRead in file testrules.c\n",buf);
+                exit(-1);
+                }
             *pbuf++ = (char)kar;
+            }
         oldkar = kar;
         }
     clumps[clumpcnt-1].linecnt = lines+linecnt - clumps[clumpcnt-1].start;

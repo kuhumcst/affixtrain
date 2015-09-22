@@ -1,3 +1,9 @@
+Version 3.19 - 2015.09.21
+-------------------------
+Added vector for Russian based on turglem data (1.6 million pairs).
+Added vectors for Polish, Icelandic and Latin. Results for Latin OOV words are
+remarkably bad, on paper.
+
 Version 3.18 - 2015.09.07
 -------------------------
 Added several some more vectors to try. Serbian, Macedonian, Farsi.

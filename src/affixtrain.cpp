@@ -20,7 +20,7 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "3.18"
+#define VERSION "3.19"
 
 #include "affixtrain.h"
 #include "testrules.h"
@@ -2876,6 +2876,10 @@ void computeParms(optionStruct * options)
         int blobs = 1;
         int lines = 0;
         int fraclines = 0;
+
+        if (options->verbose())
+            printf("Computing parameters: swath %d of %d\n",swath, maxswath);
+
         if (options->minfraction() > 0.0)
             {
             fraction = (swath == maxswath) ? options->maxfraction() : options->minfraction() * pow(factor, (double)swath);
@@ -2884,7 +2888,11 @@ void computeParms(optionStruct * options)
             else
                 {
                 filename = fbuf;
+                if (options->verbose())
+                    printf("Computing parameters: take a sample of training data\n",swath, maxswath);
                 fraclines = partOfFile(fbuf, fraction, options);
+                if (options->verbose())
+                    printf("Computing parameters: take a sample of training data DONE\n",swath, maxswath);
                 }
             CHECK("D1globTempDir");
             brown(); // until not all parms are zero
@@ -2894,6 +2902,10 @@ void computeParms(optionStruct * options)
             else
                 copybest(); // go on with best result so far.
             int filelines;
+
+            if (options->verbose())
+                printf("Computing parameters: initial training\n",swath, maxswath);
+
             doTraining
                 (/* const char *                                */  filename
                 ,/* const char *                                */  ext
@@ -2931,6 +2943,10 @@ void computeParms(optionStruct * options)
             printparms(Count.getNnodes(),brownweight, options);
             }
         int looplimit = (int)(maxiterations*pow(iterationsfactor, -swath));
+
+        if (options->verbose())
+            printf("Computing parameters: iterate and train, improve parameters by trial and error.\n",swath, maxswath);
+
         for (int iterations = 0; iterations < looplimit; ++iterations)
             {
             CHECK("D2aglobTempDir");
@@ -3477,20 +3493,39 @@ int main(int argc, char **argv)
 
         if (options.computeParms())
             {
+            if (options.verbose())
+                printf("Computing parameters\n");
+
             if (options.currentParms())
                 initOutput(options.currentParms());
 
             if (options.bestParms())
                 initOutput(options.bestParms());
+
             computeParms(&options);
+
+            if (options.verbose())
+                printf("Computing parameters DONE\n");
             }
+
+        if (options.verbose())
+            printf("Going to compute delta.\n");
 
         init(&options); // TODO Check that penalties are the best ones, not the last ones tried.
 
+        if (options.verbose())
+            printf("Computing delta DONE.\n");
+
+
         if(options.test() || options.trainTest())
             {
+            if (options.verbose())
+                printf("Going to test the rules.\n");
+
             options.printArgFile();
             testrules(&options);
+            if (options.verbose())
+                printf("Testing the rules DONE.\n");
             }
 
         if(options.createFlexRules())

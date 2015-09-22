@@ -1666,7 +1666,7 @@ void trainAndTest
     for(fraction = FRACTION_LOW,noOfSteps = 1;fraction <= FRACTION_HIGH;fraction = nextFraction(fraction),++noOfSteps)
         {
         if (Options->verbose())
-            printf("Test: take fraction %g\n",fraction);
+            printf("Test: take fraction %d\n",fraction);
         if(!fptally)
             {
             fptally = fopen(tally,"ab");

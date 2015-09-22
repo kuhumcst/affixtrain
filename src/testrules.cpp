@@ -1665,6 +1665,8 @@ void trainAndTest
     int noOfSteps;
     for(fraction = FRACTION_LOW,noOfSteps = 1;fraction <= FRACTION_HIGH;fraction = nextFraction(fraction),++noOfSteps)
         {
+        if (Options->verbose())
+            printf("Test: take fraction %g\n",fraction);
         if(!fptally)
             {
             fptally = fopen(tally,"ab");
@@ -1893,6 +1895,8 @@ static int doit(optionStruct * Options,bool TrainTest)
     {
     const char * XT;
     const char * TT;
+    if (Options->verbose())
+        printf("Test initialization\n");
     init(TrainTest,XT,TT);
     int sep = '\t';
 
@@ -1905,6 +1909,8 @@ static int doit(optionStruct * Options,bool TrainTest)
     line * lines = NULL;
     clump * clumps = NULL;
     int clumpcnt = 0;
+    if (Options->verbose())
+        printf("Test: read file\n");
     int linecnt = readFile
         (lines
         ,clumps
@@ -1912,8 +1918,12 @@ static int doit(optionStruct * Options,bool TrainTest)
         ,sep
         ,Options
         );
+    if (Options->verbose())
+        printf("Test: read file DONE\n");
     if(linecnt)
         {
+        if (Options->verbose())
+            printf("Test: train and then test\n");
         trainAndTest
             (linecnt
             ,clumpcnt
@@ -1925,6 +1935,8 @@ static int doit(optionStruct * Options,bool TrainTest)
             ,TrainTest
             );
 
+        if (Options->verbose())
+            printf("Test: train and then test DONE\n");
         delete [] lines;
         lines = NULL;
         }
@@ -1936,9 +1948,17 @@ int testrules(optionStruct * Options)
     if(lemmalistef(Options) && LGf(Options) && XTRf(Options))
         {
         if(Options->trainTest())
+            {
+            if (Options->verbose())
+                printf("trainTest.\n");
             doit(Options,true);
+            }
         if(Options->test())
+            {
+            if (Options->verbose())
+                printf("OOVTest.\n");
             doit(Options,false);
+            }
         return 0;
         }
 

@@ -42,11 +42,6 @@
 #include "utf8func.h"
 #endif
 
-#define N_FOLDCROSSVALIDATION 0
-#if N_FOLDCROSSVALIDATION
-#define N_ 10
-#endif
-
 static bool TAGGED;
 
 static int FRACTION_LOW; // min 0
@@ -164,51 +159,6 @@ class lineab
 static char Lemmas[256];
 static char Weird[256];
 
-static void init(bool TrainTest,const char *& XT,const char *& TT)
-    {
-    TAGGED = false;
-#if N_FOLDCROSSVALIDATION
-    FRACTION_LOW = 10000 - 10000/N_;
-    FRACTION_HIGH = FRACTION_LOW;
-#else
-    switch(STEPSIZE)
-        {
-        case 100:
-            FRACTION_LOW  = 154;
-            break;
-        case 25:
-            FRACTION_LOW  = 171;
-            break;
-        default:
-            FRACTION_LOW  = 1000;
-            ;
-        }
-
-    FRACTION_HIGH = 10000;
-#endif
-    CUTOFF_LOW = 0;
-    CUTOFF_HIGH = 5;
-    MAXCOUNT = 100;
-
-    if(TrainTest)
-        {
-        XT = "_train";
-        FRACTION_LOW = 10000;
-        FRACTION_HIGH = 10000;
-        }
-    else
-        {
-        XT = "";
-        }
-
-    if(TAGGED)
-        {
-        TT = "_tag";
-        }
-    else
-        TT = "";
-    }
-
 class Count
     {
     public:
@@ -287,7 +237,7 @@ struct line
     bool ambiguous:1;
     char * s;
     line():ambiguous(false),s(NULL){}
-    ~line(){delete s;}
+    ~line(){delete [] s;}
     };
 
 static int mystrcmp(const void * a,const void * b)
@@ -299,9 +249,6 @@ struct clump
     {
     line * start;
     int linecnt;
-#if N_FOLDCROSSVALIDATION
-    bool done;
-#endif
     };
 
 static void countLinesAndClumps(FILE * fpi,int & linecnt,int & clumpcnt)
@@ -370,9 +317,6 @@ static int fileRead(line * lines,
                         separatorLineSeen = true;
                         clumps[clumpcnt-1].linecnt = lines+linecnt - clumps[clumpcnt-1].start;
                         }
-#if N_FOLDCROSSVALIDATION
-                    clumps[clumpcnt].done = false;
-#endif
                     }
                 }
             else
@@ -720,20 +664,40 @@ static void printTrain(line * Line,FILE * fptrain,FILE * fptraintest,FILE * fptr
         }
     }
 
+static int TenthCnt = -1;
+static int Tenth = -1;
 
-static int splitLemmaliste
-                   (int clumpcnt
-                   ,char * training
-                   ,char * test
-                   ,char * control
-                   ,int columntest
-                   ,int columncontrol
-                   ,int columntag
-                   ,int fraction
-                   ,char * traintest,char * traincontrol
-                   ,clump * clumps
-                   ,bool TrainTest
-                   ) // 0 <= fraction <= 10000
+static void tenth(int t)
+    {
+    Tenth = t;
+    Tenth = Tenth % 10;
+    TenthCnt = -1;
+    }
+
+static int aTenth(void)
+    {
+    ++TenthCnt;
+    if((TenthCnt+Tenth) % 10 == 0)
+        return RAND_MAX;
+    else
+        return 0;
+    }
+
+static int splitLemmaList
+   (int clumpcnt
+   ,char * training
+   ,char * test
+   ,char * control
+   ,int columntest
+   ,int columncontrol
+   ,int columntag
+   ,int fraction
+   ,char * traintest
+   ,char * traincontrol
+   ,clump * clumps
+   ,bool TrainTest
+   ,bool TenFoldXValidation
+   ) // 0 <= fraction <= 10000
     {
     FILE * fptrain = NULL;
     FILE * fptest = NULL;
@@ -745,6 +709,14 @@ static int splitLemmaliste
     int trainlines = 0;
     int trainclumps = 0;
     int testclumps = 0;
+    int (*Rand)(void);
+    if(TenFoldXValidation)
+        {
+        fraction = 9000;
+        Rand = aTenth;
+        }
+    else
+        Rand = rand;
     trainclumps = (int)((double)clumpcnt * (double)fraction / 10000.0);
 
     testclumps = clumpcnt - trainclumps;
@@ -769,13 +741,10 @@ static int splitLemmaliste
                 int k = 0;
                 while(k < clumpcnt && (testclumps > 0 || trainclumps > 0))
                     {
-                    int rd = rand();
+                    int rd = Rand();
                     int L = 0;
                     if(  testclumps == 0 
                       || (  trainclumps > 0
-#if N_FOLDCROSSVALIDATION
-                         && !clumps[k].done 
-#endif
                          && (double)rd * 10000.0 < (double)RAND_MAX * (double)fraction
                          )
                       ) // write to training file
@@ -784,9 +753,6 @@ static int splitLemmaliste
                         for(;L < clumps[k].linecnt;++L)
                             printTrain(clumps[k].start+L,fptrain,fptraintest,fptraincontrol,columntest,columncontrol,columntag,TrainTest);
                         trainlines += clumps[k].linecnt;
-#if N_FOLDCROSSVALIDATION
-                        clumps[k].done = true;
-#endif
                         --trainclumps;
                         }
                     else
@@ -812,19 +778,21 @@ static int splitLemmaliste
     return trainlines;
     }
 
-static int splitLemmaliste
-                   (int linecnt
-                   ,char * training
-                   ,char * test
-                   ,char * control
-                   ,int columntest
-                   ,int columncontrol
-                   ,int columntag
-                   ,int fraction
-                   ,char * traintest,char * traincontrol
-                   ,line * lines
-                   ,bool TrainTest
-                   ) // 0 <= fraction <= 10000
+static int splitLemmaList
+   (int linecnt
+   ,char * training
+   ,char * test
+   ,char * control
+   ,int columntest
+   ,int columncontrol
+   ,int columntag
+   ,int fraction
+   ,char * traintest
+   ,char * traincontrol
+   ,line * lines
+   ,bool TrainTest
+   ,bool TenFoldXValidation
+   ) // 0 <= fraction <= 10000
     {
     FILE * fptrain = NULL;
     FILE * fptest = NULL;
@@ -837,6 +805,15 @@ static int splitLemmaliste
     int trainlines = 0;
     int ret;
     int testlines = 0;
+    int (*Rand)(void);
+    if(TenFoldXValidation)
+        {
+        fraction = 9000;
+        Rand = aTenth;
+        }
+    else
+        Rand = rand;
+
     if(fraction < 10000)
         trainlines = (int)((double)linecnt * (double)fraction / 10000.0);
     else
@@ -868,7 +845,7 @@ static int splitLemmaliste
                     while(k < linecnt && (testlines > 0 || trainlines > 0))
                         {
                         assert(!IsSpace(lines[k].s[0]));
-                        int rd = rand();
+                        int rd = Rand();
                         if(  testlines == 0 
                           || (  trainlines > 0
                              && (double)rd * 10000.0 < (double)RAND_MAX * (double)fraction && trainlines > 0
@@ -1166,33 +1143,6 @@ static evaluation compare(const char * output, const char * control, const char 
     return Evaluation;
     }
 
-static evaluation doTheTest
-    (const char * traintest
-    ,const char * test
-    ,const char * output
-    ,const char * traincontrol
-    ,const char * controlResult
-    ,const char * control
-    ,const char * flexrules
-    ,optionStruct * options
-    ,bool TrainTest
-    )
-    {
-    lemmatiseFile(TrainTest ? traintest : test,flexrules,output);
-    if (options->remove())
-        {
-        remove(flexrules);
-        }
-    if(TrainTest)
-        {
-        return compare(output,traincontrol,controlResult,traintest,options);
-        }
-    else
-        {
-        return compare(output,control,controlResult,test,options);
-        }
-    }
-
 typedef enum {esam,eamb0,eamb1,eamb2,edif,eresceil} eres;
 class stddev // standard deviations
     {
@@ -1337,7 +1287,6 @@ class counting
             }
         void testing
             ( int cutoff
-            , const char * Affixrules
             , const char * output
             , const char * traintest
             , const char * test
@@ -1353,17 +1302,14 @@ class counting
             long nflexcount = 0;
             nflexcount = Counts[cutoff].getNnodes();
             n.tflexcount += nflexcount;
-            n.Evaluation = doTheTest
-                (traintest
-                ,test
-                ,output
-                ,traincontrol
-                ,controlResult
-                ,control
-                ,Affixrules
-                ,Options
-                ,TrainTest
-                );
+            if(TrainTest)
+                {
+                n.Evaluation = compare(output,traincontrol,controlResult,traintest,Options);
+                }
+            else
+                {
+                n.Evaluation = compare(output,control,controlResult,test,Options);
+                }
             this->StandardDev.datum(n.Evaluation.same,n.Evaluation.ambiguous,n.Evaluation.different);
             n.tsame += n.Evaluation.same;
             n.tdifferent += n.Evaluation.different;
@@ -1540,7 +1486,10 @@ void createReport(counting c[CUTOFFS],int maxcount,int ttrainlines,lineab AffixL
         {
         introduction = 
             "; Lemmatization results for all data in the training set.\n"
-            "; For pruning threshold 0 there may be no errors (diff%%).\n";
+            "; For pruning threshold 0 there may be no errors (diff%).\n"
+            "; (This is not necessarily true for external trainers/lemmatizers that\n"
+            "; e.g. do not return all possible solutions in case of ambiguity.)\n"
+            ;
         postScriptum[0] = 0;
         --presentRows;
         }
@@ -1719,15 +1668,18 @@ void trainAndTest
             }
         int ttrainlines = 0;
         int maxcount;
-#if N_FOLDCROSSVALIDATION
-        maxcount = N_;
-#else
-        maxcount = (int)(5000000.0*sqrt(1.0/((double)fraction*(10000.0-fraction)*(double)linecnt)));
-        if(maxcount < 1)
-            maxcount = 1;
-        else if(maxcount > 30)
-            maxcount = 30;
-#endif
+        if(Options->tenfoldCrossValidation())
+            {
+            maxcount = 10;
+            }
+        else
+            {
+            maxcount = (int)(5000000.0*sqrt(1.0/((double)fraction*(10000.0-fraction)*(double)linecnt)));
+            if(maxcount < 1)
+                maxcount = 1;
+            else if(maxcount > 30)
+                maxcount = 30;
+            }
         char paramfile[100];
         sprintf(paramfile,"%s%s%s%s%s.txt",LGf(Options),(Options->suffixOnly() ? "_suffix" : "_affix"),XTRf(Options),TT,(Options->redo() ? "redone" : "singleshot"));
         globmaxcount = maxcount;
@@ -1746,7 +1698,8 @@ void trainAndTest
             char controlResult[256];
             char Soutput[256];
             char output[256];
-
+            if(Options->tenfoldCrossValidation())
+                tenth(count - 1);
             sprintf(Lemmas,"%s",formatLemmas);
             sprintf(Weird,"%s",formatWeird);
             if(!fptally)
@@ -1778,9 +1731,9 @@ void trainAndTest
 
             int trainlines = 0;
             if(clumpcnt > 1)
-                trainlines = splitLemmaliste(clumpcnt,Ttraining,test,Tcontrol,1,2,3,fraction,traintest,Ttraincontrol,clumps,TrainTest);
+                trainlines = splitLemmaList(clumpcnt,Ttraining,test,Tcontrol,1,2,3,fraction,traintest,Ttraincontrol,clumps,TrainTest,Options->tenfoldCrossValidation());
             else
-                trainlines = splitLemmaliste(linecnt,Ttraining,test,Tcontrol,1,2,3,fraction,traintest,Ttraincontrol,lines,TrainTest);
+                trainlines = splitLemmaList(linecnt,Ttraining,test,Tcontrol,1,2,3,fraction,traintest,Ttraincontrol,lines,TrainTest,Options->tenfoldCrossValidation());
             if(trainlines > 0)
                 {
                 ttrainlines += trainlines;
@@ -1825,7 +1778,17 @@ void trainAndTest
                     ++openfiles;
                     if(fptally)
                         {
-                        c[cutoff].testing(cutoff,Affixrules,output,traintest,
+                        if(Options->externalLemmatizar())
+                            {
+                            char * command = new char[strlen(Options->externalLemmatizar())+strlen(TrainTest ? traintest : test)+strlen(Affixrules)+strlen(output)+5];
+                            sprintf(command,"%s %s %s %s",Options->externalLemmatizar(),TrainTest ? traintest : test,Affixrules,output);
+                            system(command);
+                            delete [] command;
+                            }
+                        else
+                            lemmatiseFile(TrainTest ? traintest : test,Affixrules,output);
+                        if (Options->remove()) { remove(Affixrules); }
+                        c[cutoff].testing(cutoff,output,traintest,
                             test,Ttraincontrol,controlResult,Tcontrol,fptally,Counts,Options,TrainTest);
                         --openfiles;
                         fclose(fptally);
@@ -1878,7 +1841,7 @@ void trainAndTest
                         lowestntdifferent = c[cutoff].n.tdifferent;
                         }
                     }
-              if(nextFraction(fraction) > FRACTION_HIGH)
+                if(nextFraction(fraction) > FRACTION_HIGH)
                     {
                     createReport(c,maxcount,ttrainlines,AffixLine,noOfSteps,fraction,Options);
                     }
@@ -1917,13 +1880,57 @@ static int readFile
     }
 
 
-static int doit(optionStruct * Options,bool TrainTest)
+static int readFileAndTrainAndTest(optionStruct * Options,bool TrainTest)
     {
     const char * XT;
     const char * TT;
     if (Options->verbose())
         printf("Test initialization\n");
-    init(TrainTest,XT,TT);
+    CUTOFF_LOW = 0;
+    CUTOFF_HIGH = Options->cutoff();
+    TAGGED = false;
+    if(Options->tenfoldCrossValidation())
+        {
+        FRACTION_LOW = 9000;
+        FRACTION_HIGH = FRACTION_LOW;
+        MAXCOUNT = 10;
+        TrainTest = false;
+        }
+    else
+        {
+        switch(STEPSIZE)
+            {
+            case 100:
+                FRACTION_LOW  = 154;
+                break;
+            case 25:
+                FRACTION_LOW  = 171;
+                break;
+            default:
+                FRACTION_LOW  = 1000;
+                ;
+            }
+        FRACTION_HIGH = 10000;
+        MAXCOUNT = 100;
+        }
+
+    if(TrainTest)
+        {
+        XT = "_train";
+        FRACTION_LOW = 10000;
+        FRACTION_HIGH = 10000;
+        }
+    else
+        {
+        XT = "";
+        }
+
+    if(TAGGED)
+        {
+        TT = "_tag";
+        }
+    else
+        TT = "";
     int sep = '\t';
 
     if(XTRf(Options) == NULL)
@@ -1948,7 +1955,7 @@ static int doit(optionStruct * Options,bool TrainTest)
         printf("Test: read file DONE\n");
     if(linecnt)
         {
-        if (Options->verbose())
+        if(Options->verbose())
             printf("Test: train and then test\n");
         trainAndTest
             (linecnt
@@ -1973,17 +1980,17 @@ int testrules(optionStruct * Options)
     {
     if(lemmalistef(Options) && LGf(Options) && XTRf(Options))
         {
-        if(Options->trainTest())
+        if(Options->trainTest() && !Options->tenfoldCrossValidation())
             {
             if (Options->verbose())
                 printf("trainTest.\n");
-            doit(Options,true);
+            readFileAndTrainAndTest(Options,true);
             }
         if(Options->test())
             {
             if (Options->verbose())
                 printf("OOVTest.\n");
-            doit(Options,false);
+            readFileAndTrainAndTest(Options,false);
             }
         return 0;
         }

@@ -20,7 +20,7 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "3.20"
+#define VERSION "3.30"
 
 #include "affixtrain.h"
 #include "testrules.h"
@@ -2459,10 +2459,30 @@ static void countNodes(node * tree, countAndWeight * Count, optionStruct * optio
         }
     }
 
-static bool writeAndTest(node * tree, const char * ext, int threshold, const char * nflexrules, optionStruct * options)
+static const char * flexRuleFileName(const char * ext, int threshold, const char * nflexrules)
+    {
+    if(nflexrules)
+        return nflexrules;
+    else
+        {
+        static char * filename = NULL;
+        delete [] filename;
+        size_t size = strlen("rules_.lem")+strlen(ext)+20;
+        filename = new char[size];
+        if (size <= sprintf(filename, "rules_%d%s.lem", threshold, ext))
+            {
+            printf("flexRuleFileName: filename too small");
+            exit(-1);
+            }
+        return filename;
+        }
+    }
+
+static bool writeRules(node * tree, const char * ext, int threshold, const char * nflexrules, optionStruct * options)
     {
     CHECK("gglobTempDir");
     char filename[1000];
+    const char * FlexRuleFileName = flexRuleFileName(ext,threshold,nflexrules);
 #if RULESASTEXTINDENTED
     sprintf(filename,"tree_%d%s.txt",threshold,ext);
     FILE * foo = fopenOrExit(filename,"wb","indented rules");
@@ -2482,10 +2502,10 @@ static bool writeAndTest(node * tree, const char * ext, int threshold, const cha
 #endif
         if (256 <= sprintf(filename, "rules_%d%s.lel", threshold, ext))
             {
-            printf("writeAndTest: filename 2 small");
+            printf("writeRules: filename 2 small");
             exit(-1);
             }
-        FILE * folel = fopenOrExit(tempDir(filename, options), "wb+", "writeAndTest");
+        FILE * folel = fopenOrExit(tempDir(filename, options), "wb+", "writeRules");
 #if RULESASTEXT
         filename[strlen(filename)-1] += 2; // change ".lel" to ".len"
         FILE * foleltxt = fopenOrExit(filename,"wb","Text version");
@@ -2503,9 +2523,6 @@ static bool writeAndTest(node * tree, const char * ext, int threshold, const cha
 #if RULESASTEXTINDENTED
             fprintf(foo,"tree={%d %f}\n",Nnodes,weight); // "rules_%d%s.txt"
 #endif
-//            fprintf(fono, "%d\n%f", Count->getNnodes(), Count->getWeight()); // "numberOfRules_%d.txt"
-//            --openfiles;
-//            fclose(fono);
             int nr = 0;
             strng L("");
             strng R("");
@@ -2526,33 +2543,15 @@ static bool writeAndTest(node * tree, const char * ext, int threshold, const cha
             --openfiles;
             fclose(foo);
 #endif
-            if (nflexrules)
-                {
-                rearrange
-                    (nflexrules// the binary output of the training, 
-                    // third command line argument
-                    , folel     // .lel file, textual output with relative 
-                    // positions
+            rearrange
+                ( FlexRuleFileName// the binary output of the training, 
+                // third command line argument
+                , folel     // .lel file, textual output with relative 
 #if RULESASTEXT
-                    , foleltxt  // .len file, textual output with absolute 
-                    // positions, like in the binary output.
+                , foleltxt  // .len file, textual output with absolute 
+                // positions, like in the binary output.
 #endif
-                    );
-                }
-            else
-                {
-                filename[strlen(filename) - 1]++; // change ".lel" to ".lem"
-                rearrange
-                    (filename  // .lem file, the binary output of the training
-                    , folel     // .lel file, textual output with relative 
-                    // positions
-#if RULESASTEXT
-                    , foleltxt  // .len file, textual output with absolute 
-                    // positions, like in the binary output.
-#endif
-                    );
-                filename[strlen(filename) - 1]--; // change ".lem" back to ".lel"
-                }
+                );
             --openfiles;
             fclose(folel);
             if (remove(tempDir(filename, options))) // del ".lel"
@@ -2597,7 +2596,7 @@ static bool writeAndTest(node * tree, const char * ext, int threshold, const cha
     }
 
 static bool doTraining
-(const char * fname
+( const char * fname
 , const char * ext
 , int cutoff
 , const char * nflexrulesFormat
@@ -2649,39 +2648,30 @@ static bool doTraining
     if (nflexrulesFormat)
         {
         assert(cutoff >= 0);
-        char naam[500];
-        if (sizeof(naam) <= (size_t)sprintf(naam, nflexrulesFormat, 0))
+        char name[500];
+        if (sizeof(name) <= (size_t)sprintf(name, nflexrulesFormat, 0))
             {
-            printf("doTraining: naam 2 small");
+            printf("doTraining: name 2 small");
             exit(-1);
             }
         countNodes(top,Counts+0,options);
-        writeAndTest(top, ext, 0, naam, options);
+        writeRules(top, ext, 0, name, options);
         for (int thresh = 1; thresh <= cutoff; thresh++)
             {
             top->pruneAll(thresh);
             top = top->cleanup(NULL);
-            if (sizeof(naam) <= (size_t)sprintf(naam, nflexrulesFormat, thresh))
+            if (sizeof(name) <= (size_t)sprintf(name, nflexrulesFormat, thresh))
                 {
-                printf("doTraining: naam 2 small");
+                printf("doTraining: name 2 small");
                 exit(-1);
                 }
             countNodes(top,Counts+thresh,options);
-            writeAndTest(top, ext, thresh, naam, options);
+            writeRules(top, ext, thresh, name, options);
             }
         }
     else
         {
         countNodes(top,Counts+0,options);
-//        writeAndTest(top, ext, 0, 0, Counts+0, options);
-        /*int max = 3;
-        if (cutoff >= 0)
-            max = cutoff;
-        for (int thresh = 1; thresh <= max; thresh++)
-            {
-            top->pruneAll(thresh);
-            writeAndTest(top, ext, thresh, 0, Counts+thresh, options);
-            }*/
         }
     delete top;
     building = false; // Signal to ~vertexPointer() to not access nodes.
@@ -3131,7 +3121,7 @@ bool haswritabledir(const char * name)
 void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts)
     {
     CHECK("jglobTempDir");
-    assert(options->flexrules() != NULL); // 20130125
+    assert(options->flexrules() != NULL);
     const char * nflexrules = options->flexrules();
     const char * fname = options->wordLemmaList();
     bool moreToDo = true;
@@ -3140,16 +3130,11 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
     char ingestedFractionOfAmbiguousPairsName[1024];
     char allPairsName[1024];
     char allIngestedPairsName[1024];
-
     char pairsToTrainInNextPassFormat[1024];
     char ingestedFractionOfAmbiguousPairsFormat[1024];
     char allPairsFormat[1024];
     char allIngestedPairsFormat[1024];
-    //char wordsGroupedByRuleFormat[1024];
     char bestRulesFormat[1024];
-
-
-
     char numbersFormat[1024];
     char command[1024];
     char FlexrulePassFormat[1024];
@@ -3161,9 +3146,6 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
     sprintf(allPairsFormat, "allPairs.%s%s.pass%%d", options->extra(), tag);
     sprintf(allIngestedPairsFormat, "allIngestedPairs.%s%s.pass%%d", options->extra(), tag);
     sprintf(numbersFormat, "numbers.%s%s.pass%%d", options->extra(), tag);
-
-
-
     char nflexrulesTag[1256];
     if (nflexrules)
         {
@@ -3204,19 +3186,51 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
             exit(-1);
             }
 
-
-        moreToDo = doTraining
-            (/* const char *                                */  fname
-            ,/* const char *                                */  ext
-            ,/* int cutoff                                  */  options->cutoff()
-            ,/* const char * nflexrulesFormat               */  flexrulesPass
-            ,/* const char *                                */  passes > 1 ? "12" : options->columns()
-            ,/* char * pairsToTrainInNextPassName           */  pairsToTrainInNextPassName
-            ,/* countAndWeight *                            */  Counts
-            ,/* const char *                                */  passes > 1 ? NULL : tag
-            ,/* int * filelines                             */  NULL
-            ,                                                   options
-            );
+        if(options->externalTrainer())
+            {
+            if (sizeof(bestRulesFormat) <= (size_t)sprintf(bestRulesFormat, accumulatedFormat, nflexrules, 1))
+                {
+                printf("trainRules: bestRulesFormat 2 small");
+                exit(-1);
+                }
+            for(int threshold = 0;threshold <= options->cutoff();++threshold)
+                {
+                char * dest = new char[strlen(bestRulesFormat)+10];
+                sprintf(dest, bestRulesFormat, threshold);
+                char * command = new char[strlen(options->externalTrainer())+strlen(fname)+strlen(dest)+strlen("noofrules.txt")+15];
+                sprintf(command,"%s %s %s %s",options->externalTrainer(),fname,dest,"noofrules.txt");
+                delete [] dest;
+                system(command);
+                delete [] command;
+                FILE * noofrules = fopen("noofrules.txt","r");
+                if(noofrules)
+                    {
+                    char buffer[100];
+                    fread(buffer,sizeof(buffer),1,noofrules);
+                    fclose(noofrules);
+                    long rulecount = strtol(buffer,NULL,10);
+                    Counts[threshold].setNnodes(rulecount);
+                    }
+                else
+                    Counts[threshold].setNnodes(1);
+                }
+            moreToDo = false;
+            }
+        else
+            {
+            moreToDo = doTraining
+                (/* const char *     */  fname
+                ,/* const char *     */  ext
+                ,/* int cutoff       */  options->cutoff()
+                ,/* const char *     */  flexrulesPass
+                ,/* const char *     */  passes > 1 ? "12" : options->columns()
+                ,/* char *           */  pairsToTrainInNextPassName
+                ,/* countAndWeight * */  Counts
+                ,/* const char *     */  passes > 1 ? NULL : tag
+                ,/* int * filelines  */  NULL
+                ,/* optionStruct *   */  options
+                );
+            }
         /*
         Re-do the training, but only with those pairs that made it into
         the set of ingested pairs. The idea is to avoid the "noise" caused
@@ -3229,19 +3243,19 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
                 {
                 printf("More training to do with file \"%s\"\n", pairsToTrainInNextPassName);
                 }
-            if (doTraining
-                (/* const char *                                */  tempDir(allIngestedPairsName, options)
-                ,/* const char *                                */  ext
-                ,/* int                                         */  options->cutoff()
-                ,/* const char * nflexrulesFormat               */  flexrulesPass
-                ,/* const char *                                */  options->columns()
-                ,/* char * pairsToTrainInNextPassName           */  NULL
-                ,/* countAndWeight *                            */  Counts
-                ,/* const char *                                */  tag
-                ,/* int * filelines                             */  NULL
-                ,                                                   options
+            if(doTraining
+                (/* const char *                      */  tempDir(allIngestedPairsName, options)
+                ,/* const char *                      */  ext
+                ,/* int                               */  options->cutoff()
+                ,/* const char *                      */  flexrulesPass
+                ,/* const char *                      */  options->columns()
+                ,/* char * pairsToTrainInNextPassName */  NULL
+                ,/* countAndWeight *                  */  Counts
+                ,/* const char *                      */  tag
+                ,/* int * filelines                   */  NULL
+                ,/* optionStruct *                    */  options
                 )
-                ) // sets Nnodes
+              ) // sets Nnodes
                 {
                 if (options->verbose())
                     {
@@ -3314,8 +3328,6 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
         accumulatedFormatPrev = accumulatedFormat;
         accumulatedFormat = AccumulatedFlexrulePassFormat;
         } while (moreToDo && passes < 30);
-
-
 
         if (options->verbose())
             {
@@ -3517,7 +3529,7 @@ int main(int argc, char **argv)
             printf("Computing delta DONE.\n");
 
 
-        if(options.test() || options.trainTest())
+        if(options.test() || (options.trainTest() && !options.tenfoldCrossValidation()))
             {
             if (options.verbose())
                 printf("Going to test the rules.\n");

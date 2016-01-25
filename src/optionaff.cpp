@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <assert.h>
 #include <math.h>
 
-static char opts[] = "?@:A:B:b:c:C:D:d:e:F:f:hH:I:i:j:K:L:M:N:n:O:o:p:P:Q:"/*q:*/"R:s:T:t:v:X:x:W:" /* GNU: */ "wr";
+static char opts[] = "?@:A:B:b:C:c:D:d:E:e:F:f:G:hH:I:i:j:K:L:M:N:n:O:o:P:p:Q:"/*q:*/"R:s:T:t:V:v:X:x:W:" /* GNU: */ "wr";
 static char *** Ppoptions = NULL;
 static char ** Poptions = NULL;
 static int optionSets = 0;
@@ -64,6 +64,8 @@ optionStruct::optionStruct(optionStruct & O)
     X = dupl(O.X);
     j = dupl(O.j);
     b = dupl(O.b);
+    E = dupl(O.E);
+    G = dupl(O.G);
     nD = O.nD;
     D = new double[nD];
     for(int ii = 0;ii < nD;++ii)
@@ -74,6 +76,7 @@ optionStruct::optionStruct(optionStruct & O)
     SuffixOnlyParmSeen = O.SuffixOnlyParmSeen;
     Verbose = O.Verbose;
     Remove = O.Remove;
+    VX = O.VX;
     Minfraction = O.Minfraction;
     Maxfraction = O.Maxfraction;
     Redo = O.Redo;
@@ -112,6 +115,8 @@ optionStruct::optionStruct()
     X = NULL;
     j = NULL; // temp dir
     b = NULL; // raw file (see t)
+    E = NULL;
+    G = NULL;
     D = NULL;
     nD = 0;
     ComputeParms = true;// compute parms
@@ -121,6 +126,7 @@ optionStruct::optionStruct()
     Argstring = 0;
     Verbose = false;// verbose
     Remove = true;
+    VX = false;
     Minfraction = 0.01; // L
     Maxfraction = 1.0; // H
     Redo = false;
@@ -164,7 +170,9 @@ optionStruct::~optionStruct()
     delete[] P;
     delete[] X;
     delete[] b;
-    delete[] D;
+    delete[] b;
+    delete[] E;
+    delete[] G;
     delete[] Argstring;
     }
 
@@ -425,6 +433,9 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
             printf("  19:parmsoff (obsolete, same as -f18)\n");
             printf("-b: Name of binary rule file. Pretty print rule file and create Bracmat\n    version of rule file. Optionally (-I) lemmatise file.\n");
             printf("-Q: Max recursion depth when attempting to create candidate rule\n");
+            printf("-G: External training program\n");
+            printf("-E: External lemmatizer program (arg1=input, arg2=rules, arg3=output)\n");
+            printf("-VX: 10-fold cross validation\n");
 //            printf("-q: Percentage of training pairs to set aside for testing\n");
             return Leave;
         case 'D':
@@ -526,6 +537,15 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
                 fprintf(stderr, "Option Q:No parameter value found.\n");
                 exit(-1);
                 }
+            break;
+        case 'E': // External training program
+            E = dupl(locoptarg);
+            break;
+        case 'G': // External lemmatizer
+            G = dupl(locoptarg);
+            break;
+        case 'V': // External lemmatizer
+            VX = locoptarg && *locoptarg == 'X';
             break;
             /*
         case 'q':
@@ -1027,6 +1047,9 @@ void optionStruct::print(FILE * fp) const
     {
     fprintf(fp, "               ; verbose (-v: yes -v-: no)\n-v %s\n", Verbose ? "" : "-");
     fprintf(fp, "               ; keep intermediary files (-x: yes -x-: no)\n-x %s\n", Remove ? "-" : "");
+    fprintf(fp, "               ; 10-fold cross validation (-VX: yes, overrules T and t options ;-VX: no)\n%s-VX\n", VX ? "" : ";");
+    fprintf(fp, "               ; External training program\n%s-G%s\n", G ? "" : ";", G ? G : "<program name>");
+    fprintf(fp, "               ; External lemmatizer\n%s-E%s\n", E ? "" : ";", E ? E : "<program name>");
     if (b)
         {
         fprintf(fp, "               ; flex rules (input file, binary format)\n-b %s\n-b %s\n", b, b);
@@ -1190,54 +1213,77 @@ void optionStruct::setArgstring()
 
     if(Argstring)
         delete[] Argstring;
-    
-    size_t nameLength = strlen(i) + (e ? 1 + strlen(e) : 0) + (SuffixOnly ? strlen("_suf") : 0) + (ExpensiveInfix ? strlen("_inf") : 0) + (C < 0 ? 0 : strlen("_C") + 1) + (WeightFunction == econstant ? strlen("_XE") : 0) + (WeightFunction == esupport ? strlen("_XW") : 0) + (WeightFunction == eentropy ? strlen("_XE") : 0) + (WeightFunction == edepth ? strlen("_XD") : 0) + (WeightFunction == esize ? strlen("_XS") : 0) + (Redo ? strlen("_R") : 0) + 1;
-    
-    Argstring = new char[nameLength];
-    strcpy(Argstring, i);
-    if (e)
+
+    size_t nameLength;
+    if(G)
         {
+        nameLength = strlen(i) + (e ? 1 + strlen(e) : 0) + (1+strlen(G)) + strlen("_externalTrainer")+1+(VX ? strlen("_VX"):0);
+        
+        Argstring = new char[nameLength];
+        strcpy(Argstring, i);
+        if (e)
+            {
+            strcat(Argstring, "_");
+            strcat(Argstring, e);
+            }
         strcat(Argstring, "_");
-        strcat(Argstring, e);
+        strcat(Argstring, G);
+        strcat(Argstring, "_externalTrainer");
+        if(VX)
+            strcat(Argstring, "_VX");
         }
-    if (SuffixOnly)
+    else
         {
-        strcat(Argstring, "_suf");
-        }
-    if (ExpensiveInfix)
-        {
-        strcat(Argstring, "_inf");
-        }
-    if (C >= 0)
-        {
-        strcat(Argstring, "_C");
-        int L = strlen(Argstring);
-        Argstring[L] = (char)(C + '0');
-        Argstring[L + 1] = 0;
-        }
-    switch(WeightFunction)
-        {
-        case econstant:
-            strcat(Argstring, "_XC");
-            break;
-        case esupport:
-            strcat(Argstring, "_XW");
-            break;
-        case eentropy:
-            strcat(Argstring, "_XE");
-            break;
-        case edepth:
-            strcat(Argstring, "_XD");
-            break;
-        case esize:
-            strcat(Argstring, "_XS");
-            break;
-        default:
-            break;
-        }
-    if (Redo)
-        {
-        strcat(Argstring, "_R");
+        nameLength = strlen(i) + (e ? 1 + strlen(e) : 0) + (SuffixOnly ? strlen("_suf") : 0) + (ExpensiveInfix ? strlen("_inf") : 0) + (C < 0 ? 0 : strlen("_C") + 1) + (WeightFunction == econstant ? strlen("_XE") : 0) + (WeightFunction == esupport ? strlen("_XW") : 0) + (WeightFunction == eentropy ? strlen("_XE") : 0) + (WeightFunction == edepth ? strlen("_XD") : 0) + (WeightFunction == esize ? strlen("_XS") : 0) + (Redo ? strlen("_R") : 0) + 1+(VX ? strlen("_VX"):0);
+        
+        Argstring = new char[nameLength];
+        strcpy(Argstring, i);
+        if (e)
+            {
+            strcat(Argstring, "_");
+            strcat(Argstring, e);
+            }
+        if (SuffixOnly)
+            {
+            strcat(Argstring, "_suf");
+            }
+        if (ExpensiveInfix)
+            {
+            strcat(Argstring, "_inf");
+            }
+        if (C >= 0)
+            {
+            strcat(Argstring, "_C");
+            int L = strlen(Argstring);
+            Argstring[L] = (char)(C + '0');
+            Argstring[L + 1] = 0;
+            }
+        switch(WeightFunction)
+            {
+            case econstant:
+                strcat(Argstring, "_XC");
+                break;
+            case esupport:
+                strcat(Argstring, "_XW");
+                break;
+            case eentropy:
+                strcat(Argstring, "_XE");
+                break;
+            case edepth:
+                strcat(Argstring, "_XD");
+                break;
+            case esize:
+                strcat(Argstring, "_XS");
+                break;
+            default:
+                break;
+            }
+        if (Redo)
+            {
+            strcat(Argstring, "_R");
+            }
+        if(VX)
+            strcat(Argstring, "_VX");
         }
     }
 

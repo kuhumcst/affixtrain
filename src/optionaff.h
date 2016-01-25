@@ -49,6 +49,8 @@ class optionStruct
         const char * B; // Best parms
         const char * P; // Current parms
         const char * b; // raw rules
+        const char * G; // External training program
+        const char * E; // External lemmatizer
         const char * X; // rule weight function, defaults to constant (1)
         const char * I; // Input (with option -b: additionally lemmatise a word list - one word per line)
         const char * O; // Output (lemmas of input -I) (with option -b)
@@ -61,6 +63,7 @@ class optionStruct
         bool Test;
         bool TrainTest;
         bool Remove;    // remove test files after use (default false)
+        bool VX; // 10-fold cross validation
         double Minfraction;
         double Maxfraction;
         int K;    // Number of differently sized fractions of trainingdata 
@@ -116,6 +119,8 @@ class optionStruct
         const char * currentParms() const{return P;}
         const char * ruleWeightFunction() const{return X;}
         const char * rawRules() const{return b;}
+        const char * externalTrainer() const{return G;}
+        const char * externalLemmatizar() const{return E;}
         const int maxRecursionDepthRuleCreation()const{return Q;}
 //        const int percentageTestPairs()const{return q;}
         const bool computeParms()const{return ComputeParms;}
@@ -123,6 +128,7 @@ class optionStruct
         const bool expensiveInfix(){ return ExpensiveInfix; }
         const bool verbose()const{return Verbose;}
         const bool remove()const{ return Remove; }
+        const bool tenfoldCrossValidation()const{ return VX; }
         const bool test()const{return Test;}
         const bool trainTest()const{return TrainTest;}        
         const double minfraction()const{return Minfraction;}

@@ -2469,7 +2469,7 @@ static const char * flexRuleFileName(const char * ext, int threshold, const char
         delete [] filename;
         size_t size = strlen("rules_.lem")+strlen(ext)+20;
         filename = new char[size];
-        if (size <= sprintf(filename, "rules_%d%s.lem", threshold, ext))
+        if ((int)size <= sprintf(filename, "rules_%d%s.lem", threshold, ext))
             {
             printf("flexRuleFileName: filename too small");
             exit(-1);
@@ -3200,19 +3200,32 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
                 char * command = new char[strlen(options->externalTrainer())+strlen(fname)+strlen(dest)+strlen("noofrules.txt")+15];
                 sprintf(command,"%s %s %s %s",options->externalTrainer(),fname,dest,"noofrules.txt");
                 delete [] dest;
-                system(command);
-                delete [] command;
-                FILE * noofrules = fopen("noofrules.txt","r");
-                if(noofrules)
+                if(!system(command))
                     {
-                    char buffer[100];
-                    fread(buffer,sizeof(buffer),1,noofrules);
-                    fclose(noofrules);
-                    long rulecount = strtol(buffer,NULL,10);
-                    Counts[threshold].setNnodes(rulecount);
+                    FILE * noofrules = fopen("noofrules.txt","r");
+                    if(noofrules)
+                        {
+                        char buffer[100];
+                        if(fread(buffer,1,sizeof(buffer),noofrules) == 0)
+                            {
+                            fprintf(stderr,"Cannot read characters from a buffer open \"noofrules.txt\".\n");
+                            Counts[threshold].setNnodes(1);
+                            }
+                        else
+                            {
+                            long rulecount = strtol(buffer,NULL,10);
+                            Counts[threshold].setNnodes(rulecount);
+                            }
+                        fclose(noofrules);
+                        }
+                    else
+                        Counts[threshold].setNnodes(1);
                     }
                 else
+                    {
                     Counts[threshold].setNnodes(1);
+                    }
+                delete [] command;
                 }
             moreToDo = false;
             }

@@ -120,7 +120,7 @@ class optionStruct
         const char * ruleWeightFunction() const{return X;}
         const char * rawRules() const{return b;}
         const char * externalTrainer() const{return G;}
-        const char * externalLemmatizar() const{return E;}
+        const char * externalLemmatizer() const{return E;}
         const int maxRecursionDepthRuleCreation()const{return Q;}
 //        const int percentageTestPairs()const{return q;}
         const bool computeParms()const{return ComputeParms;}

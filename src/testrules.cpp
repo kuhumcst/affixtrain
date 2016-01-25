@@ -1778,11 +1778,12 @@ void trainAndTest
                     ++openfiles;
                     if(fptally)
                         {
-                        if(Options->externalLemmatizar())
+                        if(Options->externalLemmatizer())
                             {
-                            char * command = new char[strlen(Options->externalLemmatizar())+strlen(TrainTest ? traintest : test)+strlen(Affixrules)+strlen(output)+5];
-                            sprintf(command,"%s %s %s %s",Options->externalLemmatizar(),TrainTest ? traintest : test,Affixrules,output);
-                            system(command);
+                            char * command = new char[strlen(Options->externalLemmatizer())+strlen(TrainTest ? traintest : test)+strlen(Affixrules)+strlen(output)+5];
+                            sprintf(command,"%s %s %s %s",Options->externalLemmatizer(),TrainTest ? traintest : test,Affixrules,output);
+                            if(system(command))
+                                fprintf(stderr,"Cannot execute system command \"%s\".\n",command);
                             delete [] command;
                             }
                         else

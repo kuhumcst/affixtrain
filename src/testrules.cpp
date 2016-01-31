@@ -58,8 +58,6 @@ const char * flexruleDir(optionStruct * options)
     if (lastslash)
         {
         static char dirname[500];
-        const char * filename;
-        filename = lastslash + 1;
         sprintf(dirname, "%.*s", (int)(lastslash - nflexrules), nflexrules);
         return dirname;
         }

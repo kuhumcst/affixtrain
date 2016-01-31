@@ -21,14 +21,12 @@
 #define RESOURCEDIR ""
 #endif
 #define BINDIR ""
-#define SLASH "\\"
 #define QUOTE "\"" 
 #else
 #define HOME ""
 #define BASEDIR HOME ""
 #define RESOURCEDIR HOME ""
 #define BINDIR HOME ""
-#define SLASH "/" 
 #define QUOTE "\'" 
 #endif
 #define SEPARATOR "--"
@@ -52,6 +50,24 @@ static int MAXCOUNT;
 static const int STEPSIZE = 100;
 
 static int globmaxcount = 0;
+
+const char * flexruleDir(optionStruct * options)
+    {
+    const char * nflexrules = options->flexrules();
+    const char * lastslash = strrchr(nflexrules, DIRSEP);
+    if (lastslash)
+        {
+        static char dirname[500];
+        const char * filename;
+        filename = lastslash + 1;
+        sprintf(dirname, "%.*s", (int)(lastslash - nflexrules), nflexrules);
+        return dirname;
+        }
+    else
+        {
+        return ".";
+        }
+    }
 
 static const char * XTRf(optionStruct * Options)
     {
@@ -1048,7 +1064,7 @@ static evaluation compare(const char * output, const char * control, const char 
 
             if(found)
                 {
-                if(strchr(b1,'|'))
+                if(strchr(b1,'|') && ambiguousRule) // ambiguousRule: some "words" may contain |, e.g. smiley :-|
                     {
                     assert(ambiguousRule);
                     if(c > 2)
@@ -1592,7 +1608,31 @@ void trainAndTest
     {
     lineab AffixLine[CUTOFFS];
 
-    char formatprefix[256]          ;sprintf(formatprefix,          BASEDIR "%s%%s" SEPARATOR "%s_%s%s%s%s%s_%%s.txt",Options->tempDir(),LGf(Options),XTRf(Options),(Options->suffixOnly() ? "_suffix" : "_affix"),XT,TT,(Options->redo() ? "redone" : "singleshot"));
+    char formatprefix[500];
+    if(Options->externalTrainer() || Options->externalLemmatizer())
+        sprintf(formatprefix
+               ,BASEDIR "%s%c%%s" SEPARATOR "%s_%s%s%s%s_%%s.txt"
+               ,Options->tempDir()
+               ,DIRSEP
+               ,LGf(Options)
+               ,"_external"
+               ,XT
+               ,TT
+               ,(Options->tenfoldCrossValidation() ? "10foldXVal" : "incSize")
+               );
+    else
+        sprintf(formatprefix
+               ,BASEDIR "%s%c%%s" SEPARATOR "%s_%s%s%s%s%s%s_%%s.txt"
+               ,Options->tempDir()
+               ,DIRSEP
+               ,LGf(Options)
+               ,XTRf(Options)
+               ,(Options->suffixOnly() ? "_suffix" : "_affix")
+               ,XT
+               ,TT
+               ,(Options->redo() ? "redone" : "singleshot")
+               ,(Options->tenfoldCrossValidation() ? "10foldXVal" : "incSize")
+               );
 
     char formatTraining[256]        ;sprintf(formatTraining,        formatprefix,"training"     ,"%d_%d");        // the training words
     char formatTest[256]            ;sprintf(formatTest,            formatprefix,"test"         ,"%d_%d");        // the test words (<> training words)
@@ -1604,17 +1644,21 @@ void trainAndTest
     char formatSOutput[256]         ;sprintf(formatSOutput,         formatprefix,"sout"         ,"%d_%d_%d");
     char formatOutput[256]          ;sprintf(formatOutput,          formatprefix,"out"          ,"%d_%d_%d");
 
-    char formatcontrolResult[256]  ;sprintf(formatcontrolResult,  formatprefix,"resultAffix"  ,"%d_%d_cutoff_%d");
+    char formatcontrolResult[256]   ;sprintf(formatcontrolResult,   formatprefix,"resultAffix"  ,"%d_%d_cutoff_%d");
 
     char formatLemmas[256]          ;sprintf(formatLemmas,          formatprefix,"lemmas"       ,"");
     char formatWeird[256]           ;sprintf(formatWeird,           formatprefix,"weird"        ,"");
 
     char formatTally[256]           ;sprintf(formatTally,           formatprefix,"tally"        ,"");
-    char formatTab[256]             ;sprintf(formatTab,             formatprefix,"tab"          ,"");
+    char formatTab[256]             ;sprintf(formatTab,             formatprefix,"evaluation"          ,"");
     char tally[256];
     char tab[256];
     sprintf(tally,"%s",formatTally);
-    sprintf(tab,"%s",formatTab);
+    char * sep = strchr(formatTab,DIRSEP);
+    if(sep)
+        sprintf(tab,"%s%c%s",flexruleDir(Options),DIRSEP,sep+1); // Put evaluation in current dir.
+    else
+        sprintf(tab,"%s%c%s",flexruleDir(Options),DIRSEP,formatTab);
     FILE * fptally;    
     FILE * fptab;    
     fptally = fopen(tally,"wb");
@@ -1761,12 +1805,12 @@ void trainAndTest
                     {
                     sprintf(controlResult,formatcontrolResult,fraction,count,cutoff);
                     char Affixrules[250];
-                    const char * lastslash = strrchr(Options->flexrules(),*SLASH);
+                    const char * lastslash = strrchr(Options->flexrules(),DIRSEP);
                     const char * filename;
                     if(lastslash)
                         {
                         filename = lastslash + 1;
-                        sprintf(Affixrules,"%.*s%d%s%s",(int)(filename - Options->flexrules()),Options->flexrules(),cutoff,SLASH,filename);
+                        sprintf(Affixrules,"%.*s%d%c%s",(int)(filename - Options->flexrules()),Options->flexrules(),cutoff,DIRSEP,filename);
                         }
                     else
                         sprintf(Affixrules,"%d%c%s",cutoff,DIRSEP,Options->flexrules());

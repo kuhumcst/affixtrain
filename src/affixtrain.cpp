@@ -54,7 +54,7 @@ static const char * SCUT = ".cutoff";
 
 int openfiles = 0;
 
-const char * tempDir(const char * filename, optionStruct * options)
+static const char * tempFolder(const char * filename, optionStruct * options)
     {
     static char * fullname = NULL;
     size_t length;
@@ -64,9 +64,9 @@ const char * tempDir(const char * filename, optionStruct * options)
         {
         if (fullname)
             delete[] fullname;
-        length = strlen(options->tempDir()) + strlen(filename) + 2;
+        length = strlen(options->tempDir()) + strlen(filename) + 3;
         fullname = new char[length];
-        written = sprintf(fullname, "%s%s", options->tempDir(), filename);
+        written = sprintf(fullname, "%s%c%s", options->tempDir(), DIRSEP, filename);
         if ((size_t)written >= length)
             {
             printf("tempDir: Buffer overrun");
@@ -2505,7 +2505,7 @@ static bool writeRules(node * tree, const char * ext, int threshold, const char 
             printf("writeRules: filename 2 small");
             exit(-1);
             }
-        FILE * folel = fopenOrExit(tempDir(filename, options), "wb+", "writeRules");
+        FILE * folel = fopenOrExit(tempFolder(filename, options), "wb+", "writeRules");
 #if RULESASTEXT
         filename[strlen(filename)-1] += 2; // change ".lel" to ".len"
         FILE * foleltxt = fopenOrExit(filename,"wb","Text version");
@@ -2554,7 +2554,7 @@ static bool writeRules(node * tree, const char * ext, int threshold, const char 
                 );
             --openfiles;
             fclose(folel);
-            if (remove(tempDir(filename, options))) // del ".lel"
+            if (remove(tempFolder(filename, options))) // del ".lel"
                 {
                 if (options->verbose())
                     {
@@ -2629,7 +2629,7 @@ static bool doTraining
     node * top;
     doTheRules(&Hash, train, &top, options);
 
-    FILE * nexttrain = pairsToTrainInNextPassName ? fopenOrExit(tempDir(pairsToTrainInNextPassName, options), "wb", "nexttrain") : NULL;
+    FILE * nexttrain = pairsToTrainInNextPassName ? fopenOrExit(tempFolder(pairsToTrainInNextPassName, options), "wb", "nexttrain") : NULL;
     if (nexttrain)
         {
         int donepairs = trainingPair::makeNextTrainingSet(pairs, TrainingPair, nexttrain, options);
@@ -2850,7 +2850,7 @@ void computeParms(optionStruct * options)
         iterationsfactor = 1;
     const char * filename = options->wordLemmaList();
     const char * fbuf;
-    fbuf = dup(tempDir("trainFraction", options));
+    fbuf = dup(tempFolder("trainFraction", options));
 
     char ext[100];
     ext[0] = '\0';
@@ -3139,8 +3139,8 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
     char command[1024];
     char FlexrulePassFormat[1024];
     char AccumulatedFlexrulePassFormat[1024];
-    sprintf(FlexrulePassFormat,"%s%%s.pass%%d.cutoff%%%%d",options->tempDir());
-    sprintf(AccumulatedFlexrulePassFormat,"%s%%s.pass%%d.cutoff%%%%d.accumulated",options->tempDir());
+    sprintf(FlexrulePassFormat,"%s%c%%s.pass%%d.cutoff%%%%d",options->tempDir(),DIRSEP);
+    sprintf(AccumulatedFlexrulePassFormat,"%s%c%%s.pass%%d.cutoff%%%%d.accumulated",options->tempDir(),DIRSEP);
     sprintf(pairsToTrainInNextPassFormat, "pairsToTrainInNextPass.%s%s.pass%%d", options->extra(), tag);
     sprintf(ingestedFractionOfAmbiguousPairsFormat, "ingestedFractionOfAmbiguousPairs.%s%s.pass%%d", options->extra(), tag);
     sprintf(allPairsFormat, "allPairs.%s%s.pass%%d", options->extra(), tag);
@@ -3257,7 +3257,7 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
                 printf("More training to do with file \"%s\"\n", pairsToTrainInNextPassName);
                 }
             if(doTraining
-                (/* const char *                      */  tempDir(allIngestedPairsName, options)
+                (/* const char *                      */  tempFolder(allIngestedPairsName, options)
                 ,/* const char *                      */  ext
                 ,/* int                               */  options->cutoff()
                 ,/* const char *                      */  flexrulesPass
@@ -3336,7 +3336,7 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
                 //prettyPrint(newbestflexrules);
                 }
             }
-        fname = tempDir(pairsToTrainInNextPassName, options);
+        fname = tempFolder(pairsToTrainInNextPassName, options);
 
         accumulatedFormatPrev = accumulatedFormat;
         accumulatedFormat = AccumulatedFlexrulePassFormat;
@@ -3506,7 +3506,7 @@ int main(int argc, char **argv)
             {
             if (!haswritabledir(options.tempDir()))
                 {
-                printf("Cannot create file %s. Did you specify an existing and writable temp directory? (option -j)\n", tempDir("testFile", &options));
+                printf("Cannot create file %s. Did you specify an existing and writable temp directory? (option -j)\n", tempFolder("testFile", &options));
                 return -1;
                 }
             }

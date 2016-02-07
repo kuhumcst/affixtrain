@@ -1,3 +1,14 @@
+Version 3.32 - 2016.01.25
+-------------------------
+Evaluation file is now called 'evaluation...' and moved to current working
+directory.
+Described -x option (remove intermediary files).
+
+Version 3.31 - 2016.01.25
+-------------------------
+New: 10-fold cross validation
+New: test other trainers/lemmatizers
+
 Version 3.20 - 2015.09.21
 -------------------------
 Increased buffer size. Morphological info for some (Polish) words can be

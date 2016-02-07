@@ -436,6 +436,7 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
             printf("-G: External training program\n");
             printf("-E: External lemmatizer program (arg1=input, arg2=rules, arg3=output)\n");
             printf("-VX: 10-fold cross validation\n");
+            printf("-x: Keep all intermediary files. (default: -x- delete them)\n");
 //            printf("-q: Percentage of training pairs to set aside for testing\n");
             return Leave;
         case 'D':

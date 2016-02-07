@@ -173,6 +173,10 @@ class lineab
 static char Lemmas[256];
 static char Weird[256];
 
+/*
+This class was for keeping track of the popularity of rules among test words.
+Lemmas were supposed to be followed by a # followed by a rule number called
+'refcnt'. A # followed by 0 meant there was no rule to match the word.
 class Count
     {
     public:
@@ -222,7 +226,6 @@ class Count
     };
 
 static Count * counts = NULL;
-
 void Correct(long Cnt)
     {
     if(counts)
@@ -238,7 +241,7 @@ void Wrong(long Cnt)
         counts->Wrong(Cnt);
         }
     }
-
+*/
 static void trim(char * s)
     {
     char * d = s + strlen(s);
@@ -990,8 +993,10 @@ static evaluation compare(const char * output, const char * control, const char 
                 }
             else
                 bambiguous = false;
+            /*
             long Ref = 0;
             char * hash;
+            */
             char * s;
             bool found;
             char * tab;
@@ -1005,8 +1010,9 @@ static evaluation compare(const char * output, const char * control, const char 
                 {
                 ++c;
                 tab = NULL;
-                hash = strchr(s,'#');
+//                hash = strchr(s,'#');
                 char * bar;
+                /*
                 if(hash && hash > s && '0' <= hash[1] && hash[1] <= 9)
                     {
                     *hash = '\0';
@@ -1027,6 +1033,7 @@ static evaluation compare(const char * output, const char * control, const char 
                         }
                     }
                 else
+                */
                     {
                     bar = strchr(s,'|');
                     if(bar && bar > s && bar[1])
@@ -1068,25 +1075,28 @@ static evaluation compare(const char * output, const char * control, const char 
                     if(c > 2)
                         c = 2;
                     ++Evaluation.ambiguous[c];
-                    Correct(Ref);
+//                    Correct(Ref);
                     if(f3)
-                        fprintf(f3,"|\t%ld\t%s\t%s\t%s\n",Ref,b4,b1,b2);
+                        fprintf(f3,"|\t%s\t%s\t%s\n",b4,b1,b2);
+//                        fprintf(f3,"|\t%ld\t%s\t%s\t%s\n",Ref,b4,b1,b2);
                     }
                 else
                     {
                     assert(!ambiguousRule);
                     ++Evaluation.same;
-                    Correct(Ref);
+//                    Correct(Ref);
                     if(f3)
-                        fprintf(f3,"+\t%ld\t%s\t%s\t%s\n",Ref,b4,b1,b2);
+                        fprintf(f3,"+\t%s\t%s\t%s\n",b4,b1,b2);
+//                        fprintf(f3,"+\t%ld\t%s\t%s\t%s\n",Ref,b4,b1,b2);
                     }
                 }
             else
                 {
                 ++Evaluation.different;
-                Wrong(Ref);
+//                Wrong(Ref);
                 if(f3)
-                    fprintf(f3,"-\t%ld\t%s\t%s\t%s\n",Ref,b4,b1,b2);
+                    fprintf(f3,"-\t%s\t%s\t%s\n",b4,b1,b2);
+//                    fprintf(f3,"-\t%ld\t%s\t%s\t%s\n",Ref,b4,b1,b2);
                 }
 
             if(ambiguousRule)
@@ -1335,11 +1345,13 @@ class counting
             fprintf(fptally,"cutoff:%d ",cutoff);
             printResults(fptally,nflexcount,n.Evaluation);
             fflush(fptally);
+            /*
             if(counts)
                 {
                 delete counts;
                 counts = NULL;
                 }
+                */
             }
         void printing(int maxcount,FILE * fptab,int ttrainlines)
             {
@@ -1756,9 +1768,10 @@ void trainAndTest
                 fclose(fptally);
                 fptally = 0;
                 }
+            /*
             if(!counts)
                 counts = new Count(0); // for those words that didn't match any rule.
-
+*/
             char Ttraining[256];
             sprintf(Ttraining,formatTraining,fraction,count);
             sprintf(test,formatTest,fraction,count);

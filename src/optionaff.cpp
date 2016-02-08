@@ -201,7 +201,7 @@ void optionStruct::detectFloatingPointNumbers(const char * S)
             Sum2 += d*d;
             ++n;
             }
-        t = strchr(s, ';');
+        t = strpbrk(s, ",;:");
         if(t == 0)
             break;
         }

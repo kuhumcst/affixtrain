@@ -1,3 +1,7 @@
+Version 3.37 - 2016.05.03
+-------------------------
+Typecast char to unsigned char when calling isspace and isUpper.
+
 Version 3.36 - 2016.02.26
 -------------------------
 Added parameters for Norwegian and Swedish.

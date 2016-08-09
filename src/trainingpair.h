@@ -66,12 +66,14 @@ class trainingPair
         char * Lemma; // as computed
         vertex * V; // the rule that made Lemma
         vertexPointer * applicableRules;
+    public:
+        trainingPair * Next;
+    private:
         unsigned int bits:8;
         unsigned int ambs:3;
         unsigned int tentativeAmbs:3;
         void deleteRules();
     public:
-        trainingPair * Next;
 #if AMBIGUOUS
         trainingPair * Alt; // forms closed loop of alternatives (of lemmas)
 #endif

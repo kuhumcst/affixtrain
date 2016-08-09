@@ -32,6 +32,7 @@ typedef enum {failure,wrong,right} matchResult;
 class trainingPair;
 class optionStruct;
 class shortRulePair;
+class hashTable;
 
 class vertex;
 

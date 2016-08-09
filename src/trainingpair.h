@@ -60,15 +60,15 @@ class trainingPair
         int Inl;
         int Lemma_Inl;
 #endif
+    public:
+        trainingPair * Next;
+    private:
         char * Mask; /* Initially 0. When trainingpair becomes member of a
                      node's Wrong of Right list, it borrows Mask from the
                      trainingPairPointer pointing to this trainingPair. */
         char * Lemma; // as computed
         vertex * V; // the rule that made Lemma
         vertexPointer * applicableRules;
-    public:
-        trainingPair * Next;
-    private:
         unsigned int bits:8;
         unsigned int ambs:3;
         unsigned int tentativeAmbs:3;

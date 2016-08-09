@@ -22,8 +22,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "comp.h"
 #include "affixtrain.h"
-#include "graph.h"
+#include "node.h"
 #include "optionaff.h"
+#include "vertex.h"
 #include <float.h>
 
 #define ZIGGURAT 1
@@ -1146,7 +1147,7 @@ static bestParms best_is =
 #endif
 
 static bestParms best_nlC0 = // Dutch, ambiguous training pairs in training set derived from CELEX
-// weight function (graph.h) rcount*rcount*exp(-2.0*rcount/1.0)
+// weight function (node.h) rcount*rcount*exp(-2.0*rcount/1.0)
 // Aiming at cutoff == 0, because maximum penalty is for 1 word/lemma pairs for a rule.
     {
     false,
@@ -1271,7 +1272,7 @@ bests[11].rows == [1]
     };
 
 static bestParms best_nlC1 = // Dutch, ambiguous training pairs in training set derived from CELEX
-// weight function (graph.h) rcount*rcount*exp(-2.0*rcount/2.0)
+// weight function (node.h) rcount*rcount*exp(-2.0*rcount/2.0)
 // Aiming at cutoff == 1, because maximum penalty is for 2 word/lemma pairs for a rule.
     {
     false,
@@ -1342,7 +1343,7 @@ bests[12].rows == [1]
     };
 
 static bestParms best_nlC2 = // Dutch, ambiguous training pairs in training set derived from CELEX
-// weight function (graph.h) rcount*rcount*exp(-2.0*rcount/3.0)
+// weight function (node.h) rcount*rcount*exp(-2.0*rcount/3.0)
 // Aiming at cutoff == 2, because maximum penalty is for 3 word/lemma pairs for a rule.
     {
     false,
@@ -1766,7 +1767,7 @@ recall          0.040609 (0.000000)
 */
 
 static bestParms best_en6W = // English, ambiguous training pairs in training set derived from CELEX
-// weight function (graph.h) 5.0*(rcount-1.0)*exp(-0.9*rcount)+1
+// weight function (node.h) 5.0*(rcount-1.0)*exp(-0.9*rcount)+1
     {
     false,
     "en6W", /* Better than comp_sugar 20140915 */
@@ -1835,7 +1836,7 @@ bests[5].rows == [1]
 
 
 static bestParms best_enC0 = // English, ambiguous training pairs in training set derived from CELEX
-// weight function (graph.h) rcount*rcount*exp(-2.0*rcount/1.0)
+// weight function (node.h) rcount*rcount*exp(-2.0*rcount/1.0)
 // Aiming at cutoff == 0, because maximum penalty is for 1 word/lemma pairs for a rule.
 
 // Not good, compared with nlC0
@@ -1908,7 +1909,7 @@ bests[11].rows == [1]
     };
 
 static bestParms best_en6WS1 = // English, ambiguous training pairs in training set derived from CELEX
-// weight function (graph.h) rcount*exp(-rcount/2.0)
+// weight function (node.h) rcount*exp(-rcount/2.0)
 // Aiming at cutoff == 2, because maximum penalty is for 2 word/lemma pairs for a rule.
     {
     false,
@@ -1977,7 +1978,7 @@ bests[8].rows == [1]
     };
 
 static bestParms best_en6WS2 = // English, ambiguous training pairs in training set derived from CELEX
-// weight function (graph.h) rcount*exp(-rcount/3.0)
+// weight function (node.h) rcount*exp(-rcount/3.0)
 // Aiming at cutoff == 2, because maximum penalty is for 3 word/lemma pairs for a rule.
     {
     false,
@@ -2046,7 +2047,7 @@ bests[7].rows == [1]
     };
 
 static bestParms best_en6WS3 = // English, ambiguous training pairs in training set derived from CELEX
-// weight function (graph.h) rcount*exp(-rcount/4.0)
+// weight function (node.h) rcount*exp(-rcount/4.0)
 // Aiming at cutoff == 3, because maximum penalty is for 4 word/lemma pairs for a rule.
     {
     false,
@@ -2116,7 +2117,7 @@ bests[9].rows == [1]
     };
 
 static bestParms best_enS2 = // English, ambiguous training pairs in training set derived from CELEX
-// weight function (graph.h) rcount*rcount*exp(-2.0*rcount/3.0)
+// weight function (node.h) rcount*rcount*exp(-2.0*rcount/3.0)
 // Aiming at cutoff == 2, because maximum penalty is for 3 word/lemma pairs for a rule.
     {
     false,

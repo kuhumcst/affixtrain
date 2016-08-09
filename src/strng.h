@@ -19,6 +19,8 @@ You should have received a copy of the GNU General Public License
 along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
+#ifndef STRNG_H
+#define STRNG_H
 
 #include <stddef.h> // gcc ptrdiff_t
 #include <stdarg.h>
@@ -38,6 +40,8 @@ char * dup(const char * buf);
 char * dupn(const char * buf,size_t n);
 
 extern int StrngCount;
+
+edif dif(char * Txt, char * s_Txt);
 
 class strng
     {
@@ -205,3 +209,5 @@ class strng
 
 
 strng * makeNode(strng ** patreps,int & nr,const strng * pat,const strng * rep,const strng * L,const strng * R,strng ** pLL,strng ** pRR);
+
+#endif

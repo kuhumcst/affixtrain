@@ -19,34 +19,32 @@ You should have received a copy of the GNU General Public License
 along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
-#ifndef AFFIXTRAIN_H
-#define AFFIXTRAIN_H
+#ifndef SHORTRULEPAIR_H
+#define SHORTRULEPAIR_H
 
-#include "settingsaffixtrain.h"
+#include <string.h>
 
-class optionStruct;
+class trainingPair;
+class ruleTemplate;
+class vertex;
 
-class countAndWeight
+class shortRulePair
     {
-    int Nnodes;
-    double Weight;
-    LONG CountByDepth;
-    LONG CountBySize;
+    private:
+        char patternArray[1000];
+        char replacementArray[1000];
+        void trim();
     public:
-        void setNnodes(int N){Nnodes = N;};
-        void setWeight(double W){Weight = W;};
-        void setCountByDepth(LONG C){CountByDepth = C;};
-        void setCountBySize(LONG C){CountBySize = C;};
-        int getNnodes()const{return Nnodes;}
-        double getWeight()const{return Weight;}
-        LONG getCountByDepth()const{return CountByDepth;}
-        LONG getCountBySize()const{return CountBySize;}
+        const char * itsPatternArray(){ return patternArray; }
+        const char * itsReplacementArray(){ return replacementArray; }
+        void copy(shortRulePair * Rule)
+            {
+            strcpy(patternArray, Rule->patternArray);
+            strcpy(replacementArray, Rule->replacementArray);
+            }
+        shortRulePair(trainingPair * trainingpair, ruleTemplate * Template);
+        bool checkRule(trainingPair * trainingpair, vertex * parentPat);
+        ~shortRulePair();
     };
-
-
-//void trainRules(const char * tag, optionStruct * options);
-void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts);
-
-extern int openfiles;
 
 #endif

@@ -31,43 +31,61 @@ MAKEAFFIXRULESSRC=\
 	argopt.cpp\
 	comp.cpp\
 	flexcombi.cpp\
-	graph.cpp\
-	testrules.cpp\
+	hashtable.cpp\
 	$(LETTERFUNCDIR)/isofunc.cpp\
 	$(LETTERFUNCDIR)/letter.cpp\
 	$(LETTERFUNCDIR)/letterfunc.cpp\
+	node.cpp\
 	optionaff.cpp\
-	$(LETTERFUNCDIR)/utf8func.cpp
+	ruletemplate.cpp\
+	shortrulepair.cpp\
+	strng.cpp\
+	testrules.cpp\
+	trainingpair.cpp\
+	$(LETTERFUNCDIR)/utf8func.cpp\
+	vertex.cpp
 
 MAKEAFFIXRULESHEADERS=\
+	affixtrain.h\
 	applyaffrules.h\
 	argopt.h\
 	comp.h\
 	flexcombi.h\
-	graph.h\
-	affixtrain.h\
-	testrules.h\
+	hashtable.h\
 	$(LETTERFUNCDIR)/isofunc.h\
 	$(LETTERFUNCDIR)/letter.h\
 	$(LETTERFUNCDIR)/letterfunc.h\
+	node.h\
 	optionaff.h\
+	ruletemplate.h\
 	settingsaffixtrain.h\
+	shortrulepair.h\
 	strng.h\
-	$(LETTERFUNCDIR)/utf8func.h
+	testrules.h\
+	trainingpair.h\
+	$(LETTERFUNCDIR)/utf8func.h\
+	vertex.h
 
 MAKEAFFIXRULESOBJ=\
+	affixtrain.o\
 	applyaffrules.o\
 	argopt.o\
 	comp.o\
-	graph.o\
 	flexcombi.o\
+	hashtable.o\
 	isofunc.o\
 	letter.o\
 	letterfunc.o\
+	node.o\
 	optionaff.o\
-	affixtrain.o\
+	ruletemplate.o\
+	shortrulepair.o\
+	strng.o\
 	testrules.o\
-	utf8func.o
+	trainingpair.o\
+	utf8func.o\
+	vertex.o
+	
 				
 
 #                               #

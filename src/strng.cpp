@@ -37,56 +37,6 @@ strng::strng(const char * buf,size_t length)
     }
 
 
-
-
-edif strng::dif(strng * s) // returns Txt - s
-    {
-    return ::dif(Txt,s->Txt);
-    }
-
-
-void strng::checkIntegrity()
-    {
-    assert(Txt);
-    }
-
-bool strng::hasWildCard()
-    {
-    return Txt[0] != START || Txt[strlen(Txt)-1] != END || strchr(Txt,ANY);
-    }
-
-bool strongerCondition(char ** A,char ** B)
-    {
-    // Return true if all B are contained in an A.
-    // The loop exits when there are no more A's.
-    // If there still is a B, then this B must be unmatched, and so the
-    // function must return false.
-    // If there is no B left, it may still be the case that the last
-    // B is not contained in an A, so we also have to check for the
-    // result from the last call to strstr.
-    char * sub = 0;
-    char * a = *A;
-    char * b = *B;
-    while(b && a)
-        {
-        sub = 0;
-        while(a)
-            {
-            sub = strstr(a,b);
-            if(sub)
-                {
-                a = sub + strlen(b);
-                if(!*a)
-                    a = *++A;
-                break;
-                }
-            a = *++A;
-            }
-        b = *++B;
-        }
-    return !*B && sub;
-    }
-
 void cut(char * s,char ** a)
     {
     *a = s;
@@ -145,6 +95,84 @@ bool compatibleCondition(char ** A,char ** B)
     return true;
     }
 
+bool strongerCondition(char ** A,char ** B)
+    {
+    // Return true if all B are contained in an A.
+    // The loop exits when there are no more A's.
+    // If there still is a B, then this B must be unmatched, and so the
+    // function must return false.
+    // If there is no B left, it may still be the case that the last
+    // B is not contained in an A, so we also have to check for the
+    // result from the last call to strstr.
+    char * sub = 0;
+    char * a = *A;
+    char * b = *B;
+    while(b && a)
+        {
+        sub = 0;
+        while(a)
+            {
+            sub = strstr(a,b);
+            if(sub)
+                {
+                a = sub + strlen(b);
+                if(!*a)
+                    a = *++A;
+                break;
+                }
+            a = *++A;
+            }
+        b = *++B;
+        }
+    return !*B && sub;
+    }
+
+
+edif strng::dif(strng * s) // returns Txt - s
+    {
+    /* returns 1 if Txt is a stronger condition (further from the root) 
+       than s_Txt.
+       It returns -1 if Txt is weaker than s_Txt
+       It retuns 0 if the conditions are incommensurable.
+    */
+    char * Txt = this->Txt;
+    char * s_Txt = s->Txt;
+    char * A[100];
+    char * B[100];
+    cut(Txt,A);
+    cut(s_Txt,B);
+    if(compatibleCondition(A,B))
+        {
+        bool AB = strongerCondition(A,B);
+        bool BA = strongerCondition(B,A);
+
+        edif res = (AB && !BA) ? dif_bigger : (BA && !AB) ? dif_smaller : (AB && BA) ? dif_equal : dif_incommensurable;
+        uncut(A);
+        uncut(B);
+        assert(res == dif_incommensurable || res == dif_smaller || res == dif_bigger || res == dif_equal);
+        return res;
+        }
+    else
+        {
+        uncut(A);
+        uncut(B);
+        return dif_incompatible;
+        }
+    }
+
+
+void strng::checkIntegrity()
+    {
+    assert(Txt);
+    }
+
+bool strng::hasWildCard()
+    {
+    return Txt[0] != START || Txt[strlen(Txt)-1] != END || strchr(Txt,ANY);
+    }
+
+
+#if 0
 edif dif(char * Txt, char * s_Txt)
     {
     /* returns 1 if Txt is a stronger condition (further from the root) 
@@ -175,6 +203,6 @@ edif dif(char * Txt, char * s_Txt)
         }
     }
 
-
+#endif
 
 

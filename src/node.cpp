@@ -698,7 +698,7 @@ void node::splitTrainingPairList(trainingPair * all,trainingPair **& pNotApplica
 
 bool node::compatibleSibling(node * sib)
     {
-    if(this->V->dif(sib->V) != dif_incompatible)
+    if(this->V->Pattern.dif(&sib->V->Pattern) != dif_incompatible)
         return true;
     else if(IfPatternFails)
         return IfPatternFails->compatibleSibling(sib);

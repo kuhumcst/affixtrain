@@ -87,7 +87,6 @@ class trainingPair
         void allDeleteRules();
         trainingPair * nth(int n);
         void makeCandidateRules(hashTable * Hash,vertex * parent,bool alreadyRight,optionStruct * options);
-        int makeRuleEx(hashTable * Hash,vertex * parent,bool alreadyRight,optionStruct * options);
         int makeCorrectRules(hashTable * Hash,ruleTemplate * Template,const char * similar,vertex * parent, int mlow, int recurse,optionStruct * options);
         // if recurse = 0, don't recurse. Else recurse. If a succeeding rule
         // already has been found, decrement recurse and then test whether a

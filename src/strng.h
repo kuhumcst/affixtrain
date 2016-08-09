@@ -41,8 +41,6 @@ char * dupn(const char * buf,size_t n);
 
 extern int StrngCount;
 
-edif dif(char * Txt, char * s_Txt);
-
 class strng
     {
     private:

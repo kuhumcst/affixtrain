@@ -70,7 +70,6 @@ class vertex
     public:
         matchResult apply(trainingPair * trainingpair);
         bool applym(trainingPair * trainingpair, size_t lemmalength, char * lemma, char * mask, optionStruct * options);
-        edif dif(vertex * other);
 #if _NA
         void adjustNotApplicableCountsByRecalculatingR_NA(trainingPair * NotApplicableRight,int total);
         void adjustNotApplicableCountsByRecalculatingW_NA(trainingPair * NotApplicableWrong,int total);

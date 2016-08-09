@@ -246,9 +246,11 @@ void shortRulePair::trim()
 bool shortRulePair::checkRule(trainingPair * trainingpair, vertex * parentPat)
     {
     vertex FullRule(this);
-    if ((!parentPat || FullRule.dif(parentPat) == dif_bigger)
-        && FullRule.apply(trainingpair) == right
-        )
+    if (  (  !parentPat
+          || FullRule.Pattern.dif(&parentPat->Pattern) == dif_bigger
+          )
+       && FullRule.apply(trainingpair) == right
+       )
         {
         return true;
         }

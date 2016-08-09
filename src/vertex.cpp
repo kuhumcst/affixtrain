@@ -30,10 +30,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 int VertexPointerCount = 0;
 int VertexCount = 0;
 
-edif vertex::dif(vertex * other)
-    {
-    return ::dif(Pattern.itsTxt(),other->Pattern.itsTxt());
-    }
 
 #if DOIMPEDANCE
 void vertex::computeImpedance()

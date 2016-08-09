@@ -372,12 +372,52 @@ void trainingPair::fprintAll(FILE * famb)
     fprintf(famb,"\n");
     }
 
-void trainingPair::makeCandidateRules(hashTable * Hash,vertex * parent,bool alreadyRight /*20101206 used to calm makeRuleEx*/,optionStruct * options)
+static int storeRule(hashTable * Hash, shortRulePair * Rule, vertex *& V)
+    {
+    vertex FullRule(Rule);
+    bool New;
+    V = Hash->getVertex(&FullRule, New);
+    if (New)
+        {
+        return 1;
+        }
+    else
+        {
+        return 0;
+        }
+    }
+
+void trainingPair::makeCandidateRules(hashTable * Hash,vertex * parent,bool alreadyRight,optionStruct * options)
     {
     trainingPair * tp = this;
     while(tp)
         {
-        tp->makeRuleEx(Hash,parent,alreadyRight,options);
+        char similarArray[1000];
+        similData SimilData(similarArray);
+        SimilData.match(tp);
+        const char * predef = tp->getMask();
+        SimilData.mergeTemplates(predef, options);
+        shortRulePair Rule(tp, &SimilData);
+        if (Rule.checkRule(tp, parent))
+            {
+            vertex * e;
+            int ret = storeRule(Hash, &Rule, e);
+            }
+        else
+            {
+            int nr = tp->makeCorrectRules(Hash, &SimilData, similarArray, parent, 1, options->maxRecursionDepthRuleCreation(), options);
+            if (nr == 0 && !alreadyRight)
+                {
+                if (options->verbose())
+                    { // This is by design. Increasing RECURSE will eventually help.
+                    fprintf(stderr, "Error (makeCandidateRules): Cannot construct rule for training pair ");
+                    tp->print(stderr);
+                    fprintf(stderr, " Based on parent ");
+                    parent->print1(stderr);
+                    fprintf(stderr, "\n");
+                    }
+                }
+            }
         tp = tp->next();
         }
     }
@@ -522,21 +562,6 @@ int printRules(node * nd
     return n;
     }
 
-static int storeRule(hashTable * Hash, shortRulePair * Rule, vertex *& V)
-    {
-    vertex FullRule(Rule);
-    bool New;
-    V = Hash->getVertex(&FullRule, New);
-    if (New)
-        {
-        return 1;
-        }
-    else
-        {
-        return 0;
-        }
-    }
-
 int trainingPair::makeCorrectRules(hashTable * Hash, ruleTemplate * Template, const char * similar, vertex * parent, int mlow, int recurse, optionStruct * options)
     {
     /*In the template, replace one = with a # and construct a rule based on
@@ -583,35 +608,6 @@ int trainingPair::makeCorrectRules(hashTable * Hash, ruleTemplate * Template, co
             }
         }
     return ret;
-    }
-
-int trainingPair::makeRuleEx(hashTable * Hash, vertex * parent, bool alreadyRight, optionStruct * options)
-    {
-    char similarArray[1000];
-    similData SimilData(similarArray);
-    SimilData.match(this);
-    const char * predef = getMask();
-    SimilData.mergeTemplates(predef, options);
-    shortRulePair Rule(this, &SimilData);
-    if (Rule.checkRule(this, parent))
-        {
-        vertex * e;
-        int ret = storeRule(Hash, &Rule, e);
-        return ret;
-        }
-    int nr = makeCorrectRules(Hash, &SimilData, similarArray, parent, 1, options->maxRecursionDepthRuleCreation(), options);
-    if (nr == 0 && !alreadyRight)
-        {
-        if (options->verbose())
-            { // This is by design. Increasing RECURSE will eventually help.
-            fprintf(stderr, "Error (makeRuleEx): Cannot construct rule for trainingpair ");
-            this->print(stderr);
-            fprintf(stderr, " Based on parent ");
-            parent->print1(stderr);
-            fprintf(stderr, "\n");
-            }
-        }
-    return nr;
     }
 
 #if AMBIGUOUS

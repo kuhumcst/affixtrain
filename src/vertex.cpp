@@ -450,8 +450,6 @@ void vertex::construct(const char * pat, const char * rep)
         if (*prep != END)
             strcpy(++prep, AnyEnd);
         }
-//    Pattern = new strng(lpattern);
-//    Replacement = new strng(lreplacement);
     Pattern.dup(lpattern);
     Replacement.dup(lreplacement);
     ++VertexCount;
@@ -642,7 +640,7 @@ matchResult vertex::apply(trainingPair * trainingpair)
     return right;
     }
 
-int utfchar(char * p, int & U) /* int is big enough for all UTF-8 bytes */
+static int utfchar(char * p, int & U) /* int is big enough for all UTF-8 bytes */
     {
     if (!*p)
         {
@@ -808,8 +806,6 @@ bool vertex::applym(trainingPair * trainingpair, size_t lemmalength, char * lemm
         }
     return true;
     }
-
-
 
 vertexPointer::vertexPointer(vertex * V,vertexPointer * Next,bool InputRight,bool Right)
     : V(V),Next(Next),InputRight(InputRight),Right(Right)

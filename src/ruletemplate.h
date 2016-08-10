@@ -25,8 +25,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <stddef.h>
 #include <stdio.h>
 
-extern const int unequal;
-extern const int equal;
+extern const char unequal;
+extern const char equal;
 extern const char Start[2];
 extern const char End[2];
 extern const char AnyEnd[3];

@@ -372,11 +372,12 @@ void trainingPair::fprintAll(FILE * famb)
     fprintf(famb,"\n");
     }
 
-static int storeRule(hashTable * Hash, shortRulePair * Rule, vertex *& V)
+static int storeRule(hashTable * Hash, shortRulePair * Rule/*, vertex *& V*/)
     {
     vertex FullRule(Rule);
+    //vertex * V;
     bool New;
-    V = Hash->getVertex(&FullRule, New);
+    /*V =*/ Hash->getVertex(&FullRule, New);
     if (New)
         {
         return 1;
@@ -400,8 +401,8 @@ void trainingPair::makeCandidateRules(hashTable * Hash,vertex * parent,bool alre
         shortRulePair Rule(tp, &SimilData);
         if (Rule.checkRule(tp, parent))
             {
-            vertex * e;
-            int ret = storeRule(Hash, &Rule, e);
+            //vertex * e;
+            storeRule(Hash, &Rule/*, e*/);
             }
         else
             {
@@ -586,8 +587,8 @@ int trainingPair::makeCorrectRules(hashTable * Hash, ruleTemplate * Template, co
         if (Rule.checkRule(this, parent))
             {
             different = false;
-            vertex * e;
-            storeRule(Hash, &Rule, e);
+            //vertex * e;
+            storeRule(Hash, &Rule/*, e*/);
             ++ret; // Increment for each new or already existing rule that fits
             }
         }

@@ -29,8 +29,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <assert.h>
 
 int RuleTemplateCount;
-const int unequal = '#';
-const int equal = '=';
+const char unequal = '#';
+const char equal = '=';
 static const char * nil = "";
 const char Start[2] = { START, 0 };
 const char End[2] = { END, 0 };

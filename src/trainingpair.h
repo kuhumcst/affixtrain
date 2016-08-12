@@ -72,6 +72,14 @@ class trainingPair
         unsigned int bits:8;
         unsigned int ambs:3;
         unsigned int tentativeAmbs:3;
+        // For prepruning, pairs with fewer than 3 or 2 likes can removed from
+        // training.
+#if PRUNETRAININGPAIRS
+        unsigned int likes:2; // 0:do not train with this pair
+                              // 1:this pair has a unique inflection (initial, pessimistic value)
+                              // 2:this pair has an almost unique inflection
+                              // 3:this pair has not an almost unique inflection
+#endif
         void deleteRules();
     public:
 #if AMBIGUOUS
@@ -91,6 +99,14 @@ class trainingPair
         // if recurse = 0, don't recurse. Else recurse. If a succeeding rule
         // already has been found, decrement recurse and then test whether a
         // recursive call must be made.
+#if PRUNETRAININGPAIRS
+        void like(unsigned int L)
+            {
+            if(0 < likes && likes < L)
+                likes = L > 3 ? 3 : L;
+            }
+        bool fewerLikesThan(int thresh) const;
+#endif
         trainingPair ** pNext()
             {
             return &Next;
@@ -233,10 +249,11 @@ class trainingPair
         bool isCorrect(const char * lemma) const;
         int printAll(FILE * f,const char * h,int s);
         void print(FILE * f);
-        void printMore(FILE * f);
+        void printMore(FILE * f)const;
         void printSep(FILE * f);
         trainingPair();
         ~trainingPair();
+        void deepDelete();
         int cmpWord(const trainingPair * B) const;
         int cmpLemma(const trainingPair * B) const;
 #if WORDCLASS

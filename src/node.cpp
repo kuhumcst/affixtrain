@@ -35,11 +35,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "trainingpair.h"
 #include "vertex.h"
 #include "hashtable.h"
+#include "ruletemplate.h"
 
 //int (*comp)(const vertex * a,const vertex * b) = 0; 
 // returns b > a ? 1 : b < a ? -1 : 0
 // (Chosen like this to let qsort sort in descending order.)
 int visitno;
+
+//FILE * fprune = stdout;
 
 #if AMBIGUOUS
 int ambivalentWords;
@@ -661,38 +664,36 @@ LONG node::countBySize()
     return ret;
     }
 
-void node::splitTrainingPairList(trainingPair * all,trainingPair **& pNotApplicable,trainingPair **& pWrong,trainingPair **& pRight,optionStruct * options)
+void node::splitTrainingPairList(trainingPair * pair,trainingPair **& pNotApplicable,trainingPair **& pWrong,trainingPair **& pRight,bool SuffixOnly)
     {
-    while(all)
+    while(pair)
         {
-        trainingPair * nxt = all->next();
-        all->setNext(0);
-        char * mask = 0;
-        matchResult res = V->lemmatisem(all,&mask,0,options);
-        if(mask)
+        trainingPair * nxt = pair->next();
+        pair->setNext(0);
+        static char mask[100];
+        matchResult res = V->applym(pair,mask);
+        if(res == failure)
             {
-            all->takeMask(mask);
-            assert(res != failure);
+            *pNotApplicable = pair;
+            pNotApplicable = pair->pNext();
             }
         else
             {
-            assert(res == failure);
+            if(SuffixOnly)
+                suffix(mask);
+            pair->takeMask(mask);
+            if(res == wrong)
+                {
+                *pWrong = pair;
+                pWrong = pair->pNext();
+                }
+            else
+                {
+                *pRight = pair;
+                pRight = pair->pNext();
+                }
             }
-        switch(res)
-            {
-            case failure:
-                *pNotApplicable = all;
-                pNotApplicable = all->pNext();
-                break;
-            case wrong:
-                *pWrong = all;
-                pWrong = all->pNext();
-                break;
-            default:
-                *pRight = all;
-                pRight = all->pNext();
-            }
-        all = nxt;
+        pair = nxt;
         }
     }
 
@@ -770,6 +771,106 @@ node * node::cleanup(node * parent)
         }
     }
 
+#if PRUNETRAININGPAIRS
+static int deletedRules = 0;
+static trainingPair * pruneTrainingPairs(trainingPair * pairs)
+    {            
+    trainingPair * tp = pairs;
+//    pairs->printAll(fprune,"Initial\n",'\n');
+//    int initial = tp->count();
+//    int final;
+//    int deleted = 0;
+    while(tp && tp->fewerLikesThan(2))
+        {
+//        ++deleted;
+        ++deletedRules;
+        trainingPair * nxt = tp->next();
+        //delete tp; Impossible. Training pairs are allocated as an array.
+        tp->deepDelete();
+        tp = nxt;
+        }
+    trainingPair * ret = tp;
+    if(tp)
+        {
+        trainingPair * lastGood = tp;
+        tp = tp->next();
+        lastGood->setNext(0);
+        while(tp)
+            {
+            if(tp->fewerLikesThan(2))
+                {
+//                ++deleted;
+                ++deletedRules;
+                trainingPair * nxt = tp->next();
+                //delete tp; Impossible. Training pairs are allocated as an array.
+                tp->deepDelete();
+                tp = nxt;
+                }
+            else
+                {
+                lastGood->setNext(tp);
+                lastGood = tp;
+                tp = tp->next();
+                lastGood->setNext(0);
+                }
+            }
+        }
+//    final = ret->count();
+//    assert(final + deleted == initial);
+//    if(deleted != 0)
+//        {
+//        fprintf(fprune,"Initial %d Deleted %d Final %d\n",initial,deleted,final);
+//        ret->printAll(fprune,"Deleted\n",'\n');
+//        }
+//    else
+//        ret->printAll(fprune,"No deletions\n",'\n');
+//    fprintf(fprune,"---\n");
+    return ret;
+    }
+
+vertex ** node::cleanUpUnusedVertices(vertex ** pvf, vertex ** pvN, trainingPair * Wrong)
+    {
+#if _NA
+    // To correct _NA, re-lemmatise all pairs that are in the shortest list (Right or Wrong).
+    int outputR = (this->Right ? this->Right->count() : 0); 
+    int outputW = (Wrong ? Wrong->count() : 0);
+    int outputRW = outputR + outputW;
+    void (vertex::*ptr)(trainingPair * tp,int outputRW);
+    trainingPair * tp;
+    if(outputR < outputW)
+        {
+        ptr = &(vertex::adjustNotApplicableCountsByRecalculatingR_NA);
+        tp = Right;
+        }
+    else
+        {
+        ptr = &(vertex::adjustNotApplicableCountsByRecalculatingW_NA);
+        tp = Wrong;
+        }
+#endif
+    for(vertex ** pvi = pvf;pvi < pvN;)
+        {
+        if(  (*pvi)->R__R == 0 
+          && (*pvi)->W__R == 0 
+          && (*pvi)->R__W == 0
+          && (*pvi)->W__W == 0
+          )
+            { // rule has become irrelevant
+            (*pvi)->destroy();
+            --pvN;
+            *pvi = *pvN;
+            }
+        else
+            {
+#if _NA
+            ((*pvi)->*ptr)(tp,outputRW);
+#endif
+            ++pvi;
+            }
+        }
+    return pvN;
+    }
+#endif
 
 void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,optionStruct * options)
     {
@@ -802,9 +903,13 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
         tp->unset(b_solved);
         }
 
-    this->splitTrainingPairList(*allRight,pNotApplicableRight,pWrong,pRight,options);
-    this->splitTrainingPairList(*allWrong,pNotApplicableWrong,pWrong,pRight,options);
+//    fprintf(fprune,"this is node "); this->V->print1(fprune); fprintf(fprune,"\n...........\n");
+//    (*allRight)->printAll(fprune,"allRight\n",'\n');
+//    (*allWrong)->printAll(fprune,"allWrong\n",'\n');
+//    fprintf(fprune,"DETAILS\n");
 
+    this->splitTrainingPairList(*allRight,pNotApplicableRight,pWrong,pRight,options->suffixOnly());
+    this->splitTrainingPairList(*allWrong,pNotApplicableWrong,pWrong,pRight,options->suffixOnly());
     *pNotApplicableRight = 0;
     *pNotApplicableWrong = 0;
     *pWrong = 0;
@@ -825,24 +930,25 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
 #endif
         }
 
+//    if(!Wrong)
+//        fprintf(fprune,"NO WRONGS, GOING BACK TO PARENT\n");
+
     if(Wrong)
         {
         int N;
-        hashTable Hash(1000);
-        Wrong->makeCandidateRules(&Hash,this->V,false,options);
+        hashTable VertexHash(1000);
+        Wrong->makeCandidateRules(&VertexHash,this->V,false,options);
         if(this->Right)
-            this->Right->makeCandidateRules(&Hash,this->V,true,options);
-
-        vertex ** pv = Hash.convertToList(N);
+            this->Right->makeCandidateRules(&VertexHash,this->V,true,options);
+        N = VertexHash.recordCount();
+        vertex ** pv = VertexHash.convertToList();
         if(N == 0)
             {
             delete [] pv;
             return;
             }
         assert(N > 0);
-        int maxN = N;
-        if(maxN < 16)
-            maxN = 16;
+#if SMALLMEMORY
         int wpart = -1; // -1 indicating: no upper bound
         int rpart = -1;
         /* If wpart and rpart are positive, the rules are applied to just a 
@@ -864,13 +970,14 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
             rpart = MAXPAIRS - wpart;
             }
         //:hack
-
+#endif
         // Test all pairs (up to upper bound) on all candidate rules.
         //printf("Test all pairs (up to upper bound) on all candidate rules. %d\n",N);
         if(options->verbose())
             {
             printf("             %d  \r",N);
             }
+//        fprintf(fprune,"BEFORE PRUNING\n");
         for(int i = 0;i < N;++i)
             {
             if(options->verbose())
@@ -879,21 +986,41 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
                 }
             // Reset all counters in all candidate rules.
             pv[i]->nlemmatiseStart();
+#if SMALLMEMORY
             pv[i]->nlemmatise(Wrong,wpart,false);
             pv[i]->nlemmatise(this->Right,rpart,true);
+#else
+            pv[i]->nlemmatise(Wrong,false);
+            pv[i]->nlemmatise(this->Right,true);
+#endif
+//            fprintf(fprune,"i:%d ::",i);
+//            pv[i]->print1(fprune);
+//            fprintf(fprune,"\n");
             }
+#if PRUNETRAININGPAIRS
+        this->Right = pruneTrainingPairs(this->Right);
+        Wrong = pruneTrainingPairs(Wrong);
+        N = cleanUpUnusedVertices(pv, pv+N, Wrong) - pv;
+#endif
         node ** pnode = &this->IfPatternSucceeds;
         ptrdiff_t first = 0;
         ptrdiff_t lastN = N; // Rules having position on list beyond lastN do not
                        // apply to any of the remaining pairs.
-        do
+//        fprintf(fprune,"AFTER PRUNING\n");
+//        for(int i = 0;i < N;++i)
+//            {
+//            fprintf(fprune,"i:%d ::",i);
+//            pv[i]->print1(fprune);
+//            fprintf(fprune,"\n");
+//            }
+        while(Wrong)
             {
             if(first >= lastN)
                 {
                 fprintf(stderr,"***** first:%ld >= lastN:%ld\n",(long)first,(long)lastN);
                 fprintf(stderr,"***** (This happens if one or more wrongly lemmatised words aren't handled by any candidate rules.)\n");
                 fprintf(stderr,"***** (List of candidate rules:)\n");
-                fprintf(stderr,"***** pv:");
+                fprintf(stderr,"***** pv:\n");
                 for(int i = 0;i < lastN;++i)
                     {
                     fprintf(stderr,"i=%d:",i);
@@ -902,7 +1029,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
                     }
                 fprintf(stderr,"***** (List of unmatched words that need better lemmatisation rule(s):)\n");
                 fprintf(stderr,"\n***** Wrong:\n");
-                Wrong->printAll(stderr,"unmatched words that need better lemmatisation rule(s)",'\n');
+                Wrong->printAll(stderr,"unmatched words that need better lemmatisation rule(s)\n",'\n');
                 if(options->verbose())
                     {
                     printf("\nAFFIXTRAIN failed\n");
@@ -954,44 +1081,21 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
 #else
             (*pnode)->init(&this->Right,&Wrong,level+1/*,pv+first,lastN-first*/,options);
 #endif
-#if _NA
-            int outputR = (this->Right ? this->Right->count() : 0); 
-            int outputW = (Wrong ? Wrong->count() : 0);
-#endif
+#if SMALLMEMORY
             if(wpart < 0)
-                {
-                for(vertex ** pvi = pvf;pvi < pvN;++pvi)
-                    {
-                    if(  (*pvi)->R__R == 0 
-                      && (*pvi)->W__R == 0 
-                      && (*pvi)->R__W == 0
-                      && (*pvi)->W__W == 0
-                      )
-                        { // rule has become irrelevant
-                        (*pvi)->destroy();
-                        --pvN;
-                        *pvi = *pvN;
-                        }
-#if _NA
-                    else
-                        {
-                        if(outputR < outputW)
-                            {
-                            (*pvi)->adjustNotApplicableCountsByRecalculatingR_NA(this->Right,outputR+outputW);
-                            }
-                        else
-                            {
-                            (*pvi)->adjustNotApplicableCountsByRecalculatingW_NA(Wrong,outputR+outputW);
-                            }
-                        }
 #endif
-                    }
+                {
+#if PRUNETRAININGPAIRS
+                pvN = cleanUpUnusedVertices(pvf, pvN, Wrong);
+#endif
                 if(pvf == pvN)
                     {
                     if(options->verbose()) /* This is not really an error. */
                         fprintf(stderr,"\n***** destroyed all remaining untested rule candidates because they have become inapplicable\n");
                     }
                 }
+
+#if SMALLMEMORY
             if(options->verbose() && wpart >= 0)
                 {
                 if(lastN > pvN - pv)
@@ -1001,6 +1105,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
                     }
                 }
             else
+#endif
                 lastN = pvN - pv;
 
             ++first;
@@ -1009,6 +1114,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
                 if(options->verbose()) /* This is not really an error. */
                     fprintf(stderr,"\n***** DANGER first %ld >= lastN %ld\n",(long)first,(long)lastN);
                 }
+#if SMALLMEMORY
             // hack:
 
             int CnT;
@@ -1041,9 +1147,9 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
                 wpart = -1;
                 }
             // :hack
+#endif
             pnode = &(*pnode)->IfPatternFails;
             }
-        while(Wrong);
 
         *pnode = 0;
         for(int i = 0;i < lastN;++i)

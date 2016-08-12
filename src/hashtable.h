@@ -12,7 +12,11 @@ class hashTable
         vertex ** hash_table;
         hashTable * next;
     public:
-        vertex ** convertToList(int & N);
+        long recordCount()const
+            {
+            return record_count;
+            }
+        vertex ** convertToList();
         hashTable * getNext()
             {
             return next;

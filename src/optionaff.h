@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 typedef enum {GoOn = 0,Leave = 1,Error = 2} OptReturnTp;
 typedef enum {econstant = 0, edepth = 1, esupport = 2, eentropy = 3, esize = 4} OptWeightFunction;
 
+
 void cleanUpOptions();
 
 class optionStruct

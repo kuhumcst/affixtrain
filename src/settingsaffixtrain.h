@@ -39,7 +39,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define DOIMPEDANCE 0
 
+#define SMALLMEMORY 0
+
+// Full form - lemma pairs that require unique rules are discarded if
+// PRUNETRAININGPAIRS 1
+#define PRUNETRAININGPAIRS 0
+
+#if SMALLMEMORY
 #define MAXPAIRS 8000000 //1000000 //500000 //100000 //500000 
+#endif
 // Set this number as high as possible. A high value entails very heavy use 
 // of memory!
 

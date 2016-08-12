@@ -1,3 +1,17 @@
+Version 3.50 - 2016.08.12
+-------------------------
+New functionality (if #define PRUNETRAININGPAIRS 1 in settingsaffixtrain.h):
+While building the decision tree, discard the training pairs that require
+rules that are not shared/supported by any other training pairs.
+
+Version 3.41
+-------------------------
+More cosmetic changes, eliminiation of a few function calls.
+
+Version 3.4  - 2016.08.09
+-------------------------
+Reorganization of source code - most classes in separate files.
+
 Version 3.37 - 2016.05.03
 -------------------------
 Typecast char to unsigned char when calling isspace and isUpper.

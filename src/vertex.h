@@ -30,7 +30,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 typedef enum {failure,wrong,right} matchResult;
 
 class trainingPair;
-class optionStruct;
 class shortRulePair;
 class hashTable;
 
@@ -54,6 +53,9 @@ class vertex
         vertex ** Head;
         int RefCount;
         int Relations;
+#if PRUNETRAININGPAIRS
+        int RuleLikes;
+#endif
         hashTable * Hash;
     public:
         strng Pattern;
@@ -69,7 +71,7 @@ class vertex
         double wght;
     public:
         matchResult apply(trainingPair * trainingpair);
-        bool applym(trainingPair * trainingpair, size_t lemmalength, char * lemma, char * mask, optionStruct * options);
+        matchResult applym(trainingPair * pair, char * mask);
 #if _NA
         void adjustNotApplicableCountsByRecalculatingR_NA(trainingPair * NotApplicableRight,int total);
         void adjustNotApplicableCountsByRecalculatingW_NA(trainingPair * NotApplicableWrong,int total);
@@ -93,7 +95,7 @@ class vertex
         int relations(){return Relations;}
         void print(FILE * f,int level);
         void printRule(FILE * f,int level,int nr);
-        void print1(FILE * f);
+        void print1(FILE * f)const;
         vertex * getNext(){return Next;}
         void setNext(vertex * next){Next = next;}
         void setHead(vertex ** head){Head = head;}
@@ -116,10 +118,16 @@ class vertex
         vertex(shortRulePair * Rule);
         vertex(const char * pat, const char * rep);
         matchResult lemmatise(trainingPair * pair);
-        matchResult lemmatisem(trainingPair * pair, char ** mask, char ** plemma, optionStruct * options);
         int goodness(trainingPair * pairs, topScore * Top);
         void nlemmatiseStart();
+#if PRUNETRAININGPAIRS
+        int ruleLikes()const{return RuleLikes;}
+#endif
+#if SMALLMEMORY
         int nlemmatise(trainingPair * pairs,int n,bool InputRight);
+#else
+        int nlemmatise(trainingPair * pairs,bool InputRight);
+#endif
 #if AMBIGUOUS
         void markAmbiguousForNextRound(trainingPair * pair);
 #endif
@@ -136,6 +144,9 @@ class vertexPointer
     public:
         vertexPointer(vertex * V,vertexPointer * Next,bool InputRight,bool Right);
         ~vertexPointer();
+#if PRUNETRAININGPAIRS
+        bool fewerLikesThan(int thresh) const;
+#endif
         void deleteAll()
             {
             vertexPointer * p = this;

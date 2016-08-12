@@ -33,8 +33,21 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 int TrainingPairCount = 0;
 trainingPair::trainingPair():Next(0),Mask(0),Lemma(0),V(0),applicableRules(0),ambs(undecided),tentativeAmbs(undecided)
+#if PRUNETRAININGPAIRS
+    ,likes(1)
+#endif
     {
     ++TrainingPairCount;
+    }
+
+void trainingPair::deepDelete()
+    {
+    deleteRules();
+    delete [] Lemma;
+    Lemma = NULL;
+    delete [] Mask;
+    Mask = NULL;
+    Next = 0;
     }
 
 trainingPair::~trainingPair()
@@ -128,7 +141,7 @@ void trainingPair::print(FILE * f)
 #endif
     }
 
-void trainingPair::printMore(FILE * f)
+void trainingPair::printMore(FILE * f)const
     {
     if(!f)
         return;
@@ -611,6 +624,13 @@ int trainingPair::makeCorrectRules(hashTable * Hash, ruleTemplate * Template, co
     return ret;
     }
 
+#if PRUNETRAININGPAIRS
+bool trainingPair::fewerLikesThan(int thresh) const
+    {
+    bool ret = !applicableRules || applicableRules->fewerLikesThan(thresh);
+    return ret;
+    }
+#endif
 #if AMBIGUOUS
 trainingPair * trainingPair::makeWrongAmbiguousIfRightPresent(trainingPair *& Ambiguous)
     {

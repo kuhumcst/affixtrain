@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "trainingpair.h"
 #include "shortrulepair.h"
 #include "ruletemplate.h"
-#include "optionaff.h"
+
 
 int VertexPointerCount = 0;
 int VertexCount = 0;
@@ -73,7 +73,7 @@ void vertex::computeImpedance()
     }
 #endif
 
-void vertex::print1(FILE * f)
+void vertex::print1(FILE * f)const
     {
     fprintf(f,"{%s\t%s}",Pattern.itsTxt(),Replacement.itsTxt());
     }
@@ -109,7 +109,14 @@ vertex::~vertex()
     }
 
 vertex::vertex(vertex * Rule,hashTable * Hash):
-        Head(0),RefCount(0),Relations(0),Hash(Hash)
+             Head(0)
+            ,RefCount(0)
+            ,Relations(0)
+#if PRUNETRAININGPAIRS
+            ,RuleLikes(0)
+#endif
+            ,Hash(Hash
+            )
         ,R__R(0)
         ,R__W(0)
         ,W__R(0)
@@ -125,62 +132,6 @@ vertex::vertex(vertex * Rule,hashTable * Hash):
         Replacement.dup(Rule->Replacement.itsTxt());
         ++VertexCount;
         }
-
-matchResult vertex::lemmatisem(trainingPair * pair, char ** pmask, char ** plemma, optionStruct * options)
-    {
-    static char lemma[100];
-    static char mask[100];
-    if (applym(pair, sizeof(lemma), lemma, mask, options))
-        {
-        if (plemma)
-            *plemma = lemma;
-        if (pmask)
-            *pmask = mask;
-        if (pair->isCorrect(lemma))
-            {
-#if AMBIGUOUS
-            for(trainingPair * q = pair->Alt;q != pair;q = q->Alt)
-                {
-                q->set(b_solved);
-                q->setRes(notme);                
-                }
-            pair->set(b_solved);
-            pair->setRes(yes);
-#endif
-            return right;
-            }
-        else
-            {
-#if AMBIGUOUS
-            switch(pair->getRes())
-                {
-                case yes:
-                case undecided:
-                case no:
-                    {
-                    for(trainingPair * q = pair->Alt;q != pair;q = q->Alt)
-                        {
-                        q->setRes(undecided);
-                        }
-                    }
-                    pair->setRes(no);
-                    break;
-                case notme:
-                    if(!pair->isset(b_solved))
-                        {
-                        pair->setRes(no);
-                        }
-                    break;
-                }
-#endif
-            return wrong;
-            }
-        }
-    else
-        {
-        return failure;
-        }
-    }
 
 matchResult vertex::lemmatise(trainingPair * pair)
     {
@@ -258,41 +209,52 @@ void vertex::markAmbiguousForNextRound(trainingPair * pair)
     }
 #endif
 
-int vertex::nlemmatise(trainingPair * pair,int n,bool InputRight)
+int vertex::nlemmatise ( trainingPair * pair
+#if SMALLMEMORY
+                       , int n
+#endif
+                       , bool InputRight
+                       )
     {
     int ret = 0;
-    trainingPair * p = pair;
-    int m = n;
-    while(p && m != 0)
+    trainingPair * p;
+#if SMALLMEMORY
+    int m;
+    for(p = pair, m = n; p && (m != 0);p = p->next(), --m)
+#else
+    for(p = pair; p; p = p->next())
+#endif
         {
         p->setTentativeRes(undecided);
         p->unset(b_tentativelysolved);
-        p = p->next();
-        --m;
         }
-    while(pair && n != 0)
+#if SMALLMEMORY
+    for(p = pair, m = n; p && (m != 0);p = p->next(), --m)
+#else
+    for(p = pair; p; p = p->next())
+#endif
         {
         ++ret;
-        switch(lemmatise(pair))
+        switch(lemmatise(p))
             {
             case wrong:
 #if AMBIGUOUS
-                assert(pair->getTentativeRes() == no || pair->getTentativeRes() == notme);
-                if(pair->getTentativeRes() != notme)
+                assert(p->getTentativeRes() == no || p->getTentativeRes() == notme);
+                if(p->getTentativeRes() != notme)
                     { // don't count homographs that have an ok sibling
-                    pair->addRule(this,InputRight,false);
-                    }
-                else
-                    {
+                    p->addRule(this,InputRight,false);
                     }
 #else
-                pair->addRule(this,InputRight,false);
+                p->addRule(this,InputRight,false);
 #endif
                 break;
             case right:
-                assert(pair->getTentativeRes() == yes);
+                assert(p->getTentativeRes() == yes);
                 // do opportunistically count homographs that are ok
-                pair->addRule(this,InputRight,true);
+                p->addRule(this,InputRight,true);
+#if PRUNETRAININGPAIRS
+                ++RuleLikes;
+#endif
                 break;
 #if _NA
             default:
@@ -305,11 +267,9 @@ int vertex::nlemmatise(trainingPair * pair,int n,bool InputRight)
                 ;
 #endif
             }
-        pair = pair->next();
-        --n;
         }
-    assert(!pair);
-    return ret;;
+    assert(!p);
+    return ret;
     }
 
 void vertex::deleteThis()
@@ -660,17 +620,18 @@ static int utfchar(char * p, int & U) /* int is big enough for all UTF-8 bytes *
     return q - p;
     }
 
-bool vertex::applym(trainingPair * trainingpair, size_t lemmalength, char * lemma, char * mask, optionStruct * options)
+matchResult vertex::applym(trainingPair * pair, char * mask)
     {
     char wrd[100];
-    size_t L1 = trainingpair->itsWordlength();
+    char lemma[100];
+    size_t L1 = pair->itsWordlength();
     if (L1 + 3 > sizeof(wrd))
         {
         printf("vertex::apply too small buffer");
         exit(1);
         }
     wrd[0] = START;
-    strncpy(wrd + 1, trainingpair->itsWord(), L1);
+    strncpy(wrd + 1, pair->itsWord(), L1);
     wrd[L1 + 1] = END;
     wrd[L1 + 2] = 0;
     char * p = Pattern.itsTxt();
@@ -683,7 +644,7 @@ bool vertex::applym(trainingPair * trainingpair, size_t lemmalength, char * lemm
         }
     char * w = wrd;
     char * d = lemma;
-    char * last = lemma + lemmalength - 7;
+    char * last = lemma + sizeof(lemma) - 7;
     char * m = mask;
     int P,W,R;
     int pinc = utfchar(p, P);
@@ -713,11 +674,7 @@ bool vertex::applym(trainingPair * trainingpair, size_t lemmalength, char * lemm
 
             if (P != R)
                 {
-                if (options->suffixOnly())
-                    {
-                    suffix(mask);
-                    }
-                return false;
+                return failure;
                 }
             }
         else if (R == ANY)
@@ -779,11 +736,7 @@ bool vertex::applym(trainingPair * trainingpair, size_t lemmalength, char * lemm
         }
     if (P || R)
         {
-        if (options->suffixOnly())
-            {
-            suffix(mask);
-            }
-        return false;
+        return failure;
         }
     *--m = '\0';
     for (m = mask; *m; ++m)
@@ -800,11 +753,46 @@ bool vertex::applym(trainingPair * trainingpair, size_t lemmalength, char * lemm
     *oldd = '\0';
     if (oldd > lemma + 1)
         oldd[-1] = '\0';
-    if (options->suffixOnly())
+
+    if (pair->isCorrect(lemma))
         {
-        suffix(mask);
+#if AMBIGUOUS
+        for(trainingPair * q = pair->Alt;q != pair;q = q->Alt)
+            {
+            q->set(b_solved);
+            q->setRes(notme);                
+            }
+        pair->set(b_solved);
+        pair->setRes(yes);
+#endif
+        return right;
         }
-    return true;
+    else
+        {
+#if AMBIGUOUS
+        switch(pair->getRes())
+            {
+            case yes:
+            case undecided:
+            case no:
+                {
+                for(trainingPair * q = pair->Alt;q != pair;q = q->Alt)
+                    {
+                    q->setRes(undecided);
+                    }
+                }
+                pair->setRes(no);
+                break;
+            case notme:
+                if(!pair->isset(b_solved))
+                    {
+                    pair->setRes(no);
+                    }
+                break;
+            }
+#endif
+        return wrong;
+        }
     }
 
 vertexPointer::vertexPointer(vertex * V,vertexPointer * Next,bool InputRight,bool Right)
@@ -848,3 +836,20 @@ vertexPointer::~vertexPointer()
         }
     --VertexPointerCount;
     }
+
+#if PRUNETRAININGPAIRS
+bool vertexPointer::fewerLikesThan(int thresh) const
+    {
+    const vertexPointer * a;
+    for(a = this;a;a = a->Next)
+        {
+        if(a->Right)
+            {
+            if(a->V->ruleLikes() >= thresh)
+                return false;
+            }
+        }
+        
+    return true;
+    }
+#endif

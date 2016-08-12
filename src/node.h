@@ -33,6 +33,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <stddef.h> // gcc ptrdiff_t
 #include "settingsaffixtrain.h"
 
+#if PRUNETRAININGPAIRS
+extern FILE * fprune;
+#endif
+
 extern FILE * flog;
 extern int parmsoff;
 /*
@@ -160,7 +164,10 @@ class node // node in decision tree
         int print(FILE * fo,int ind,int & Nnodes,int &NnodesR);
 
         void init(trainingPair ** allRight,trainingPair ** allWrong,int level,optionStruct * options);
-        void splitTrainingPairList(trainingPair * all,trainingPair **& pNotApplicable,trainingPair **& pWrong,trainingPair **& pRight,optionStruct * options);
+        void splitTrainingPairList(trainingPair * all,trainingPair **& pNotApplicable,trainingPair **& pWrong,trainingPair **& pRight,bool SuffixOnly);
+#if PRUNETRAININGPAIRS
+        vertex ** cleanUpUnusedVertices(vertex ** pvf, vertex ** pvN, trainingPair * Wrong);
+#endif
         node(vertex * V);
         ~node();
     };

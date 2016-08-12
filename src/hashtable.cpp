@@ -122,9 +122,8 @@ vertex * hashTable::find(const char * ckey,vertex **& head)
     return p;
     }
 
-vertex ** hashTable::convertToList(int & N)
+vertex ** hashTable::convertToList()
     {
-    N = record_count;
     vertex ** ret = new vertex * [record_count];
     int i;
     int n = 0;

@@ -20,7 +20,7 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "3.41"
+#define VERSION "3.50"
 
 #include "affixtrain.h"
 #include "testrules.h"
@@ -266,9 +266,6 @@ struct aFile
         if (options->verbose())
             {
             printf("line %d read\n", line);
-            }
-        if (options->verbose())
-            {
             printf("%s:", fname);
             }
         }
@@ -736,9 +733,8 @@ static trainingPair * readTrainingPairs(aFile & afile, int & pairs, const char *
             printf("%ld characters and %d lines, %d selected with tag %s       \n", afile.size, afile.lines, pairs, tag);
         else
             printf("%ld characters and %d lines\r", afile.size, afile.lines);
-        }
-    if (options->verbose())
         printf("readTrainingPairs DONE\n");
+        }
     return TrainingPair;
     }
 
@@ -795,7 +791,6 @@ static void rearrange   ( const char * filename
         {
         if (buf[i] == '\n')
             {
-            //printf("\n");
             size[n] += sizeof(int) + sizeof(int); // room for index and '\0' byte
             size[n] >>= 2;
             size[n] <<= 2; // rounded to nearest word boundary
@@ -816,7 +811,6 @@ static void rearrange   ( const char * filename
         else if (doind)
             {// read nesting level
             ind[n] *= 10;
-            //printf("%c",buf[i]);
             ind[n] += buf[i] - '0';
             }
         else
@@ -1023,7 +1017,7 @@ static bool writeRules(node * tree, const char * ext, int threshold, const char 
                 {
                 if (options->verbose())
                     {
-                    printf("cannot remove %s\n", filename);
+                    printf("cannot remove %s (Press <Enter> to continue...)\n", filename);
                     getchar();
                     }
                 }
@@ -1112,7 +1106,11 @@ static bool doTraining
 
     top = new node(best);
     trainingPair * Right = NULL;
+//    fprune = fopen("prunedTrainingPairs.txt","w");
+//    train->printAll(fprune,"ALL\n",'\n');
+//    fprintf(fprune,"____________\n");
     top->init(&Right, &train, 0, options);
+//    fclose(fprune);
     top = top->cleanup(NULL);
 
     FILE * nexttrain = pairsToTrainInNextPassName ? fopenOrExit(tempFolder(pairsToTrainInNextPassName, options), "wb", "nexttrain") : NULL;
@@ -1264,7 +1262,8 @@ const int partOfFile(const char * fbuf, const double fraction, optionStruct * op
             }
         if(li > 0)
             ++blbs;
-        printf("%d of %d lines, %d of %d clusters\n",li,options->lines(),bl,blbs);
+        if(options->verbose())
+            printf("%d of %d lines, %d of %d clusters\n",li,options->lines(),bl,blbs);
         if (options->currentParms() && !flog)
             {
             flog = fopenOrExit(options->currentParms(), "a", "log file");
@@ -1782,7 +1781,7 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
                 {
                 if (options->verbose())
                     {
-                    printf("This should return 0\n");
+                    printf("This should return 0 (Press <Enter> to continue...)\n");
                     getchar();
                     }
                 }
@@ -2062,9 +2061,10 @@ int main(int argc, char **argv)
             if (options.verbose())
                 printf("Testing the rules DONE.\n");
             }
-
         if(options.createFlexRules())
             {
+//            printf("CREATE FLEXRULES (<ENTER>)");
+//            getchar();
             setCompetitionFunction(&options);
             tagClass * Tags = NULL;
             options.setReadLines(options.lines());

@@ -839,12 +839,12 @@ vertex ** node::cleanUpUnusedVertices(vertex ** pvf, vertex ** pvN, trainingPair
     trainingPair * tp;
     if(outputR < outputW)
         {
-        ptr = &(vertex::adjustNotApplicableCountsByRecalculatingR_NA);
+        ptr = &vertex::adjustNotApplicableCountsByRecalculatingR_NA;
         tp = Right;
         }
     else
         {
-        ptr = &(vertex::adjustNotApplicableCountsByRecalculatingW_NA);
+        ptr = &vertex::adjustNotApplicableCountsByRecalculatingW_NA;
         tp = Wrong;
         }
 #endif

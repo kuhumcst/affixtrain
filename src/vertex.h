@@ -27,7 +27,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "strng.h"
 #include <stdio.h>
 
-typedef enum {failure,wrong,right} matchResult;
 
 class trainingPair;
 class shortRulePair;
@@ -157,6 +156,14 @@ class vertexPointer
                 p = n;
                 }
             }
+        bool has(vertex * V)
+            {
+            for(vertexPointer * p = this; p; p = p->Next)
+                if(p->V == V)
+                    return true;
+            return false;
+            }
+
     };
 
 #endif

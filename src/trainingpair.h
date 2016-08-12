@@ -31,6 +31,8 @@ class hashTable;
 class optionStruct;
 class ruleTemplate;
 
+extern FILE * fpmourn;
+
 enum eResult {undecided, yes, no
 #if AMBIGUOUS
                                 , notme
@@ -106,6 +108,8 @@ class trainingPair
                 likes = L > 3 ? 3 : L;
             }
         bool fewerLikesThan(int thresh) const;
+        int notLemmatizedBy(vertex * V);
+        void mourn();
 #endif
         trainingPair ** pNext()
             {

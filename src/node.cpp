@@ -773,7 +773,7 @@ node * node::cleanup(node * parent)
 
 #if PRUNETRAININGPAIRS
 static int deletedRules = 0;
-static trainingPair * pruneTrainingPairs(trainingPair * pairs)
+static trainingPair * pruneTrainingPairs(trainingPair * pairs,trainingPair *& deletedPairs)
     {            
     trainingPair * tp = pairs;
 //    pairs->printAll(fprune,"Initial\n",'\n');
@@ -786,7 +786,9 @@ static trainingPair * pruneTrainingPairs(trainingPair * pairs)
         ++deletedRules;
         trainingPair * nxt = tp->next();
         //delete tp; Impossible. Training pairs are allocated as an array.
-        tp->deepDelete();
+        tp->Next = deletedPairs;
+        deletedPairs = tp;
+        //tp->deepDelete();
         tp = nxt;
         }
     trainingPair * ret = tp;
@@ -803,7 +805,9 @@ static trainingPair * pruneTrainingPairs(trainingPair * pairs)
                 ++deletedRules;
                 trainingPair * nxt = tp->next();
                 //delete tp; Impossible. Training pairs are allocated as an array.
-                tp->deepDelete();
+                tp->Next = deletedPairs;
+                deletedPairs = tp;
+                //tp->deepDelete();
                 tp = nxt;
                 }
             else
@@ -828,9 +832,10 @@ static trainingPair * pruneTrainingPairs(trainingPair * pairs)
     return ret;
     }
 
-vertex ** node::cleanUpUnusedVertices(vertex ** pvf, vertex ** pvN, trainingPair * Wrong)
+vertex ** node::cleanUpUnusedVertices(vertex ** pvf, vertex ** pvN, trainingPair * deletedRightPairs, trainingPair * deletedWrongPairs)
     {
 #if _NA
+#if 0
     // To correct _NA, re-lemmatise all pairs that are in the shortest list (Right or Wrong).
     int outputR = (this->Right ? this->Right->count() : 0); 
     int outputW = (Wrong ? Wrong->count() : 0);
@@ -848,22 +853,32 @@ vertex ** node::cleanUpUnusedVertices(vertex ** pvf, vertex ** pvN, trainingPair
         tp = Wrong;
         }
 #endif
+#endif
     for(vertex ** pvi = pvf;pvi < pvN;)
         {
-        if(  (*pvi)->R__R == 0 
-          && (*pvi)->W__R == 0 
-          && (*pvi)->R__W == 0
-          && (*pvi)->W__W == 0
+        vertex * V = *pvi;
+        if(  V->R__R == 0 
+          && V->W__R == 0 
+          && V->R__W == 0
+          && V->W__W == 0
           )
             { // rule has become irrelevant
-            (*pvi)->destroy();
+            V->destroy();
             --pvN;
             *pvi = *pvN;
             }
         else
             {
 #if _NA
+#if 0
             ((*pvi)->*ptr)(tp,outputRW);
+#else
+            int M;
+            M = deletedRightPairs->notLemmatizedBy(V);
+            V->R__NA -= M;
+            M = deletedWrongPairs->notLemmatizedBy(V);
+            V->W__NA -= M;
+#endif
 #endif
             ++pvi;
             }
@@ -998,9 +1013,15 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
 //            fprintf(fprune,"\n");
             }
 #if PRUNETRAININGPAIRS
-        this->Right = pruneTrainingPairs(this->Right);
-        Wrong = pruneTrainingPairs(Wrong);
-        N = cleanUpUnusedVertices(pv, pv+N, Wrong) - pv;
+        trainingPair * deletedRightPairs = 0;
+        this->Right = pruneTrainingPairs(this->Right,deletedRightPairs);
+        trainingPair * deletedWrongPairs = 0;
+        Wrong = pruneTrainingPairs(Wrong,deletedWrongPairs);
+        N = cleanUpUnusedVertices(pv, pv+N, deletedRightPairs,deletedWrongPairs) - pv;
+        if(deletedRightPairs)
+            deletedRightPairs->mourn();
+        if(deletedWrongPairs)
+            deletedWrongPairs->mourn();
 #endif
         node ** pnode = &this->IfPatternSucceeds;
         ptrdiff_t first = 0;
@@ -1085,9 +1106,36 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
             if(wpart < 0)
 #endif
                 {
-#if PRUNETRAININGPAIRS
-                pvN = cleanUpUnusedVertices(pvf, pvN, Wrong);
+#if _NA
+                int outputR = (this->Right ? this->Right->count() : 0); 
+                int outputW = (Wrong ? Wrong->count() : 0);
 #endif
+                for(vertex ** pvi = pvf;pvi < pvN;++pvi)
+                    {
+                    if(  (*pvi)->R__R == 0 
+                      && (*pvi)->W__R == 0 
+                      && (*pvi)->R__W == 0
+                      && (*pvi)->W__W == 0
+                      )
+                        { // rule has become irrelevant
+                        (*pvi)->destroy();
+                        --pvN;
+                        *pvi = *pvN;
+                        }
+#if _NA
+                    else
+                        {
+                        if(outputR < outputW)
+                            {
+                            (*pvi)->adjustNotApplicableCountsByRecalculatingR_NA(this->Right,outputR+outputW);
+                            }
+                        else
+                            {
+                            (*pvi)->adjustNotApplicableCountsByRecalculatingW_NA(Wrong,outputR+outputW);
+                            }
+                        }
+#endif
+                    }
                 if(pvf == pvN)
                     {
                     if(options->verbose()) /* This is not really an error. */

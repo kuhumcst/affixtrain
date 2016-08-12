@@ -20,7 +20,7 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "3.50"
+#define VERSION "3.51"
 
 #include "affixtrain.h"
 #include "testrules.h"
@@ -1106,10 +1106,12 @@ static bool doTraining
 
     top = new node(best);
     trainingPair * Right = NULL;
+    fpmourn = fopen("prunedTrainingPairs.txt","w");
 //    fprune = fopen("prunedTrainingPairs.txt","w");
 //    train->printAll(fprune,"ALL\n",'\n');
 //    fprintf(fprune,"____________\n");
     top->init(&Right, &train, 0, options);
+    fclose(fpmourn);
 //    fclose(fprune);
     top = top->cleanup(NULL);
 

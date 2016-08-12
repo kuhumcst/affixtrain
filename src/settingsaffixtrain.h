@@ -43,7 +43,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Full form - lemma pairs that require unique rules are discarded if
 // PRUNETRAININGPAIRS 1
-#define PRUNETRAININGPAIRS 0
+#define PRUNETRAININGPAIRS 1
 
 #if SMALLMEMORY
 #define MAXPAIRS 8000000 //1000000 //500000 //100000 //500000 
@@ -416,5 +416,6 @@ Read word class from file.
 #define FTELL   ftell
 #endif
 
+typedef enum {failure,wrong,right} matchResult;
 
 #endif

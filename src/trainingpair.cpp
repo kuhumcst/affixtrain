@@ -31,6 +31,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "hashtable.h"
 
 
+FILE * fpmourn = 0;
+
 int TrainingPairCount = 0;
 trainingPair::trainingPair():Next(0),Mask(0),Lemma(0),V(0),applicableRules(0),ambs(undecided),tentativeAmbs(undecided)
 #if PRUNETRAININGPAIRS
@@ -630,6 +632,27 @@ bool trainingPair::fewerLikesThan(int thresh) const
     bool ret = !applicableRules || applicableRules->fewerLikesThan(thresh);
     return ret;
     }
+
+int trainingPair::notLemmatizedBy(vertex * V)
+    {
+    int ret = 0;
+    for(trainingPair * p = this;p;p = p->Next)
+        {
+        if(!p->applicableRules->has(V))
+            ++ret;
+        }
+    return ret;
+    }
+
+void trainingPair::mourn()
+    {
+    for(trainingPair * p = this;p;p = p->Next)
+        {
+        p->printMore(fpmourn);
+        p->deepDelete();
+        }
+    }
+
 #endif
 #if AMBIGUOUS
 trainingPair * trainingPair::makeWrongAmbiguousIfRightPresent(trainingPair *& Ambiguous)

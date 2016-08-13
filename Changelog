@@ -1,3 +1,9 @@
+Version 3.52 - 2016.08.13
+-------------------------
+Eliminated more calls to the expensive apply() function (if #defined _NA 1)
+For very big training sets it may be better to set #defined _NA 0 to
+restrict running time.
+
 Version 3.51 - 2016.08.12
 -------------------------
 Eliminated calls to the expensive apply() function.

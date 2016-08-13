@@ -304,14 +304,17 @@ void vertex::adjustNotApplicableCountsByRecalculatingR_NA(trainingPair * pair,in
     R__NA = 0;
     while(pair)
         {
-        switch(lemmatise(pair))
+        if (pair->notLemmatizedBy(this))
+            ++R__NA;
+        /*
+        switch (lemmatise(pair))
             {
             case wrong:
             case right:
                 break;
             default:
                 ++R__NA;
-            }
+            }*/
         pair = pair->next();
         }
     W__NA = total - (R__NA + R__R + R__W + W__R + W__W);
@@ -320,16 +323,18 @@ void vertex::adjustNotApplicableCountsByRecalculatingR_NA(trainingPair * pair,in
 void vertex::adjustNotApplicableCountsByRecalculatingW_NA(trainingPair * pair,int total)
     {
     W__NA = 0;
-    while(pair)
+    while (pair)
         {
-        switch(lemmatise(pair))
+        if (pair->notLemmatizedBy(this))
+            ++W__NA;
+        /*        switch (lemmatise(pair))
             {
             case wrong:
             case right:
                 break;
             default:
                 ++W__NA;
-            }
+            }*/
         pair = pair->next();
         }
     R__NA = total - (R__R + R__W + W__NA + W__R + W__W);

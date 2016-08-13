@@ -20,7 +20,7 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "3.51"
+#define VERSION "3.52"
 
 #include "affixtrain.h"
 #include "testrules.h"
@@ -462,6 +462,7 @@ static int markAmbiguous(int allPairs, trainingPair * TrainingPair, optionStruct
                         pTrainingPair[k]->set(b_ambiguous);
                         pAlt->Alt = pTrainingPair[k];
                         pAlt = pTrainingPair[k];
+                        ++n;
                         }
 #else
 #if LEMMAINL
@@ -508,7 +509,7 @@ static int markAmbiguous(int allPairs, trainingPair * TrainingPair, optionStruct
 
     delete[] pTrainingPair; // Bart 20081008
     if (options->verbose())
-        printf("markAmbiguous DONE\n");
+        printf("markAmbiguous DONE. Returns %d\n",n);
     return n;
     }
 
@@ -1104,7 +1105,13 @@ static bool doTraining
     bool New;
     vertex * best = Hash.getVertex(&ROOT, New);
 
+    if (options->verbose())
+        printf("Going to build a decision tree\n");
+
     top = new node(best);
+    if (options->verbose())
+        printf("Top node is created\n");
+
     trainingPair * Right = NULL;
     fpmourn = fopen("prunedTrainingPairs.txt","w");
 //    fprune = fopen("prunedTrainingPairs.txt","w");
@@ -1112,7 +1119,9 @@ static bool doTraining
 //    fprintf(fprune,"____________\n");
     top->init(&Right, &train, 0, options);
     fclose(fpmourn);
-//    fclose(fprune);
+    if (options->verbose())
+        printf("Decision tree built\n");
+    //    fclose(fprune);
     top = top->cleanup(NULL);
 
     FILE * nexttrain = pairsToTrainInNextPassName ? fopenOrExit(tempFolder(pairsToTrainInNextPassName, options), "wb", "nexttrain") : NULL;

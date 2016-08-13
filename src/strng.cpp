@@ -172,37 +172,3 @@ bool strng::hasWildCard()
     }
 
 
-#if 0
-edif dif(char * Txt, char * s_Txt)
-    {
-    /* returns 1 if Txt is a stronger condition (further from the root) 
-       than s_Txt.
-       It returns -1 if Txt is weaker than s_Txt
-       It retuns 0 if the conditions are incommensurable.
-    */
-    char * A[100];
-    char * B[100];
-    cut(Txt,A);
-    cut(s_Txt,B);
-    if(compatibleCondition(A,B))
-        {
-        bool AB = strongerCondition(A,B);
-        bool BA = strongerCondition(B,A);
-
-        edif res = (AB && !BA) ? dif_bigger : (BA && !AB) ? dif_smaller : (AB && BA) ? dif_equal : dif_incommensurable;
-        uncut(A);
-        uncut(B);
-        assert(res == dif_incommensurable || res == dif_smaller || res == dif_bigger || res == dif_equal);
-        return res;
-        }
-    else
-        {
-        uncut(A);
-        uncut(B);
-        return dif_incompatible;
-        }
-    }
-
-#endif
-
-

@@ -64,6 +64,12 @@ class trainingPair
 #endif
     public:
         trainingPair * Next;
+#if AMBIGUOUS
+        trainingPair * Alt; // forms closed loop of alternatives (of lemmas)
+#endif
+#if PESSIMISTIC
+        trainingPair * AltLemma; // forms closed loop of inflected forms (of same lemma)
+#endif
     private:
         char * Mask; /* Initially 0. When trainingpair becomes member of a
                      node's Wrong of Right list, it borrows Mask from the
@@ -84,12 +90,6 @@ class trainingPair
 #endif
         void deleteRules();
     public:
-#if AMBIGUOUS
-        trainingPair * Alt; // forms closed loop of alternatives (of lemmas)
-#endif
-#if PESSIMISTIC
-        trainingPair * AltLemma; // forms closed loop of inflected forms (of same lemma)
-#endif
 #if AMBIGUOUS
         trainingPair * makeWrongAmbiguousIfRightPresent(trainingPair *& Ambiguous);
 #endif
@@ -157,7 +157,7 @@ class trainingPair
             {
             bits &= ~bit;
             }
-        inline int isset(int bit)
+        inline unsigned int isset(unsigned int bit)
             {
             return bit & bits;
             }

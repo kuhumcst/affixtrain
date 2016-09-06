@@ -137,8 +137,8 @@ class strng
         strng * substr(ptrdiff_t pos,ptrdiff_t len = -1) const
             {
             if(len < 0)
-                len = strlen(this->Txt+pos);
-            char * buf = new char[len+1];
+                len = (ptrdiff_t)strlen(this->Txt + pos);
+            char * buf = new char[(size_t)len+1];
             char * p = buf;
             char * s = this->Txt+pos;
             while(len-- > 0 && *s)
@@ -172,7 +172,7 @@ class strng
                 }
            // assert(s < e);
             strng * ret = new strng();
-            ret->Txt = new char[e - s + 1];
+            ret->Txt = new char[(size_t)(e - s + 1)];
             char * d = ret->Txt;
             while(s < e)
                 {
@@ -193,7 +193,7 @@ class strng
             while(*--r == ' ' || *r == '\t' || *r == '\n' || *r == '\r')
                 {
                 }
-            char * nTxt = new char[r - l + 2];
+            char * nTxt = new char[(size_t)(r - l + 2)];
             char * d = nTxt;
             while(l <= r)
                 {

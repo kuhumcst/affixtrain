@@ -485,7 +485,7 @@ static int fileRead(line * lines,
 
 static ptrdiff_t removeDuplicateLines(clump * Clump)
     {
-    qsort(Clump->start,Clump->linecnt,sizeof(line),mystrcmp);
+    qsort(Clump->start, (size_t)(Clump->linecnt), sizeof(line), mystrcmp);
     int i;
     int j;
     for(i = 0,j = i + 1;j < Clump->linecnt;++j)
@@ -593,12 +593,12 @@ static ptrdiff_t readlines(int columnfull,int columnbase,int columnPOS,line *& l
         printf("readlines countLinesAndClumps: %td lines\n",Linecnt);
     assert(!lines);
     rewind(fpi);
-    lines = new line[Linecnt];
+    lines = new line[(size_t)Linecnt];
     if(clumpcnt)
         {
         if (Options->verbose())
             printf("readlines countLinesAndClumps: %d clumps\n",clumpcnt);
-        clumps = new clump[clumpcnt];
+        clumps = new clump[(size_t)clumpcnt];
         clumps[0].start = 0;
         }
     else
@@ -1219,8 +1219,8 @@ class stddev // standard deviations
             assert(globmaxcount > 0);
             maxN = globmaxcount;
             N = 0;
-            x = new int[maxN];
-            X = new tri[maxN];
+            x = new int[(size_t)maxN];
+            X = new tri[(size_t)maxN];
             }
         ~stddev()
             {
@@ -1251,7 +1251,7 @@ class stddev // standard deviations
                 return 0.0;
             double meanresult = 0.0;
             int i;
-            double * result = new double[N];
+            double * result = new double[(size_t)N];
             for(i = 0;i < N;++i)
                 {
                 int cases = X[i][esam] + X[i][eamb0] + X[i][eamb1] + X[i][eamb2] + X[i][edif];
@@ -1424,7 +1424,7 @@ class counting
             double ntot = n.tsame + n.tambiguous[0] + n.tambiguous[1] + n.tambiguous[2] + n.tdifferent;
             const char * f1 = "%14d ";
             const char * f2 = "%14.6f ";
-            char ** ell = new char *[norow];
+            char ** ell = new char *[(size_t)norow];
             for(int i = 0;i < norow;++i)
                 cell[i] = ell[i] = new char[22];
             sprintf(ell[0],f1,cutoff);
@@ -1760,7 +1760,7 @@ void trainAndTest
         sprintf(paramfile,"%s%s%s%s%s.txt",LGf(Options),(Options->suffixOnly() ? "_suffix" : "_affix"),XTRf(Options),TT,(Options->redo() ? "redone" : "singleshot"));
         globmaxcount = maxcount;
         counting c[CUTOFFS]; // indexed by cutoff
-        countAndWeight * Counts = new countAndWeight[CUTOFF_HIGH+1];
+        countAndWeight * Counts = new countAndWeight[(size_t)(CUTOFF_HIGH + 1)];
         int count = 1;
         for( count = 1
             ; count <= maxcount

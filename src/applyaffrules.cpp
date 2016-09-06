@@ -72,10 +72,10 @@ static bool readRules(FILE * flexrulefile, buffer * Buffer)
             }
         else
             return false;
-        Buffer->buf = new char[Buffer->buflen + 1];
+        Buffer->buf = new char[(size_t)Buffer->buflen+ 1];
         if (Buffer->buf && Buffer->buflen > 0)
             {
-            if (fread(Buffer->buf, 1, Buffer->buflen, flexrulefile) != (size_t)Buffer->buflen)
+            if (fread(Buffer->buf, 1, (size_t)Buffer->buflen, flexrulefile) != (size_t)Buffer->buflen)
                 return 0;
             Buffer->buf[Buffer->buflen] = '\0';
             }
@@ -217,7 +217,7 @@ static char * rewrite(const char *& word, const char *& wordend, const char * p)
                 //                    length of infix       length of unmatched after infix
                 resultlength += (fields[M + 1] - fields[M] - 1) + (vars[m].e - vars[m].s);
                 }
-            destination = new char[resultlength + 1];
+            destination = new char[(size_t)resultlength + 1];
             printed = sprintf(destination, "%.*s%.*s", (int)(fields[2] - fields[1] - 1), fields[1], (int)(vars[0].e - vars[0].s), vars[0].s);
             for (m = 1; 2 * m + 3 < findex; ++m)
                 {
@@ -231,7 +231,7 @@ static char * rewrite(const char *& word, const char *& wordend, const char * p)
         else if (vars[0].e == vars[0].s) // whole-word match: everything matched by "prefix"
             {
             //++news;
-            destination = new char[(fields[2] - fields[1] - 1) + 1];
+            destination = new char[(size_t)(fields[2] - fields[1] - 1) + 1];
             printed = sprintf(destination, "%.*s", (int)(fields[2] - fields[1] - 1), fields[1]);
             }
         else
@@ -260,7 +260,7 @@ static char ** addLemma(char ** lemmas, const char * lemma)
                     return lemmas;
                     }
                 }
-            char ** nlemmas = new char *[i + 2];
+            char ** nlemmas = new char *[(size_t)(i + 2)];
             for (i = 0; lemmas[i]; ++i)
                 {
                 nlemmas[i] = lemmas[i];
@@ -516,10 +516,10 @@ bool lemmatiseFile(const char * OneWordPerLineFile,const char * rulefile,const c
     fseek(OWPLF, 0, SEEK_END);
     long wend = ftell(OWPLF);
     fseek(OWPLF, 0, SEEK_SET);
-    char * wbuf = new char[wend + 1];
+    char * wbuf = new char[(size_t)(wend + 1)];
     if (wbuf && wend > 0)
         {
-        if (fread(wbuf, 1, wend, OWPLF) != (size_t)wend)
+        if (fread(wbuf, 1, (size_t)wend, OWPLF) != (size_t)wend)
             return 0;
         wbuf[wend] = '\0';
         }

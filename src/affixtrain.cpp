@@ -20,7 +20,7 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "3.60"
+#define VERSION "3.61"
 
 #include "affixtrain.h"
 #include "testrules.h"
@@ -87,7 +87,7 @@ class tagClass
     public:
         char * name;
         tagClass * next;
-        tagClass(const char * name, ptrdiff_t length, tagClass * next)
+        tagClass(const char * name, size_t length, tagClass * next)
             {
             this->name = new char[length + 1];
             strncpy(this->name, name, length);
@@ -99,12 +99,12 @@ class tagClass
             delete[] name;
             delete next;
             }
-        bool has(const char * str, ptrdiff_t length)
+        bool has(const char * str, size_t length)
             {
-            return ((length == (ptrdiff_t)strlen(name))
+            return  (  (length == strlen(name))
                     && !strncmp(str, name, length)
                     )
-                    || (next && next->has(str, length));
+                 || (next && next->has(str, length));
             }
     };
 
@@ -156,11 +156,11 @@ struct aFile
     {
     union pointers file;
     union pointers * Lines;
-    int filesize;
-    int lines;
-    long size;
     const char * eob;
     char * fname;
+    size_t size;
+    size_t lines;
+    int filesize;
     aFile(const char * fname, optionStruct * options) :Lines(NULL), filesize(0), lines(0), eob(NULL)
         {
         assert(fname);
@@ -192,7 +192,7 @@ struct aFile
         eob = file.chars + size;
 
         const char * buf;
-        int line;
+        size_t line;
         const char * nl;
         const char * tab;
         for (buf = file.chars, line = 0; buf < eob;)
@@ -304,7 +304,7 @@ static tagClass * collectTags(optionStruct * options)
 
     CHECK("SglobTempDir");
     tagClass * Tags = NULL;
-    int line;
+    size_t line;
     pointers * Lines = afile.Lines;
     if (options->verbose())
         {
@@ -313,7 +313,7 @@ static tagClass * collectTags(optionStruct * options)
     for (line = 0; line < afile.lines; ++line)
         {
         const char * cols[18];
-        ptrdiff_t lengths[18];
+        size_t lengths[18];
         const char * limit = (line < afile.lines - 1) ? Lines[line + 1].cchars : afile.eob;
 
         const char * q = Lines[line].cchars;
@@ -323,10 +323,10 @@ static tagClass * collectTags(optionStruct * options)
                && (ii < sizeof(cols) / sizeof(cols[0]) - 1)
                )
             {
-            lengths[ii] = q - cols[ii];
+            lengths[ii] = (size_t)(q - cols[ii]);
             cols[++ii] = ++q;
             }
-        lengths[ii] = limit - cols[ii] - 1;
+        lengths[ii] = (size_t)(limit - cols[ii] - 1);
         unsigned int maxii = ++ii;
         cols[maxii] = q ? q : limit;
         const char * column;
@@ -378,12 +378,12 @@ static int compare(const void * arg1, const void * arg2)
     return ret;
     }
 
-static int markAmbiguous(int allPairs, trainingPair * TrainingPair, optionStruct * options)
+static int markAmbiguous(size_t allPairs, trainingPair * TrainingPair, optionStruct * options)
     {
     if (options->verbose())
         printf("markAmbiguous\n");
     trainingPair ** pTrainingPair = new trainingPair *[allPairs];
-    int j;
+    size_t j;
     for (j = 0; j < allPairs; ++j)
         pTrainingPair[j] = TrainingPair + j;
     qsort((void *)pTrainingPair, allPairs, sizeof(trainingPair *), compare);
@@ -410,7 +410,7 @@ static int markAmbiguous(int allPairs, trainingPair * TrainingPair, optionStruct
         {
         if (!pTrainingPair[j]->isset(b_skip))
             {
-            int k;
+            size_t k;
             for (k = j + 1
                  ;    k < allPairs
                  //&& !pTrainingPair[j]->isset(b_skip)
@@ -440,7 +440,7 @@ static int markAmbiguous(int allPairs, trainingPair * TrainingPair, optionStruct
             ++j;
         else
             {
-            int k;
+            size_t k;
 #if AMBIGUOUS
             trainingPair * pAlt = pTrainingPair[j];
 #endif
@@ -530,7 +530,7 @@ static int compare2(const void * arg1, const void * arg2)
     return ret;
     }
 
-static int markParadigms(int allPairs,trainingPair * TrainingPair,FILE * fparadigms)
+static int markParadigms(size_t allPairs,trainingPair * TrainingPair,FILE * fparadigms)
     {
     //    FILE * allFile = fopenwb("allFile.txt");
     trainingPair ** pTrainingPair = new trainingPair * [allPairs];
@@ -580,7 +580,7 @@ static int markParadigms(int allPairs,trainingPair * TrainingPair,FILE * fparadi
 
 static trainingPair * globTrainingPair;
 
-static trainingPair * readTrainingPairs(aFile & afile, int & pairs, const char * columns, const char * tag, optionStruct * options)
+static trainingPair * readTrainingPairs(aFile & afile, size_t & pairs, const char * columns, const char * tag, optionStruct * options)
     {
     if (options->verbose())
         printf("readTrainingPairs\n");
@@ -590,7 +590,7 @@ static trainingPair * readTrainingPairs(aFile & afile, int & pairs, const char *
     // "123456" means Word, Lemma, Wordfreq, Lemmafreq, Wordclass, Lemmaclass
     CHECK("TglobTempDir");
     pairs = 0;
-    int line;
+    size_t line;
     size_t taglength = tag ? strlen(tag) : 0;
     pointers * Lines = afile.Lines;
     if (options->verbose())
@@ -601,7 +601,7 @@ static trainingPair * readTrainingPairs(aFile & afile, int & pairs, const char *
         {
         const char * cols[18];
         const char * Word = NULL;
-        ptrdiff_t lengths[18];
+        size_t lengths[18];
         size_t wordlength = 0;
 #if WORDCLASS
         const char * WordClass = NULL; // unused
@@ -626,10 +626,10 @@ static trainingPair * readTrainingPairs(aFile & afile, int & pairs, const char *
                && (ii < sizeof(cols) / sizeof(cols[0]) - 1)
                )
             {
-            lengths[ii] = q - cols[ii];
+            lengths[ii] = (size_t)(q - cols[ii]);
             cols[++ii] = ++q;
             }
-        lengths[ii] = limit - cols[ii] - 1;
+        lengths[ii] = (size_t)(limit - cols[ii] - 1);
         unsigned int maxii = ++ii;
         cols[maxii] = q ? q : limit;
         const char * column;
@@ -739,7 +739,7 @@ static trainingPair * readTrainingPairs(aFile & afile, int & pairs, const char *
     return TrainingPair;
     }
 
-static void markTheAmbiguousPairs(trainingPair * TrainingPair, int pairs, optionStruct * options)
+static void markTheAmbiguousPairs(trainingPair * TrainingPair, size_t pairs, optionStruct * options)
     {
     markAmbiguous(pairs, TrainingPair, options);
 
@@ -767,9 +767,9 @@ static void rearrange   ( const char * filename
     FILE * fo = fopenOrExit(filename, "wb", "rearrange output");
     long end;
     end = ftell(folel);
-    char * buf = new char[end + 1]; // contents of folel, a textual file.
+    char * buf = new char[(size_t)end + 1]; // contents of folel, a textual file.
     rewind(folel);
-    if (fread(buf, end, 1, folel) != 1)
+    if (fread(buf, (size_t)end, 1, folel) != 1)
         return;
     buf[end] = '\0'; // 20140224 new
     unsigned int n = 0;
@@ -780,7 +780,7 @@ static void rearrange   ( const char * filename
     char ** pbuf = new char *[n + 1]; // lines
     unsigned int * size = new unsigned int[n + 1]; // binary size taken up by each rule
     unsigned int * cumsize = new unsigned int[n + 1]; // idem, cumulative
-    int * ind = new int[n + 1]; // nesting levels, also used to store cumulative sizes
+    unsigned int * ind = new unsigned int[n + 1]; // nesting levels, also used to store cumulative sizes
     pbuf[0] = buf + 0;
     n = 0;
     bool doind = true;  // first field on line is an indentation (or nesting
@@ -818,17 +818,17 @@ static void rearrange   ( const char * filename
             size[n]++;
         }
     pbuf[n] = NULL;
-    int lev[50];
+    unsigned int lev[50];
     unsigned int j;
     for (j = 0; j < sizeof(lev) / sizeof(lev[0]); ++j)
         lev[j] = 0;
     for (j = 0; j < n; ++j)
         {
-        int oldj = lev[ind[j]]; // find previous sibling
+        unsigned int oldj = lev[ind[j]]; // find previous sibling
         if (oldj)
-            ind[oldj] = cumsize[j]; // tell previous sibling where its next 
-        // sibling is
-        for (int k = ind[j] + 1; k < 50 && lev[k]; ++k)
+            ind[oldj] = cumsize[j]; // tell previous sibling 
+                                    // where its next sibling is
+        for (unsigned int k = ind[j] + 1; k < 50 && lev[k]; ++k)
             {
             lev[k] = 0; // forget about previous sibling'c children
             }
@@ -845,9 +845,9 @@ static void rearrange   ( const char * filename
         long ppos = cumsize[j];
         assert(pos == ppos);
 #endif
-        if (ind[j] >= pos)
-            ind[j] -= pos; // We only need to know how far to jump from here.
-        fwrite(ind + j, sizeof(int), 1, fo);
+        if (ind[j] >= (unsigned int)pos)
+            ind[j] -= (unsigned int)pos; // We only need to know how far to jump from here.
+        fwrite(ind + j, sizeof(unsigned int), 1, fo);
 
 #if RULESASTEXT
         fprintf(foleltxt,"%d",ind[j]);
@@ -1064,7 +1064,7 @@ static bool doTraining
 , char * pairsToTrainInNextPassName
 , countAndWeight * Counts
 , const char * tag
-, int * filelines
+, size_t * filelines
 , optionStruct * options
 )
     {
@@ -1076,7 +1076,7 @@ static bool doTraining
     if (filelines)
         *filelines = afile.lines;
 
-    int allPairs;
+    size_t allPairs;
     trainingPair * TrainingPair = readTrainingPairs(afile, allPairs, columns, tag, options);
     markTheAmbiguousPairs(TrainingPair, allPairs, options);
     hashTable Hash(10);
@@ -1085,7 +1085,7 @@ static bool doTraining
     // that are to be used for testing.
     // Pairs that are doublets are not added to either list.
     // Nor are pairs that are not well-formed (e.g. contain a ' ').
-    int pairs = 0;
+    size_t pairs = 0;
     trainingPair ** ptrain = &train;
     for (pairs = 0; pairs < allPairs; ++pairs)
         {
@@ -1127,7 +1127,7 @@ static bool doTraining
     FILE * nexttrain = pairsToTrainInNextPassName ? fopenOrExit(tempFolder(pairsToTrainInNextPassName, options), "wb", "nexttrain") : NULL;
     if (nexttrain)
         {
-        int pairs = 0;
+        size_t pairs = 0;
         int donepairs = 0;
         for (pairs = 0; pairs < allPairs; ++pairs)
             {
@@ -1199,7 +1199,7 @@ static bool doTraining
     return moreToDo;
     }
 
-const int partOfFile(const char * fbuf, const double fraction, optionStruct * options)
+const unsigned int partOfFile(const char * fbuf, const double fraction, optionStruct * options)
     {
     if (options->currentParms() && !flog)
         {
@@ -1313,7 +1313,7 @@ const int partOfFile(const char * fbuf, const double fraction, optionStruct * op
     fclose(f2);
 
     f2 = fopenOrExit(fbuf, "r", "computeParms");
-    int fraclines = 0;
+    unsigned int fraclines = 0;
     while ((kar = fgetc(f2)) != EOF)
         {
         if (kar == '\n')
@@ -1384,8 +1384,8 @@ void computeParms(optionStruct * options)
     for (int swath = 0; swath <= maxswath; ++swath)
         {
         int blobs = 1;
-        int lines = 0;
-        int fraclines = 0;
+        size_t lines = 0;
+        size_t fraclines = 0;
 
         if (options->verbose())
             printf("Computing parameters: swath %d of %d\n",swath, maxswath);
@@ -1411,7 +1411,7 @@ void computeParms(optionStruct * options)
                 init(options);
             else
                 copybest(); // go on with best result so far.
-            int filelines;
+            size_t filelines;
 
             if (options->verbose())
                 printf("Computing parameters: initial training\n");
@@ -1485,7 +1485,7 @@ void computeParms(optionStruct * options)
                 }
             CHECK("D2globTempDir");
 
-            int filelines;
+            size_t filelines;
             doTraining
                 (/* const char *                                */  filename
                 ,/* const char *                                */  ext
@@ -2092,7 +2092,7 @@ int main(int argc, char **argv)
                         {
                         printf("Doing tag %s\n", theTag->name);
                         }
-                    countAndWeight * Counts = new countAndWeight[1+options.cutoff()];
+                    countAndWeight * Counts = new countAndWeight[1 + (size_t)options.cutoff()];
                     trainRules(theTag->name, &options,Counts);
                     delete[]Counts;
                     theTag = theTag->next;
@@ -2102,7 +2102,7 @@ int main(int argc, char **argv)
                 {
                 if (options.verbose())
                     printf("NOT doing Tags\n");
-                countAndWeight * Counts = new countAndWeight[1+options.cutoff()];
+                countAndWeight * Counts = new countAndWeight[1+(size_t)options.cutoff()];
                 trainRules("", &options,Counts);
                 delete[]Counts;
                 }

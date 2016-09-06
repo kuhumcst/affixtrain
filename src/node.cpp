@@ -91,7 +91,7 @@ strng * protect(strng * p)
         const char * pq;
         while((pq = strpbrk(txt,"\\\"")) != NULL)
             {
-            strng stxt(txt,pq - txt);
+            strng stxt(txt,(size_t)(pq - txt));
             if(*pq == '\\')
                 ret->cat(&stxt,&slash,(const strng *)0);
             else

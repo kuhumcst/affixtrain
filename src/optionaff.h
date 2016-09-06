@@ -33,14 +33,19 @@ void cleanUpOptions();
 class optionStruct
     {
     private:
+        OptWeightFunction WeightFunction;
         double * D; // list of penalty parameters
                     // R__R;W__R;R__W;W__W
                     // or
                     // R__R;W__R;R__W;W__W;R__NA;W__NA
                     // Defaults to 0;0;1;0;0;0
-        int nD; // set by counting numbers in D, defaults to 6
-        int c; // cutoff
-        int C; // expected cutoff
+        double Minfraction;
+        double Maxfraction;
+        double M; // # Iterations when training with Maxfraction of input
+        double N; // # Iterations when training with Minfraction of input
+        double TreePenalty;
+        //        double DepthWeight;
+        char * Argstring;
         const char * e; // extra
         const char * f; // compfunc
         const char * i; // word list
@@ -55,6 +60,22 @@ class optionStruct
         const char * X; // rule weight function, defaults to constant (1)
         const char * I; // Input (with option -b: additionally lemmatise a word list - one word per line)
         const char * O; // Output (lemmas of input -I) (with option -b)
+        int nD; // set by counting numbers in D, defaults to 6
+        int c; // cutoff
+        int C; // expected cutoff
+        int K;    // Number of differently sized fractions of trainingdata 
+        int Q; // Max recursion depth when attempting to create candidate rule
+        /*      int q;*/ /* Percentage of training pairs to set aside for testing set to
+                         positive value if you want to set PERC percent of the avaliable
+                         data aside for testing.*/
+        int Blobs; // Number of blobs found in word list
+        unsigned int Lines; // Number of lines found in word list
+        int FracBlobs; // Number of blobs used for training
+        unsigned int FracLines; // Number of lines used for training
+        int Swath;
+        int SwathIteration;
+        int NumberOfNodes;
+        size_t TrainingPairsLines;
         bool ComputeParms;// compute parms
         bool SuffixOnly;// suffix only
         bool ExpensiveInfix;/*to create intermediate between full affix
@@ -65,46 +86,25 @@ class optionStruct
         bool TrainTest;
         bool Remove;    // remove test files after use (default false)
         bool VX; // 10-fold cross validation
-        double Minfraction;
-        double Maxfraction;
-        int K;    // Number of differently sized fractions of trainingdata 
-        double M; // # Iterations when training with Maxfraction of input
-        double N; // # Iterations when training with Minfraction of input
         bool Redo; /* option R. Set to true if training has to be done once
                    more after the removal of the homographs that will be
                    handled in the next iteration.*/
-        int Q; // Max recursion depth when attempting to create candidate rule
-  /*      int q;*/ /* Percentage of training pairs to set aside for testing set to
-               positive value if you want to set PERC percent of the avaliable
-               data aside for testing.*/
         bool F; // Create flexrules. Can be combined with computation (-p) and
                 // testing (-t, -T).
         /* End of options. */
 
-        int Blobs; // Number of blobs found in word list
-        int Lines; // Number of lines found in word list
-        int FracBlobs; // Number of blobs used for training
-        int FracLines; // Number of lines used for training
         bool SuffixOnlyParmSeen;
-        int Swath;
-        int SwathIteration;
-        int NumberOfNodes;
-        int TrainingPairsLines;
-        double TreePenalty;
-//        double DepthWeight;
-        char * Argstring;
-        OptWeightFunction WeightFunction;
         OptReturnTp doSwitch(int c, char * locoptarg, char * progname);
         OptReturnTp readOptsFromFile(char * locoptarg,char * progname);
         void detectFloatingPointNumbers(const char * S);
     public:
         const OptWeightFunction getWeightFunction(){return WeightFunction;}
         const int blobs() const { return Blobs; }
-        const int lines() const { return Lines; }
+        const unsigned int lines() const { return Lines; }
         const int fracblobs() const { return FracBlobs; }
-        const int fraclines() const { return FracLines; }
+        const unsigned int fraclines() const { return FracLines; }
         void setReadBlobs(int bl) { FracBlobs = bl; }
-        void setReadLines(int li) { FracLines = li; }
+        void setReadLines(unsigned int li) { FracLines = li; }
         const int cutoff() const{ return c; }
         const int expectedCutoff() const{return C;}
         const char * extra() const{return e ? e : "";}
@@ -145,7 +145,7 @@ class optionStruct
         void setSwath(int S){Swath = S;}
         void setSwathIteration(int SI){SwathIteration = SI;}
         void setNumberOfNodes(int NoN){NumberOfNodes = NoN;}
-        void setTrainingPairsLines(int TPL){TrainingPairsLines = TPL;}
+        void setTrainingPairsLines(size_t TPL){TrainingPairsLines = TPL;}
         void setWeight(double W){TreePenalty = W;}
 
         void setI(const char * WordList);

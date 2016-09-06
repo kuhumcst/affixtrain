@@ -131,7 +131,7 @@ static void printpatBracmat(char ** fields,int findex,char * start,char * end
         {
         *ppat++ = ANY;
         inc = (int)(fields[M] - fields[M-1] - 1);
-        strncpy(ppat,fields[M-1],inc);
+        strncpy(ppat, fields[M - 1], (size_t)inc);
         ppat += inc;
         }
     if(findex > 2)
@@ -146,20 +146,20 @@ static void printpatBracmat(char ** fields,int findex,char * start,char * end
     strcpy(ppat,end);
  
     inc = (int)(fields[2] - fields[1] - 1);
-    strncpy(prep,fields[1],inc);
+    strncpy(prep, fields[1], (size_t)inc);
     prep += inc;
     for(int M = 5;M < findex;M += 2)
         {
         *prep++ = ANY;
         inc = (int)(fields[M+1] - fields[M] - 1);
-        strncpy(prep,fields[M],inc);
+        strncpy(prep, fields[M], (size_t)inc);
         prep += inc;
         }
     if(findex > 2)
         {
         inc = (int)(fields[4] - fields[3] - 1);
         *prep++ = ANY;
-        strncpy(prep,fields[3],inc);
+        strncpy(prep, fields[3], (size_t)inc);
         prep += inc;
         }
     *prep = '\0';
@@ -248,8 +248,8 @@ struct fileBuffer
 
             Length = length;
             while (Length & 3) ++Length;
-            buf = new char[Length];
-            if (length == (long int)fread(buf, 1, length, flexrulefile))
+            buf = new char[(size_t)Length];
+            if (length == (long int)fread(buf, 1, (size_t)length, flexrulefile))
                 {
                 return true;
                 }
@@ -696,15 +696,15 @@ class rule
         {
         ptrdiff_t n = End - Start;
         int p[1];
-        ptrdiff_t diff = ((char*)p - arr - n) % sizeof(int);
-        strncpy(arr, Start, n);
+        ptrdiff_t diff = (ptrdiff_t)(((char*)p - arr - n) % sizeof(int));
+        strncpy(arr, Start, (size_t)n);
         return n + diff;
         }
     bool eq(rule * R)
         {
         if (End - Start != R->End - R->Start)
             return false;
-        return !strncmp(Start, R->Start, End - Start);
+        return !strncmp(Start, R->Start, (size_t)(End - Start));
         }
     };
 
@@ -959,7 +959,7 @@ ptrdiff_t chain::copy(char * arr, int ind)
         }
     else
         {
-        *Other = Alt ? sizeof(int) : -(int)sizeof(int);
+        *Other = (ptrdiff_t)(Alt ? sizeof(int) : -(int)sizeof(int));
         }
     if (Alt)
         arr += Alt->copy(arr, ind);
@@ -1118,7 +1118,7 @@ bool flexcombi(const char * bestflexrules, const char * nextbestflexrules, const
         printf("Error (flexcombi): Cannot open %s for reading\n",nextbestflexrules);
         return false;
         }
-    char * arr = new char[2 * (FileBuffer.Length + NextFileBuffer.Length)];
+    char * arr = new char[(size_t)(2 * (FileBuffer.Length + NextFileBuffer.Length))];
     FILE * f = fopen(combinedflexrules, "wb");
     ++openfiles;
     if(!f)

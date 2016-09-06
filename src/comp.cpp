@@ -703,8 +703,9 @@ int (*comp)(const vertex * a,const vertex * b) = comp_parms;
 //bool compute_parms = false;
 
 
-struct rotation
+class rotation
     {
+    public:
     double Matrix[6];
     int ROWPARMS;
     // metadata:
@@ -729,9 +730,9 @@ struct rotation
             options->setParm(i,Matrix[i]);
             }
         }
-    } rotation;
+    };
 
-static struct rotation parms = 
+static rotation parms = 
    /* R_R   W_R   R_W   W_W  R_NA  W_NA */   
     {{  0.0,  3.0, -2.0,  1.0,  0.0,  0.0},6,"","",0,0,0.0}
     ;
@@ -766,7 +767,7 @@ struct bestParms
     bool suffixonly;
     const char * langbase;
     int rowss;
-    struct rotation val;
+    rotation val;
     // Each row:
     // R__R W__R R__W W__W R__NA W__NA
     // Generally, good that Wrongs change to Rights (W__R > 0) and that Rights don't change to Wrongs (R__W < 0)
@@ -2571,7 +2572,7 @@ static struct bestParms bests[] =
     ,best_is_suffix
     };
 
-static struct rotation best    =
+static rotation best    =
     /* R_R   W_R   R_W   W_W  R_NA  W_NA */   
     {{ 0.0,  3.0, -3.0,  1.0,  0.0,  0.0 }};
 
@@ -2615,7 +2616,7 @@ static void plus(double * dest, double * term,int cols)
 static int improvements = 0;
 static double previous[6] = {0,0,0,0,0,0};
 
-void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,int lines,double fraction,int fraclines,bool improvement,optionStruct * options)
+void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,size_t lines,double fraction,size_t fraclines,bool improvement,optionStruct * options)
     {
     if(improvement)
         {
@@ -2802,7 +2803,7 @@ void testAngle()
     getchar();
     }
 
-static struct rotation goodParms[] = 
+static rotation goodParms[] = 
     {
         {{ 0.0238310217,-0.6213812731, 0.7764218951, 0.0162447104, 0.0240052761, 0.0982155421},6,"bg","S",  9419,1,0.19208886,false},
         {{ 0.1021732216,-0.5298420485, 0.8355539585, 0.0025004658, 0.1024159319, 0.0135034591},6,"bg","D",  9556,1,0.19515940,false},
@@ -2961,7 +2962,7 @@ void brown()
 #endif
     normalise(vector);
     double inproduct = inner(parms.Matrix,vector); // Only first row. Ignore the rest.
-    struct rotation diff = parms;
+    rotation diff = parms;
     times(diff.Matrix,-inproduct);
     plus(vector,diff.Matrix,parms.ROWPARMS);
     normalise(vector);

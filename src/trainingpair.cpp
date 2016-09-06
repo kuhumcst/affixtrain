@@ -291,7 +291,7 @@ void trainingPair::fprintTraining(FILE * fp
                 while(len-- > 0 && *plemma)
                     {
                     char * lemma = plemma;
-                    int LEMMA = upperEquivalent(getUTF8char((const char *&)plemma,UTF8));
+                    int LEMMA = (int)upperEquivalent(getUTF8char((const char *&)plemma,UTF8));
                     int WORD =  getUTF8char(pword,UTF8);
                     if(LEMMA == WORD)
                         {
@@ -299,7 +299,7 @@ void trainingPair::fprintTraining(FILE * fp
                         int n = UnicodeToUtf8(LEMMA,NLEMMA,sizeof(NLEMMA)-1);
                         if(n == plemma - lemma)
                             {
-                            strncpy(lemma,NLEMMA,n);
+                            strncpy(lemma,NLEMMA,(size_t)n);
                             // Notice: no '\0'
                             }
                         else
@@ -467,8 +467,8 @@ int printRules(node * nd
         // Wildcards are the character in the constant ANY (currently ':')
         if(options->verbose())
             printf("pat [%s] rep [%s]\n",nd->V->Pattern.itsTxt(),nd->V->Replacement.itsTxt());
-        strng * pat = nd->V->Pattern.substr(1,strlen(nd->V->Pattern.itsTxt()) - 2);
-        strng * rep = nd->V->Replacement.substr(1,strlen(nd->V->Replacement.itsTxt()) - 2);
+        strng * pat = nd->V->Pattern.substr(1,(ptrdiff_t)strlen(nd->V->Pattern.itsTxt()) - 2);
+        strng * rep = nd->V->Replacement.substr(1, (ptrdiff_t)strlen(nd->V->Replacement.itsTxt()) - 2);
         strng * patreps[100];
         unsigned int i;
         for(i = 0;i < sizeof(patreps)/sizeof(patreps[0]);++i)

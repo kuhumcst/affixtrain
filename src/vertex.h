@@ -46,19 +46,16 @@ struct topScore
 
 class vertex
     {
+    public:
+        strng Pattern;
+        strng Replacement;
+        double wght;
     private:
         friend class hashTable;
         vertex * Next; // vertices with the same hash key.
         vertex ** Head;
-        int RefCount;
-        int Relations;
-#if PRUNETRAININGPAIRS
-        int RuleLikes;
-#endif
         hashTable * Hash;
     public:
-        strng Pattern;
-        strng Replacement;
         long R__R;
         long R__W;
         long W__R;
@@ -67,7 +64,12 @@ class vertex
         long R__NA;
         long W__NA;
 #endif
-        double wght;
+    private:
+        int RefCount;
+        int Relations;
+#if PRUNETRAININGPAIRS
+        int RuleLikes;
+#endif
     public:
         matchResult apply(trainingPair * trainingpair);
         matchResult applym(trainingPair * pair, char * mask);
@@ -138,8 +140,8 @@ class vertexPointer
     private:
         vertex * V;
         vertexPointer * Next;
-        bool InputRight:1;
-        bool Right:1;
+        bool InputRight;
+        bool Right;
     public:
         vertexPointer(vertex * V,vertexPointer * Next,bool InputRight,bool Right);
         ~vertexPointer();

@@ -59,9 +59,9 @@ void similData::match(trainingPair * trainingpair)
         size_t lemmaLen = trainingpair->itsLemmalength();
         int * iWord = new int[wordLen + 1];
         int * iLemmaHead = new int[lemmaLen + 1];
-        wordLen = Utf8ToUnicode(iWord, trainingpair->itsWord(), wordLen);
+        wordLen = (size_t)Utf8ToUnicode(iWord, trainingpair->itsWord(), wordLen);
         assert(lemmaLen > 0);
-        lemmaLen = Utf8ToUnicode(iLemmaHead, trainingpair->itsLemmaHead(), lemmaLen);
+        lemmaLen = (size_t)Utf8ToUnicode(iLemmaHead, trainingpair->itsLemmaHead(), lemmaLen);
         isimil(iWord, iWord + wordLen, iLemmaHead, iLemmaHead + lemmaLen, iStart, iEnd);
         delete[] iWord;
         delete[] iLemmaHead;

@@ -28,10 +28,10 @@ class optionStruct;
 
 class countAndWeight
     {
-    int Nnodes;
     double Weight;
     LONG CountByDepth;
     LONG CountBySize;
+    int Nnodes;
     public:
         void setNnodes(int N){Nnodes = N;};
         void setWeight(double W){Weight = W;};

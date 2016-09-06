@@ -876,7 +876,7 @@ int skipping(ptrdiff_t N,trainingPair * pairs)
 #define PROD 10000000ULL
 #define MINTRAINING 1000
         int M = pairs->count();
-        printf("N %d M %d\n",N,M);
+        printf("N %td M %d\n",N,M);
         unsigned long long prod = (unsigned long long)M*(unsigned long long)N;
         printf("prod %llu \n",prod);
         if(prod > PROD)
@@ -1011,7 +1011,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
         //printf("Test all pairs (up to upper bound) on all candidate rules. %d\n",N);
         if(options->verbose())
             {
-            printf("             %d candidate rules \r",N);
+            printf("             %td candidate rules \r",N);
             }
 //        fprintf(fprune,"BEFORE PRUNING\n");
         ptrdiff_t skipW = skipping(N,Wrong);
@@ -1051,7 +1051,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
         Wrong = pruneTrainingPairs(Wrong, deletedWrongPairs);
         if (options->verbose())
             {
-            printf("clean up unused candidate rules               <-- %d\r",N);
+            printf("clean up unused candidate rules               <-- %td\r",N);
             }
         N = cleanUpUnusedVertices(pv, pv + N
 #if _NA
@@ -1060,7 +1060,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
             ) - pv;
         if (options->verbose())
             {
-            printf("clean up unused candidate rules  %d\r", N);
+            printf("clean up unused candidate rules  %td\r", N);
             }
         if (deletedRightPairs)
             deletedRightPairs->mourn();

@@ -123,9 +123,9 @@ class vertex
         int ruleLikes()const{return RuleLikes;}
 #endif
 #if SMALLMEMORY
-        int nlemmatise(trainingPair * pairs,int n,bool InputRight);
+        int nlemmatise(trainingPair * pairs,int n,bool InputRight,ptrdiff_t skip);
 #else
-        int nlemmatise(trainingPair * pairs,bool InputRight);
+        int nlemmatise(trainingPair * pairs,bool InputRight,ptrdiff_t skip);
 #endif
 #if AMBIGUOUS
         void markAmbiguousForNextRound(trainingPair * pair);

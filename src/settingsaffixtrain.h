@@ -353,7 +353,7 @@ be a bias indicating that "infixes" tend to be near the end, rather than near
 the start, of a word. In that case, reversing words may improve results.
 */
 
-#define _NA 1
+#define _NA 0
 /* NA 1
 Allow weight functions (see comp.cpp) to use the numbers W__NA and N__NA,
 the number of wrongly (correctly) lemmatized words that a candidate rule 

@@ -166,7 +166,11 @@ class node // node in decision tree
         void init(trainingPair ** allRight,trainingPair ** allWrong,int level,optionStruct * options);
         void splitTrainingPairList(trainingPair * all,trainingPair **& pNotApplicable,trainingPair **& pWrong,trainingPair **& pRight,bool SuffixOnly);
 #if PRUNETRAININGPAIRS
-        vertex ** cleanUpUnusedVertices(vertex ** pvf, vertex ** pvN, trainingPair * deletedRightPairs, trainingPair * deletedWrongPairs);
+        vertex ** cleanUpUnusedVertices(vertex ** pvf, vertex ** pvN
+#if _NA
+            , trainingPair * deletedRightPairs, trainingPair * deletedWrongPairs
+#endif
+            );
 #endif
         node(vertex * V);
         ~node();

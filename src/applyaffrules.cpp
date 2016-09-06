@@ -427,7 +427,7 @@ static char * concat(char ** L)
     {
     if (L)
         {
-        int lngth = 0;
+        size_t lngth = 0;
         int i;
         for (i = 0; L[i]; ++i)
             {
@@ -479,7 +479,7 @@ const char * applyRules(const char * word,buffer * Buffer)
     {
     if(Buffer->buf)
         {
-        int len = strlen(word);
+        size_t len = strlen(word);
         delete [] result;
         result = NULL;
         char ** lemmas = 0;

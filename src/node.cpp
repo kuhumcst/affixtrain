@@ -832,7 +832,11 @@ static trainingPair * pruneTrainingPairs(trainingPair * pairs,trainingPair *& de
     return ret;
     }
 
-vertex ** node::cleanUpUnusedVertices(vertex ** pvf, vertex ** pvN, trainingPair * deletedRightPairs, trainingPair * deletedWrongPairs)
+vertex ** node::cleanUpUnusedVertices(vertex ** pvf, vertex ** pvN
+#if _NA
+                                      , trainingPair * deletedRightPairs, trainingPair * deletedWrongPairs
+#endif
+                                      )
     {
 #if _NA
 #endif
@@ -864,6 +868,29 @@ vertex ** node::cleanUpUnusedVertices(vertex ** pvf, vertex ** pvN, trainingPair
     return pvN;
     }
 #endif
+
+int skipping(ptrdiff_t N,trainingPair * pairs)
+    {
+    if(pairs)
+        {
+#define PROD 10000000ULL
+#define MINTRAINING 1000
+        int M = pairs->count();
+        printf("N %d M %d\n",N,M);
+        unsigned long long prod = (unsigned long long)M*(unsigned long long)N;
+        printf("prod %llu \n",prod);
+        if(prod > PROD)
+            {
+            unsigned long long m = PROD / (unsigned long long)N;
+            if(m < MINTRAINING)
+                m = MINTRAINING;
+            int skip = (int)((M / m) - 1);
+            printf("Skipping %d\n",skip);
+            return skip;
+            }
+        }
+    return 0;
+    }
 
 void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,optionStruct * options)
     {
@@ -944,7 +971,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
 
     if(Wrong)
         {
-        int N;
+        ptrdiff_t N;
         hashTable VertexHash(1000);
         Wrong->makeCandidateRules(&VertexHash,this->V,false,options);
         if(this->Right)
@@ -987,6 +1014,8 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
             printf("             %d candidate rules \r",N);
             }
 //        fprintf(fprune,"BEFORE PRUNING\n");
+        ptrdiff_t skipW = skipping(N,Wrong);
+        ptrdiff_t skipR = skipping(N,this->Right);
         for(int i = 0;i < N;++i)
             {
             if(options->verbose())
@@ -995,12 +1024,13 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
                 }
             // Reset all counters in all candidate rules.
             pv[i]->nlemmatiseStart();
+
 #if SMALLMEMORY
-            pv[i]->nlemmatise(Wrong,wpart,false);
-            pv[i]->nlemmatise(this->Right,rpart,true);
+            pv[i]->nlemmatise(Wrong,wpart,false,skipW);
+            pv[i]->nlemmatise(this->Right,rpart,true,skipR);
 #else
-            pv[i]->nlemmatise(Wrong,false);
-            pv[i]->nlemmatise(this->Right,true);
+            pv[i]->nlemmatise(Wrong,false,skipW);
+            pv[i]->nlemmatise(this->Right,true,skipR);
 #endif
 //            fprintf(fprune,"i:%d ::",i);
 //            pv[i]->print1(fprune);
@@ -1023,7 +1053,11 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
             {
             printf("clean up unused candidate rules               <-- %d\r",N);
             }
-        N = cleanUpUnusedVertices(pv, pv + N, deletedRightPairs, deletedWrongPairs) - pv;
+        N = cleanUpUnusedVertices(pv, pv + N
+#if _NA
+            , deletedRightPairs, deletedWrongPairs
+#endif
+            ) - pv;
         if (options->verbose())
             {
             printf("clean up unused candidate rules  %d\r", N);

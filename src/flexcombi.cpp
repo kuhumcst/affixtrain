@@ -692,9 +692,9 @@ class rule
             }
         printf("\n");
         }
-    int copy(char * arr/*, int ind*/)
+    ptrdiff_t copy(char * arr/*, int ind*/)
         {
-        int n = End - Start;
+        ptrdiff_t n = End - Start;
         int p[1];
         ptrdiff_t diff = ((char*)p - arr - n) % sizeof(int);
         strncpy(arr, Start, n);
@@ -729,7 +729,7 @@ class treenode
         oneOrMore Sibling;
         oneOrMore Child;
         void print(int ind);
-        int copy(char * arr, int ind);
+        ptrdiff_t copy(char * arr, int ind);
         bool eq(treenode * Y)
             {
             return Rule.eq(&Y->Rule);
@@ -815,7 +815,7 @@ class chain
                 return 0;
             }
         void print(int ind);
-        int copy(char * arr, int ind);
+        ptrdiff_t copy(char * arr, int ind);
     };
 
 treenode * oneOrMore::get(treenode * example)
@@ -887,9 +887,9 @@ void treenode::print(int ind)
         }
     }
 
-int treenode::copy(char * arr,int ind)
+ptrdiff_t treenode::copy(char * arr,int ind)
     {
-    int * FailBranch = (int*)arr;
+    ptrdiff_t * FailBranch = (ptrdiff_t*)arr;
     typetype type = 0;
     arr += sizeof(int);
     if (Sibling.more)
@@ -948,9 +948,9 @@ void chain::print(int ind)
         Alt->print(ind);
     }
 
-int chain::copy(char * arr, int ind)
+ptrdiff_t chain::copy(char * arr, int ind)
     {
-    int * Other = (int *)arr;
+    ptrdiff_t * Other = (ptrdiff_t *)arr;
     arr += sizeof(int);
     if (TreeNode)
         {
@@ -1138,9 +1138,9 @@ bool flexcombi(const char * bestflexrules, const char * nextbestflexrules, const
         TreeNode->merge(NextTreeNode);
         //printf("\nCombined Tree:\n");
         //TreeNode->print(0);
-        int length = TreeNode->copy(arr, 0);
+        ptrdiff_t length = TreeNode->copy(arr, 0);
         *(int*)arr = 0;
-        for(int i = 0;i < length;++i)
+        for(ptrdiff_t i = 0;i < length;++i)
             fputc(arr[i],f);
         }
     --openfiles;

@@ -450,7 +450,7 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
             break;
         case 'j': // temp dir
             {
-            int jlen = strlen(locoptarg);
+            size_t jlen = strlen(locoptarg);
             if(locoptarg[jlen-1] == '\\' || locoptarg[jlen-1] == '/')
                 locoptarg[jlen-1] = '\0'; // Remove separator at end
             j = dupl(locoptarg);
@@ -1260,7 +1260,7 @@ void optionStruct::setArgstring()
         if (C >= 0)
             {
             strcat(Argstring, "_C");
-            int L = strlen(Argstring);
+            size_t L = strlen(Argstring);
             Argstring[L] = (char)(C + '0');
             Argstring[L + 1] = 0;
             }

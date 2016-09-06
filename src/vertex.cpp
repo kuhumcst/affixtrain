@@ -214,10 +214,12 @@ int vertex::nlemmatise ( trainingPair * pair
                        , int n
 #endif
                        , bool InputRight
+                       , ptrdiff_t skip
                        )
     {
     int ret = 0;
     trainingPair * p;
+    int skipped = 0;
 #if SMALLMEMORY
     int m;
     for(p = pair, m = n; p && (m != 0);p = p->next(), --m)
@@ -234,38 +236,43 @@ int vertex::nlemmatise ( trainingPair * pair
     for(p = pair; p; p = p->next())
 #endif
         {
-        ++ret;
-        switch(lemmatise(p))
+        ++skipped;
+        if(skipped > skip)
             {
-            case wrong:
+            skipped = 0;
+            ++ret;
+            switch(lemmatise(p))
+                {
+                case wrong:
 #if AMBIGUOUS
-                assert(p->getTentativeRes() == no || p->getTentativeRes() == notme);
-                if(p->getTentativeRes() != notme)
-                    { // don't count homographs that have an ok sibling
+                    assert(p->getTentativeRes() == no || p->getTentativeRes() == notme);
+                    if(p->getTentativeRes() != notme)
+                        { // don't count homographs that have an ok sibling
+                        p->addRule(this,InputRight,false);
+                        }
+#else
                     p->addRule(this,InputRight,false);
-                    }
-#else
-                p->addRule(this,InputRight,false);
 #endif
-                break;
-            case right:
-                assert(p->getTentativeRes() == yes);
-                // do opportunistically count homographs that are ok
-                p->addRule(this,InputRight,true);
+                    break;
+                case right:
+                    assert(p->getTentativeRes() == yes);
+                    // do opportunistically count homographs that are ok
+                    p->addRule(this,InputRight,true);
 #if PRUNETRAININGPAIRS
-                ++RuleLikes;
+                    ++RuleLikes;
 #endif
-                break;
+                    break;
 #if _NA
-            default:
-                if(InputRight)
-                    ++R__NA;
-                else
-                    ++W__NA;
+                default:
+                    if(InputRight)
+                        ++R__NA;
+                    else
+                        ++W__NA;
 #else
-            default:
-                ;
+                default:
+                    ;
 #endif
+                }
             }
         }
     assert(!p);
@@ -622,7 +629,7 @@ static int utfchar(char * p, int & U) /* int is big enough for all UTF-8 bytes *
         U <<= 8;
         U += *q++;
         } 
-    return q - p;
+    return (int)(q - p);
     }
 
 matchResult vertex::applym(trainingPair * pair, char * mask)

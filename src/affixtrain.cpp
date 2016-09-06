@@ -20,7 +20,7 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "3.52"
+#define VERSION "3.60"
 
 #include "affixtrain.h"
 #include "testrules.h"
@@ -591,7 +591,7 @@ static trainingPair * readTrainingPairs(aFile & afile, int & pairs, const char *
     CHECK("TglobTempDir");
     pairs = 0;
     int line;
-    int taglength = tag ? strlen(tag) : 0;
+    size_t taglength = tag ? strlen(tag) : 0;
     pointers * Lines = afile.Lines;
     if (options->verbose())
         {
@@ -661,7 +661,7 @@ static trainingPair * readTrainingPairs(aFile & afile, int & pairs, const char *
                 case '3':
                 case 'T':
                 case 't':
-                if (tag && (taglength == lengths[ii]) && !strncmp(cols[ii], tag, taglength))
+                if (tag && (taglength == (size_t)lengths[ii]) && !strncmp(cols[ii], tag, taglength))
                     {
                     doUse = true;
                     }

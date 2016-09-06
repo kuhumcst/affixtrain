@@ -286,10 +286,10 @@ static int mystrcmp(const void * a,const void * b)
 struct clump
     {
     line * start;
-    int linecnt;
+    ptrdiff_t linecnt;
     };
 
-static void countLinesAndClumps(FILE * fpi,int & linecnt,int & clumpcnt)
+static void countLinesAndClumps(FILE * fpi,ptrdiff_t & linecnt,int & clumpcnt)
     {
     linecnt = 0;
     clumpcnt = 0;
@@ -482,7 +482,7 @@ static int fileRead(line * lines,
     return linecnt;
     }
 
-static int removeDuplicateLines(clump * Clump)
+static ptrdiff_t removeDuplicateLines(clump * Clump)
     {
     qsort(Clump->start,Clump->linecnt,sizeof(line),mystrcmp);
     int i;
@@ -536,7 +536,7 @@ static int removeDuplicateLines(clump * Clump)
     return Clump->linecnt;
     }
 
-static void randomix(line * lines,int linecnt)
+static void randomix(line * lines,ptrdiff_t linecnt)
     {
     int i;
     line tmp;
@@ -568,13 +568,13 @@ static void randomix(clump * clumps,int clumpcnt)
         }
     }
 
-static int readlines(int columnfull,int columnbase,int columnPOS,line *& lines,int sep
+static ptrdiff_t readlines(int columnfull,int columnbase,int columnPOS,line *& lines,int sep
                      ,clump *& clumps,int & clumpcnt
                      ,optionStruct * Options
                      )
     {
     FILE * fpi = NULL;
-    int Linecnt = 0;
+    ptrdiff_t Linecnt = 0;
     //fpi = fopen(lemmalistef(Options),"r");
     fpi = fopen(lemmalistef(Options),"rb");
     ++openfiles;
@@ -721,8 +721,8 @@ static int aTenth(void)
         return 0;
     }
 
-static int splitLemmaList
-   (int clumpcnt
+static ptrdiff_t splitLemmaList
+   (ptrdiff_t clumpcnt
    ,char * training
    ,char * test
    ,char * control
@@ -744,9 +744,9 @@ static int splitLemmaList
     FILE * fptraincontrol = NULL;
     fptrain = fopen(training,"wb");
     ++openfiles;
-    int trainlines = 0;
-    int trainclumps = 0;
-    int testclumps = 0;
+    ptrdiff_t trainlines = 0;
+    ptrdiff_t trainclumps = 0;
+    ptrdiff_t testclumps = 0;
     int (*Rand)(void);
     if(TenFoldXValidation)
         {
@@ -816,8 +816,8 @@ static int splitLemmaList
     return trainlines;
     }
 
-static int splitLemmaList
-   (int linecnt
+static ptrdiff_t splitLemmaList
+   (ptrdiff_t linecnt
    ,char * training
    ,char * test
    ,char * control
@@ -840,9 +840,9 @@ static int splitLemmaList
     fptrain = fopen(training,"wb");
     ++openfiles;
 //    int lines = 1000000;
-    int trainlines = 0;
-    int ret;
-    int testlines = 0;
+    ptrdiff_t trainlines = 0;
+    ptrdiff_t ret;
+    ptrdiff_t testlines = 0;
     int (*Rand)(void);
     if(TenFoldXValidation)
         {
@@ -1374,7 +1374,7 @@ class counting
                 }
                 */
             }
-        void printing(int maxcount,FILE * fptab,int ttrainlines)
+        void printing(int maxcount,FILE * fptab,ptrdiff_t ttrainlines)
             {
             double ntot = n.tsame + n.tambiguous[0] + n.tambiguous[1] + n.tambiguous[2] + n.tdifferent;
 
@@ -1418,7 +1418,7 @@ class counting
                 );
             fflush(fptab);
             }
-        void validationcolumn(const char ** cell, int cutoff, int maxcount, int ttrainlines, lineab * AffixLine, int norow)
+        void validationcolumn(const char ** cell, int cutoff, int maxcount, ptrdiff_t ttrainlines, lineab * AffixLine, int norow)
             {
             double ntot = n.tsame + n.tambiguous[0] + n.tambiguous[1] + n.tambiguous[2] + n.tdifferent;
             const char * f1 = "%14d ";
@@ -1449,7 +1449,7 @@ class counting
             sprintf(ell[20],"%6.3f*N^%4.3f ", exp(AffixLine->a()), AffixLine->b());//0.056414*N^0.799693
             delete[]ell;
             }
-        void printingNice(int cutoff,double fraction,int maxcount,FILE * fptab,int ttrainlines,optionStruct * Options)
+        void printingNice(int cutoff,double fraction,int maxcount,FILE * fptab,ptrdiff_t ttrainlines,optionStruct * Options)
             {
             double ntot = n.tsame + n.tambiguous[0] + n.tambiguous[1] + n.tambiguous[2] + n.tdifferent;
             fprintf(fptab,"\nNew algorithm, least wrongly lemmatised (MIN(diff)).\n");
@@ -1483,7 +1483,7 @@ class counting
     };
 
 
-void createReport(counting c[CUTOFFS],int maxcount,int ttrainlines,lineab AffixLine[CUTOFFS],int noOfSteps,int lastFraction,optionStruct * Options)
+void createReport(counting c[CUTOFFS],int maxcount,ptrdiff_t ttrainlines,lineab AffixLine[CUTOFFS],int noOfSteps,int lastFraction,optionStruct * Options)
     {
     const char * texts[] =    {
         "prun. thrshld. ",
@@ -1548,7 +1548,7 @@ void createReport(counting c[CUTOFFS],int maxcount,int ttrainlines,lineab AffixL
         {
         c[k].validationcolumn(cell + (k + 1)*norow, k, maxcount, ttrainlines, AffixLine + k, norow);
         }
-    int len = 0;
+    size_t len = 0;
     for(int m = 0;m < nocell;++m)
         len += strlen(cell[m]);
     char * report = new char[len + 3*norow + 1];
@@ -1627,7 +1627,7 @@ int nextFraction(int fraction)
 
 
 void trainAndTest
-        (int linecnt
+        (ptrdiff_t linecnt
         ,int clumpcnt
         ,const char * XT
         ,const char * TT
@@ -1741,7 +1741,7 @@ void trainAndTest
             fclose(fptab);
             fptab = 0;
             }
-        int ttrainlines = 0;
+        ptrdiff_t ttrainlines = 0;
         int maxcount;
         if(Options->tenfoldCrossValidation())
             {
@@ -1805,7 +1805,7 @@ void trainAndTest
             static char suffixrulesArr[256];
             sprintf(suffixrulesArr,formatFlexrules,fraction,count);
 
-            int trainlines = 0;
+            ptrdiff_t trainlines = 0;
             if(clumpcnt > 1)
                 trainlines = splitLemmaList(clumpcnt,Ttraining,test,Tcontrol,1,2,3,fraction,traintest,Ttraincontrol,clumps,TrainTest,Options->tenfoldCrossValidation());
             else
@@ -1945,7 +1945,7 @@ void trainAndTest
     }
 
 
-static int readFile
+static ptrdiff_t readFile
         (line *& lines
         ,clump *& clumps
         ,int & clumpcnt
@@ -2021,7 +2021,7 @@ static int readFileAndTrainAndTest(optionStruct * Options,bool TrainTest)
     int clumpcnt = 0;
     if (Options->verbose())
         printf("Test: read file\n");
-    int linecnt = readFile
+    ptrdiff_t linecnt = readFile
         (lines
         ,clumps
         ,clumpcnt

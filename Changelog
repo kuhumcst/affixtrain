@@ -1,3 +1,11 @@
+Version 3.60 - 2016.09.06
+-------------------------
+When testing candidate rules, if the amount of tests is very large due to the
+amount of candidate rules and the amount of training pairs, training pairs
+will be skipped so the running time remains more or less acceptable.
+Changed the type of some ints to size_t or ptrdiff_t to silence the 64-bit
+Visual C++ compiler. (Microsoft Visual Studio 2008. Version 9.0)
+
 Version 3.52 - 2016.08.13
 -------------------------
 Eliminated more calls to the expensive apply() function (if #defined _NA 1)

@@ -590,7 +590,7 @@ static ptrdiff_t readlines(int columnfull,int columnbase,int columnPOS,line *& l
         printf("readlines countLinesAndClumps\n");
     countLinesAndClumps(fpi,Linecnt,clumpcnt);
     if (Options->verbose())
-        printf("readlines countLinesAndClumps: %d lines\n",Linecnt);
+        printf("readlines countLinesAndClumps: %td lines\n",Linecnt);
     assert(!lines);
     rewind(fpi);
     lines = new line[Linecnt];

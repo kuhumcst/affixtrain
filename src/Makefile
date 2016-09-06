@@ -8,8 +8,8 @@ AFFIXTRAIN=$(BIN)affixtrain
 AFFIXTRAINI=$(BIN)affixtraini
 AFFIXTRAINP=$(BIN)affixtrainp
 
-CC=g++ -O3 -Wall -DNDEBUG -pedantic
-CCP=g++ -O3 -Wall -c -pg -DNDEBUG -pedantic
+CC=g++ -O3 -Wall -DNDEBUG -pedantic -std=c++11
+CCP=g++ -O3 -Wall -c -pg -DNDEBUG -pedantic -std=c++11
 
 CCLINKDYNAMIC=g++ 
 CCLINKDYNAMICP=g++ -Wall -pg 

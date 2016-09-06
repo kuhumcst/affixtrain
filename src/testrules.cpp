@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "settingsaffixtrain.h"
 #include "affixtrain.h"
 #include "optionaff.h"
+#include <stddef.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
@@ -31,9 +32,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <string.h>
 #include <math.h>
 #include <assert.h>
-#include <stdarg.h>
-#include <limits.h>
-
 
 #ifdef WIN32
 #define HOME ""

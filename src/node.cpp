@@ -1011,7 +1011,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
         //printf("Test all pairs (up to upper bound) on all candidate rules. %d\n",N);
         if(options->verbose())
             {
-            printf("             %td candidate rules \r",N);
+            printf("             %td candidate rules %c",N,STARTLINE);
             }
 //        fprintf(fprune,"BEFORE PRUNING\n");
         ptrdiff_t skipW = skipping(N,Wrong);
@@ -1020,7 +1020,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
             {
             if(options->verbose())
                 {
-                printf("%d \r",i);
+                printf("%d %c",i,STARTLINE);
                 }
             // Reset all counters in all candidate rules.
             pv[i]->nlemmatiseStart();
@@ -1040,18 +1040,18 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
         trainingPair * deletedRightPairs = 0;
         if (options->verbose())
             {
-            printf("pruning right pairs \r");
+            printf("pruning right pairs %c",STARTLINE);
             }
         this->Right = pruneTrainingPairs(this->Right, deletedRightPairs);
         trainingPair * deletedWrongPairs = 0;
         if (options->verbose())
             {
-            printf("pruning wrong pairs \r");
+            printf("pruning wrong pairs %c",STARTLINE);
             }
         Wrong = pruneTrainingPairs(Wrong, deletedWrongPairs);
         if (options->verbose())
             {
-            printf("clean up unused candidate rules               <-- %td\r",N);
+            printf("clean up unused candidate rules               <-- %td%c",N,STARTLINE);
             }
         N = cleanUpUnusedVertices(pv, pv + N
 #if _NA
@@ -1060,7 +1060,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
             ) - pv;
         if (options->verbose())
             {
-            printf("clean up unused candidate rules  %td\r", N);
+            printf("clean up unused candidate rules  %td%c", N,STARTLINE);
             }
         if (deletedRightPairs)
             deletedRightPairs->mourn();
@@ -1068,7 +1068,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
             deletedWrongPairs->mourn();
         if (options->verbose())
             {
-            printf("clean up pruned training pairs\r");
+            printf("clean up pruned training pairs%c",STARTLINE);
             }
 #endif
         node ** pnode = &this->IfPatternSucceeds;
@@ -1086,7 +1086,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
             {
             if (options->verbose())
                 {
-                printf("Finding the best candidate child rule\r");
+                printf("Finding the best candidate child rule%c",STARTLINE);
                 }
             if (first >= lastN)
                 {
@@ -1121,7 +1121,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
                     }
                 if (options->verbose())
                     {
-                    printf("Weights computed     \r");
+                    printf("Weights computed     %c",STARTLINE);
                     }
                 if (options->expensiveInfix())
                     {
@@ -1131,7 +1131,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
                         }
                     if (options->verbose())
                         {
-                        printf("Weights adjusted     \r");
+                        printf("Weights adjusted     %c",STARTLINE);
                         }
                     }
                 for (vertex ** pvi = pvf + 1; pvi < pvN; ++pvi)
@@ -1145,7 +1145,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
                     }
                 if (options->verbose())
                     {
-                    printf("candidates sorted     \r");
+                    printf("candidates sorted     %c",STARTLINE);
                     }
                 }
             else
@@ -1172,7 +1172,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
 #endif
                 if (options->verbose())
                     {
-                    printf("delete the rules that have become irrelevant and adjust counts for the good ones.    \r");
+                    printf("delete the rules that have become irrelevant and adjust counts for the good ones.    %c",STARTLINE);
                     }
                 for (vertex ** pvi = pvf; pvi < pvN; ++pvi)
                     {
@@ -1193,7 +1193,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
                             {
                             if (options->verbose())
                                 {
-                                printf("delete the rules that have become irrelevant and adjust counts for the good ones.  %d right pairs to check %d \r", outputR, outputW);
+                                printf("delete the rules that have become irrelevant and adjust counts for the good ones.  %d right pairs to check %d %c", outputR, outputW,STARTLINE);
                                 }
                             (*pvi)->adjustNotApplicableCountsByRecalculatingR_NA(this->Right, outputR + outputW);
                             }
@@ -1201,7 +1201,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
                             {
                             if (options->verbose())
                                 {
-                                printf("delete the rules that have become irrelevant and adjust counts for the good ones.  %d wrong pairs to check %d \r", outputW, outputR);
+                                printf("delete the rules that have become irrelevant and adjust counts for the good ones.  %d wrong pairs to check %d %c", outputW, outputR,STARTLINE);
                                 }
                             (*pvi)->adjustNotApplicableCountsByRecalculatingW_NA(Wrong, outputR + outputW);
                             }
@@ -1210,7 +1210,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
                     }
                 if (options->verbose())
                     {
-                    printf("delete the rules that have become irrelevant and adjust counts for the good ones. DONE                                            \r");
+                    printf("delete the rules that have become irrelevant and adjust counts for the good ones. DONE                                            %c",STARTLINE);
                     }
                 if (pvf == pvN)
                     {

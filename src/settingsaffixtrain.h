@@ -404,6 +404,8 @@ Read word class from file.
 #define STRTOL  _strtoi64
 #define FSEEK   _fseeki64
 #define FTELL   _ftelli64
+// \r in printf
+#define STARTLINE 13
 #else
 #define LONG    long
 #define LONGU   "%lu"
@@ -414,6 +416,8 @@ Read word class from file.
 #define STRTOL  strtol
 #define FSEEK   fseek
 #define FTELL   ftell
+// \n in printf
+#define STARTLINE 10
 #endif
 
 typedef enum {failure,wrong,right} matchResult;

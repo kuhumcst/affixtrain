@@ -20,7 +20,7 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "3.61"
+#define VERSION "3.62"
 
 #include "affixtrain.h"
 #include "testrules.h"
@@ -733,7 +733,7 @@ static trainingPair * readTrainingPairs(aFile & afile, size_t & pairs, const cha
         if (tag && *tag)
             printf("%zd characters and %zd lines, %zd selected with tag %s       \n", afile.size, afile.lines, pairs, tag);
         else
-            printf("%zd characters and %zd lines\r", afile.size, afile.lines);
+            printf("%zd characters and %zd lines%c", afile.size, afile.lines,STARTLINE);
         printf("readTrainingPairs DONE\n");
         }
     return TrainingPair;
@@ -1503,7 +1503,7 @@ void computeParms(optionStruct * options)
 
             if (options->verbose())
                 {
-                printf("\r%d %d %f %d %f           \n", iterations, currentNo, currentweight, brownNo, brownweight);
+                printf("%c%d %d %f %d %f           \n", STARTLINE, iterations, currentNo, currentweight, brownNo, brownweight);
                 }
 
             if (currentNo == 0)

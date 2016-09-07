@@ -2673,7 +2673,7 @@ void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,siz
                );
 
         fprintf(f
-               ,"/* number of nodes: %d, nodes/line: %.*e weight (%s used): %.*e blobs %d lines %d * fraction %.*e = %d lines*/\n"
+               ,"/* number of nodes: %d, nodes/line: %.*e weight (%s used): %.*e blobs %d lines %zd * fraction %.*e = %zd lines*/\n"
                ,Nnodes
                ,DBL_DIG+2,(double)Nnodes/(double)fraclines
                , (options->getWeightFunction() == esupport || options->getWeightFunction() == eentropy) ? "" : "not "

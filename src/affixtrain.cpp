@@ -161,7 +161,7 @@ struct aFile
     size_t size;
     size_t lines;
     int filesize;
-    aFile(const char * fname, optionStruct * options) :Lines(NULL), filesize(0), lines(0), eob(NULL)
+    aFile(const char * fname, optionStruct * options) :Lines(NULL), eob(NULL), lines(0), filesize(0)
         {
         assert(fname);
 
@@ -227,7 +227,7 @@ struct aFile
             }
         if (options->verbose())
             {
-            printf("line %d\n", line);
+            printf("line %zd\n", line);
             }
 
         lines = line;
@@ -265,7 +265,7 @@ struct aFile
             }
         if (options->verbose())
             {
-            printf("line %d read\n", line);
+            printf("line %zd read\n", line);
             printf("%s:", fname);
             }
         }
@@ -308,7 +308,7 @@ static tagClass * collectTags(optionStruct * options)
     pointers * Lines = afile.Lines;
     if (options->verbose())
         {
-        printf("Checking %d lines in %s for tags %s\n", afile.lines, afile.fname, options->columns());
+        printf("Checking %zd lines in %s for tags %s\n", afile.lines, afile.fname, options->columns());
         }
     for (line = 0; line < afile.lines; ++line)
         {
@@ -731,9 +731,9 @@ static trainingPair * readTrainingPairs(aFile & afile, size_t & pairs, const cha
     if (options->verbose())
         {
         if (tag && *tag)
-            printf("%ld characters and %d lines, %d selected with tag %s       \n", afile.size, afile.lines, pairs, tag);
+            printf("%zd characters and %zd lines, %zd selected with tag %s       \n", afile.size, afile.lines, pairs, tag);
         else
-            printf("%ld characters and %d lines\r", afile.size, afile.lines);
+            printf("%zd characters and %zd lines\r", afile.size, afile.lines);
         printf("readTrainingPairs DONE\n");
         }
     return TrainingPair;

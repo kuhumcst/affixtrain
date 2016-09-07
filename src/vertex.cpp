@@ -110,13 +110,12 @@ vertex::~vertex()
 
 vertex::vertex(vertex * Rule,hashTable * Hash):
              Head(0)
+            ,Hash(Hash)
             ,RefCount(0)
             ,Relations(0)
 #if PRUNETRAININGPAIRS
             ,RuleLikes(0)
 #endif
-            ,Hash(Hash
-            )
         ,R__R(0)
         ,R__W(0)
         ,W__R(0)
@@ -349,7 +348,8 @@ void vertex::adjustNotApplicableCountsByRecalculatingW_NA(trainingPair * pair,in
 #endif
 
 vertex::vertex(shortRulePair * Rule) :
-    Head(0), RefCount(0), Relations(0), Hash(0)
+      Head(0)
+    , Hash(0)
     , R__R(0)
     , R__W(0)
     , W__R(0)
@@ -358,6 +358,8 @@ vertex::vertex(shortRulePair * Rule) :
     , R__NA(0)
     , W__NA(0)
 #endif
+    , RefCount(0)
+    , Relations(0)
     {
     construct((const char*)Rule->itsPatternArray(), (const char*)Rule->itsReplacementArray());
     }

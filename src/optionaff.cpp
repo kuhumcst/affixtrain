@@ -908,8 +908,8 @@ void optionStruct::completeArgs()
             fprintf(stderr, "Error: No parameters provided. (-D option).\n"
                 "Add -p if you want to compute the parameters.\n"
                 "If the parameters are already computed, edit the generated parameter file\n"
-                "(e.g., parms.%s) and then run the program with\n\n\taffixtrain -@ parms.%s\n",
-                argstring_no_path(),argstring_no_path());
+                "(e.g., parms.txt) and then run the program with\n\n\taffixtrain -@ parms.txt\n"
+                );
             exit(2);
             }
         }

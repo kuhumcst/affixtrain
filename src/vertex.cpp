@@ -109,28 +109,28 @@ vertex::~vertex()
     }
 
 vertex::vertex(vertex * Rule,hashTable * Hash):
-             Head(0)
-            ,Hash(Hash)
-            ,RefCount(0)
-            ,Relations(0)
-#if PRUNETRAININGPAIRS
-            ,RuleLikes(0)
-#endif
-        ,R__R(0)
-        ,R__W(0)
-        ,W__R(0)
-        ,W__W(0)
+      Head(0)
+    , Hash(Hash)
+    , R__R(0)
+    , R__W(0)
+    , W__R(0)
+    , W__W(0)
 #if _NA
-        ,R__NA(0)
-        ,W__NA(0)
+    , R__NA(0)
+    , W__NA(0)
+#endif
+    , RefCount(0)
+    , Relations(0)
+#if PRUNETRAININGPAIRS
+    , RuleLikes(0)
 #endif
 
-        {
-        assert(Hash);
-        Pattern.dup(Rule->Pattern.itsTxt());
-        Replacement.dup(Rule->Replacement.itsTxt());
-        ++VertexCount;
-        }
+    {
+    assert(Hash);
+    Pattern.dup(Rule->Pattern.itsTxt());
+    Replacement.dup(Rule->Replacement.itsTxt());
+    ++VertexCount;
+    }
 
 matchResult vertex::lemmatise(trainingPair * pair)
     {
@@ -360,6 +360,9 @@ vertex::vertex(shortRulePair * Rule) :
 #endif
     , RefCount(0)
     , Relations(0)
+#if PRUNETRAININGPAIRS
+    , RuleLikes(0)
+#endif
     {
     construct((const char*)Rule->itsPatternArray(), (const char*)Rule->itsReplacementArray());
     }

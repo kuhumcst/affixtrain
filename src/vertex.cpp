@@ -365,15 +365,18 @@ vertex::vertex(shortRulePair * Rule) :
     }
 
 vertex::vertex(const char * pat, const char * rep) :
-Head(0), RefCount(0), Relations(0), Hash(0)
-, R__R(0)
-, R__W(0)
-, W__R(0)
-, W__W(0)
+      Head(0)
+    , Hash(0)
+    , R__R(0)
+    , R__W(0)
+    , W__R(0)
+    , W__W(0)
 #if _NA
-, R__NA(0)
-, W__NA(0)
+    , R__NA(0)
+    , W__NA(0)
 #endif
+    , RefCount(0)
+    , Relations(0)
     {
     construct(pat, rep);
     }

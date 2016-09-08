@@ -1274,7 +1274,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
 #endif
             if (options->verbose())
                 {
-                printf("Treat the unmatched inputs with this nodes next sibling. \n");
+                printf("Treat the unmatched inputs with this node's next sibling. \n");
                 }
             pnode = &(*pnode)->IfPatternFails;
             }

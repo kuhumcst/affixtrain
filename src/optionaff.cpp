@@ -148,13 +148,16 @@ optionStruct::optionStruct()
 
 void cleanUpOptions()
     {
-    for (int I = 0; I < optionSets; ++I)
-        {
-        delete[] Poptions[I];
-        delete[] Ppoptions[I];
-        }
-    delete[] Poptions;
-    delete[] Ppoptions;
+	if (optionSets > 0)
+		{
+		for (int I = 0; I < optionSets; ++I)
+			{
+			delete[] Poptions[I];
+			delete[] Ppoptions[I];
+			}
+		delete[] Poptions;
+		delete[] Ppoptions;
+		}
     }
 
 optionStruct::~optionStruct()

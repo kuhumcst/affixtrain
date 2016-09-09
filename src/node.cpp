@@ -876,16 +876,16 @@ int skipping(ptrdiff_t N,trainingPair * pairs)
 #define PROD 10000000ULL
 #define MINTRAINING 1000
         int M = pairs->count();
-        printf("N %td M %d\n",N,M);
+//        printf("N %td M %d\n",N,M);
         unsigned long long prod = (unsigned long long)M*(unsigned long long)N;
-        printf("prod %llu \n",prod);
+//        printf("prod %llu \n",prod);
         if(prod > PROD)
             {
             unsigned long long m = PROD / (unsigned long long)N;
             if(m < MINTRAINING)
                 m = MINTRAINING;
             int skip = (int)((M / m) - 1);
-            printf("Skipping %d\n",skip);
+//            printf("Skipping %d\n",skip);
             return skip;
             }
         }
@@ -1014,8 +1014,8 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
             printf("             %td candidate rules %c",N,STARTLINE);
             }
 //        fprintf(fprune,"BEFORE PRUNING\n");
-        ptrdiff_t skipW = skipping(N,Wrong);
-        ptrdiff_t skipR = skipping(N,this->Right);
+        int skipW = skipping(N,Wrong);
+        int skipR = skipping(N,this->Right);
         for(int i = 0;i < N;++i)
             {
             if(options->verbose())

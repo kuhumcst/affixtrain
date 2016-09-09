@@ -478,7 +478,11 @@ static int fileRead(line * lines,
             }
         oldkar = kar;
         }
-    clumps[clumpcnt-1].linecnt = lines+linecnt - clumps[clumpcnt-1].start;
+	if (clumpcnt > 0)
+		{
+		assert(clumps != 0);
+		clumps[clumpcnt - 1].linecnt = lines + linecnt - clumps[clumpcnt - 1].start;
+		}
 
     return linecnt;
     }

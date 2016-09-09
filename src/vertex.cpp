@@ -213,7 +213,7 @@ int vertex::nlemmatise ( trainingPair * pair
                        , int n
 #endif
                        , bool InputRight
-                       , ptrdiff_t skip
+                       , int skip
                        )
     {
     int ret = 0;
@@ -236,43 +236,43 @@ int vertex::nlemmatise ( trainingPair * pair
 #endif
         {
         ++skipped;
-        if(skipped > skip)
-            {
-            skipped = 0;
-            ++ret;
-            switch(lemmatise(p))
-                {
-                case wrong:
+		if (skipped > skip)
+			{
+			skipped = 0;
+			++ret;
+			switch (lemmatise(p))
+				{
+					case wrong:
 #if AMBIGUOUS
-                    assert(p->getTentativeRes() == no || p->getTentativeRes() == notme);
-                    if(p->getTentativeRes() != notme)
-                        { // don't count homographs that have an ok sibling
-                        p->addRule(this,InputRight,false);
-                        }
+						assert(p->getTentativeRes() == no || p->getTentativeRes() == notme);
+						if (p->getTentativeRes() != notme)
+							{ // don't count homographs that have an ok sibling
+							p->addRule(this, InputRight, false);
+							}
 #else
-                    p->addRule(this,InputRight,false);
+						p->addRule(this,InputRight,false);
 #endif
-                    break;
-                case right:
-                    assert(p->getTentativeRes() == yes);
-                    // do opportunistically count homographs that are ok
-                    p->addRule(this,InputRight,true);
+						break;
+					case right:
+						assert(p->getTentativeRes() == yes);
+						// do opportunistically count homographs that are ok
+						p->addRule(this, InputRight, true);
 #if PRUNETRAININGPAIRS
-                    ++RuleLikes;
+						++RuleLikes;
 #endif
-                    break;
+						break;
 #if _NA
-                default:
-                    if(InputRight)
-                        ++R__NA;
-                    else
-                        ++W__NA;
+					default:
+						if(InputRight)
+							++R__NA;
+						else
+							++W__NA;
 #else
-                default:
-                    ;
+					default:
+						;
 #endif
-                }
-            }
+				}
+			}
         }
     assert(!p);
     return ret;

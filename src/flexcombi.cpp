@@ -331,97 +331,113 @@ static char * printChain
 
 static char * printrules
 ( char * rules
- , char * max
- , char * start
- , char * end
- , FILE * fm
- , int indent
- )
-    {
-    if(max <= rules)
-        return rules;
-    ptrdiff_t index = *(int *)rules;
-    assert(!(index & 3));
-    if(index == 0)
-        index = max - rules;
-    assert(!(index & 3));
-    char * p = rules + sizeof(int);
-    typetype type = *(typetype*)p;
-    if(type > 3)
-        type = 0;
-    else
-        p += sizeof(typetype);
-    size_t slen = strlen(start);
-    size_t elen = strlen(end);
-    char * fields[44];
-    fields[0] = p;
-    int findex = 1;
-    while(*p != '\n')
-        {
-        if(*p == '\t')
-            fields[findex++] = ++p;
-        else
-            ++p;
-        }
-    fields[findex] = ++p; // p is now within 3 bytes from the next record.
-    fprintf(fm,"%*s",indent,"");
-    printpat(fields,findex,start,end,fm);
-    ptrdiff_t nxt = p - rules;
-    nxt += sizeof(int) - 1;
-    nxt /= sizeof(int);
-    nxt *= sizeof(int);
-    p = rules+nxt;
-    if(type & 2)
-        { // several chains of children ahead
-        p = printChain
-            ( p
-            , rules + index
-            , indent + 2
-            , start
-            , end
-            , fm
-            , " ambiguous children"
-            );
-        }
-    else
-        {
-        p = printrules
-            ( p
-            , rules + index
-            , start
-            , end
-            , fm
-            , indent + 2
-            );
-        }
-    start[slen] = '\0';
-    Strrev(end);
-    end[elen] = 0;
-    Strrev(end);
-    if(type & 1)
-        {
-        p = printChain
-            ( rules + index
-            , max
-            , indent+1
-            , start
-            , end
-            , fm
-            , " ambiguous tails of children"
-            );
-        }
-    else
-        p = printrules
-            ( rules + index
-            , max
-            , start
-            , end
-            , fm
-            , indent
-            );
-    assert(p == max);
-    return p;
-    }
+, char * max
+, char * start
+, char * end
+, FILE * fm
+, int indent
+)
+	{
+	for (;;)
+		{
+		if (max <= rules)
+			{
+			assert(rules == max);
+			return rules;
+			}
+		else
+			{
+			ptrdiff_t index = *(int *)rules;
+			assert(!(index & 3));
+			if (index == 0)
+				index = max - rules;
+			assert(!(index & 3));
+			char * p = rules + sizeof(int);
+			typetype type = *(typetype*)p;
+			if (type > 3)
+				type = 0;
+			else
+				p += sizeof(typetype);
+			size_t slen = strlen(start);
+			size_t elen = strlen(end);
+			char * fields[44];
+			fields[0] = p;
+			int findex = 1;
+			while (*p != '\n')
+				{
+				if (*p == '\t')
+					fields[findex++] = ++p;
+				else
+					++p;
+				}
+			fields[findex] = ++p; // p is now within 3 bytes from the next record.
+			fprintf(fm, "%*s", indent, "");
+			printpat(fields, findex, start, end, fm);
+			ptrdiff_t nxt = p - rules;
+			nxt += sizeof(int) - 1;
+			nxt /= sizeof(int);
+			nxt *= sizeof(int);
+			p = rules + nxt;
+			if (type & 2)
+				{ // several chains of children ahead
+				p = printChain
+					(p
+					, rules + index
+					, indent + 2
+					, start
+					, end
+					, fm
+					, " ambiguous children"
+					);
+				}
+			else
+				{
+				p = printrules
+					(p
+					, rules + index
+					, start
+					, end
+					, fm
+					, indent + 2
+					);
+				}
+			start[slen] = '\0';
+			Strrev(end);
+			end[elen] = 0;
+			Strrev(end);
+			if (type & 1)
+				{
+				p = printChain
+					(rules + index
+					, max
+					, indent + 1
+					, start
+					, end
+					, fm
+					, " ambiguous tails of children"
+					);
+				assert(p == max);
+				return p;
+				}
+			else
+				{
+				/*
+				p = printrules
+				(rules + index
+				, max
+				, start
+				, end
+				, fm
+				, indent
+				);
+				assert(p == max);
+				return p;
+				*/
+				rules += index;
+				}
+			}
+		}
+	}
 
 int prettyPrint(const char * flexrulesIn)
     {

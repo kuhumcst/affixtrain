@@ -906,7 +906,7 @@ void ifThereAreUnmatchedWordsThenTellUsAndExit(vertex ** pv,trainingPair * Wrong
     fprintf(stderr,"***** pv:\n");
     for(unsigned long i = 0;i < lastN;++i)
         {
-        fprintf(stderr,"i=%d:",i);
+        fprintf(stderr,"i=%lu:",i);
         pv[i]->print1(stderr);
         fprintf(stderr,"\n");
         }
@@ -1133,7 +1133,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
             {
             if(options->verbose())
                 {
-                printf("%d %c",i,STARTLINE);
+                printf("%lu %c",i,STARTLINE);
                 }
             /* Reset all counters in all candidate rules:
                     R__W = R__R = W__W = W__R = 0 */
@@ -1147,11 +1147,13 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
 #endif
         /* Point to the pointer to the head of the sequence of children. */
         node ** pnode = &this->IfPatternSucceeds;
-        unsigned long first = 0; /* Points at the start of the list of
+        unsigned long first = 0; /* Index of the first in the list of
                                  candidates. Incremented for each candidate
                                  that made it to a new node. */
-        unsigned long lastN = N; /* Points to the last
-        /* `Wrong' is the list of training pairs that are not correctly
+        unsigned long lastN = N; /* Index of the last in the list of
+                                 candidates. Decremented as candidates become
+                                 irrelevant. */
+        /* Wrong is the list of training pairs that are not correctly
            lemmatised by this rule. We make them disappear by creating
            child nodes that absorb them. */
         while(Wrong)

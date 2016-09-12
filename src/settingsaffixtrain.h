@@ -39,8 +39,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define DOIMPEDANCE 0
 
-#define SMALLMEMORY 0
-
 // Full form - lemma pairs that require unique rules are discarded if
 // PRUNETRAININGPAIRS 1
 #define PRUNETRAININGPAIRS 0

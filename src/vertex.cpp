@@ -209,9 +209,6 @@ void vertex::markAmbiguousForNextRound(trainingPair * pair)
 #endif
 
 int vertex::nlemmatise ( trainingPair * pair
-#if SMALLMEMORY
-                       , int n
-#endif
                        , bool InputRight
                        , int skip
                        )
@@ -219,21 +216,12 @@ int vertex::nlemmatise ( trainingPair * pair
     int ret = 0;
     trainingPair * p;
     int skipped = 0;
-#if SMALLMEMORY
-    int m;
-    for(p = pair, m = n; p && (m != 0);p = p->next(), --m)
-#else
     for(p = pair; p; p = p->next())
-#endif
         {
         p->setTentativeRes(undecided);
         p->unset(b_tentativelysolved);
         }
-#if SMALLMEMORY
-    for(p = pair, m = n; p && (m != 0);p = p->next(), --m)
-#else
     for(p = pair; p; p = p->next())
-#endif
         {
         ++skipped;
 		if (skipped > skip)
@@ -312,15 +300,6 @@ void vertex::adjustNotApplicableCountsByRecalculatingR_NA(trainingPair * pair,in
         {
         if (pair->notLemmatizedBy(this))
             ++R__NA;
-        /*
-        switch (lemmatise(pair))
-            {
-            case wrong:
-            case right:
-                break;
-            default:
-                ++R__NA;
-            }*/
         pair = pair->next();
         }
     W__NA = total - (R__NA + R__R + R__W + W__R + W__W);
@@ -333,14 +312,6 @@ void vertex::adjustNotApplicableCountsByRecalculatingW_NA(trainingPair * pair,in
         {
         if (pair->notLemmatizedBy(this))
             ++W__NA;
-        /*        switch (lemmatise(pair))
-            {
-            case wrong:
-            case right:
-                break;
-            default:
-                ++W__NA;
-            }*/
         pair = pair->next();
         }
     R__NA = total - (R__R + R__W + W__NA + W__R + W__W);

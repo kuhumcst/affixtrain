@@ -776,19 +776,13 @@ static int deletedRules = 0;
 static trainingPair * pruneTrainingPairs(trainingPair * pairs,trainingPair *& deletedPairs)
     {            
     trainingPair * tp = pairs;
-//    pairs->printAll(fprune,"Initial\n",'\n');
-//    int initial = tp->count();
-//    int final;
-//    int deleted = 0;
     while(tp && tp->fewerLikesThan(2))
         {
-//        ++deleted;
         ++deletedRules;
         trainingPair * nxt = tp->next();
         //delete tp; Impossible. Training pairs are allocated as an array.
         tp->Next = deletedPairs;
         deletedPairs = tp;
-        //tp->deepDelete();
         tp = nxt;
         }
     trainingPair * ret = tp;
@@ -801,13 +795,11 @@ static trainingPair * pruneTrainingPairs(trainingPair * pairs,trainingPair *& de
             {
             if(tp->fewerLikesThan(2))
                 {
-//                ++deleted;
                 ++deletedRules;
                 trainingPair * nxt = tp->next();
                 //delete tp; Impossible. Training pairs are allocated as an array.
                 tp->Next = deletedPairs;
                 deletedPairs = tp;
-                //tp->deepDelete();
                 tp = nxt;
                 }
             else
@@ -819,20 +811,10 @@ static trainingPair * pruneTrainingPairs(trainingPair * pairs,trainingPair *& de
                 }
             }
         }
-//    final = ret->count();
-//    assert(final + deleted == initial);
-//    if(deleted != 0)
-//        {
-//        fprintf(fprune,"Initial %d Deleted %d Final %d\n",initial,deleted,final);
-//        ret->printAll(fprune,"Deleted\n",'\n');
-//        }
-//    else
-//        ret->printAll(fprune,"No deletions\n",'\n');
-//    fprintf(fprune,"---\n");
     return ret;
     }
 
-vertex ** node::cleanUpUnusedVertices(vertex ** pvf, vertex ** pvN
+vertex ** cleanUpUnusedVertices(vertex ** pvf, vertex ** pvN
 #if _NA
                                       , trainingPair * deletedRightPairs, trainingPair * deletedWrongPairs
 #endif
@@ -869,28 +851,209 @@ vertex ** node::cleanUpUnusedVertices(vertex ** pvf, vertex ** pvN
     }
 #endif
 
-int skipping(ptrdiff_t N,trainingPair * pairs)
+int skipping(unsigned long N,trainingPair * pairs)
     {
     if(pairs)
         {
+//#define PROD 3ULL
+//#define MINTRAINING 2
 #define PROD 10000000ULL
 #define MINTRAINING 1000
-        int M = pairs->count();
-//        printf("N %td M %d\n",N,M);
+        unsigned long M = pairs->count();
         unsigned long long prod = (unsigned long long)M*(unsigned long long)N;
-//        printf("prod %llu \n",prod);
         if(prod > PROD)
             {
             unsigned long long m = PROD / (unsigned long long)N;
             if(m < MINTRAINING)
                 m = MINTRAINING;
             int skip = (int)((M / m) - 1);
-//            printf("Skipping %d\n",skip);
             return skip;
             }
         }
     return 0;
     }
+
+void node::printNumbers(trainingPair ** allRight,trainingPair ** allWrong)
+    {
+    int r = 0;
+    int w = 0;
+    for (trainingPair * tp = *allRight; tp; tp = tp->next())
+        {
+        ++r;
+        }
+    for (trainingPair * tp = *allWrong; tp; tp = tp->next())
+        {
+        ++w;
+        }
+    printf("node(right=%d,wrong=%d) rule:",r,w);
+    this->V->print1(stdout);
+    printf("\n");
+    }
+
+void node::unsetSolved(trainingPair ** allPairs)
+    {
+    for(trainingPair * tp = *allPairs;tp;tp = tp->next())
+        {
+        tp->unset(b_solved);
+        }
+    }
+
+void ifThereAreUnmatchedWordsThenTellUsAndExit(vertex ** pv,trainingPair * Wrong, unsigned long first, unsigned long lastN)
+    {
+    fprintf(stderr,"***** first:%lu >= lastN:%lu\n",first,lastN);
+    fprintf(stderr,"***** (This happens if one or more wrongly lemmatised words aren't handled by any candidate rules.)\n");
+    fprintf(stderr,"***** (List of candidate rules:)\n");
+    fprintf(stderr,"***** pv:\n");
+    for(unsigned long i = 0;i < lastN;++i)
+        {
+        fprintf(stderr,"i=%d:",i);
+        pv[i]->print1(stderr);
+        fprintf(stderr,"\n");
+        }
+    fprintf(stderr,"***** (List of unmatched words that need better lemmatisation rule(s):)\n");
+    fprintf(stderr,"\n***** Wrong:\n");
+    Wrong->printAll(stderr,"unmatched words that need better lemmatisation rule(s)\n",'\n');
+    printf("\nAFFIXTRAIN failed\n");
+    fprintf(stderr,"\n***** AFFIXTRAIN failed\n");
+    exit(-1);
+    }
+
+void letTheBestRuleBeFirst(vertex ** pvf, vertex ** pvN,optionStruct * options)
+    {
+    if (comp == comp_parms)
+        {
+        for (vertex ** pvi = pvf; pvi < pvN; ++pvi)
+            {
+            computeWeight(*pvi);
+            }
+        if (options->verbose())
+            {
+            printf("Weights computed     %c",STARTLINE);
+            }
+        if (options->expensiveInfix())
+            {
+            for (vertex ** pvi = pvf; pvi < pvN; ++pvi)
+                {
+                (*pvi)->adjustWeight();
+                }
+            if (options->verbose())
+                {
+                printf("Weights adjusted     %c",STARTLINE);
+                }
+            }
+        for (vertex ** pvi = pvf + 1; pvi < pvN; ++pvi)
+            {
+            if (comp_parms(*pvf, *pvi) < 0)
+                {
+                vertex * tmp = *pvf;
+                *pvf = *pvi;
+                *pvi = tmp;
+                }
+            }
+        if (options->verbose())
+            {
+            printf("candidates sorted     %c",STARTLINE);
+            }
+        }
+    else
+        {
+        for (vertex ** pvi = pvf + 1; pvi < pvN; ++pvi)
+            {
+            if (comp(*pvf, *pvi) < 0)
+                {
+                vertex * tmp = *pvf;
+                *pvf = *pvi;
+                *pvi = tmp;
+                }
+            }
+        }
+    }
+
+
+vertex ** adjustCounts(vertex ** pvf, vertex ** pvN,optionStruct * options)
+    {
+    if (options->verbose())
+        {
+        printf("delete the rules that have become irrelevant and adjust counts for the good ones.    %c",STARTLINE);
+        }
+    for (vertex ** pvi = pvf; pvi < pvN; )
+        {
+        vertex * V = *pvi;
+        if(  V->R__R == 0 
+          && V->W__R == 0 
+          && V->R__W == 0
+          && V->W__W == 0
+          )
+            { /* The rule has become irrelevant. Delete it and put the last in 
+              the list in its place. (The list is unsorted, so that is safe to
+              do.) The list becomes a shorter. */
+            V->destroy();
+            --pvN;
+            *pvi = *pvN;
+            /* Do not increment pvi! */
+            }
+        else
+            {
+#if _NA
+            if(outputR < outputW)
+                {
+                V->adjustNotApplicableCountsByRecalculatingR_NA(this->Right, outputR + outputW);
+                }
+            else
+                {
+                V->adjustNotApplicableCountsByRecalculatingW_NA(Wrong, outputR + outputW);
+                }
+#endif
+            ++pvi;
+            }
+        }
+    if (options->verbose())
+        {
+        printf("delete the rules that have become irrelevant and adjust counts for the good ones. DONE                                            %c",STARTLINE);
+        }
+    return pvN;
+    }
+
+#if PRUNETRAININGPAIRS
+unsigned long pruneTheWeirdWords(trainingPair *& Right, trainingPair *& Wrong, vertex ** pv, unsigned long N, optionStruct * options)
+    {
+    trainingPair * deletedRightPairs = 0;
+    if (options->verbose())
+        {
+        printf("pruning right pairs %c",STARTLINE);
+        }
+    Right = pruneTrainingPairs(Right, deletedRightPairs);
+    trainingPair * deletedWrongPairs = 0;
+    if (options->verbose())
+        {
+        printf("pruning wrong pairs %c",STARTLINE);
+        }
+    Wrong = pruneTrainingPairs(Wrong, deletedWrongPairs);
+    if (options->verbose())
+        {
+        printf("clean up unused candidate rules               <-- %lu%c",N,STARTLINE);
+        }
+    N = (unsigned long)(cleanUpUnusedVertices(pv, pv + N
+#if _NA
+        , deletedRightPairs, deletedWrongPairs
+#endif
+        ) - pv);
+    if (options->verbose())
+        {
+        printf("clean up unused candidate rules  %lu%c", N,STARTLINE);
+        }
+    if (deletedRightPairs)
+        deletedRightPairs->mourn();
+    if(deletedWrongPairs)
+        deletedWrongPairs->mourn();
+    if (options->verbose())
+        {
+        printf("clean up pruned training pairs%c",STARTLINE);
+        }
+    return N;
+    }
+#endif
+
 
 void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,optionStruct * options)
     {
@@ -904,21 +1067,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
        training pair.)
     */
     if (options->verbose())
-        {
-        int r = 0;
-        int w = 0;
-        for (trainingPair * tp = *allRight; tp; tp = tp->next())
-            {
-            ++r;
-            }
-        for (trainingPair * tp = *allWrong; tp; tp = tp->next())
-            {
-            ++w;
-            }
-        printf("node(right=%d,wrong=%d) rule:",r,w);
-        this->V->print1(stdout);
-        printf("\n");
-        }
+        printNumbers(allRight,allWrong);
 
     trainingPair * NotApplicableRight = NULL;
     trainingPair * NotApplicableWrong = NULL;
@@ -930,19 +1079,8 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
     trainingPair ** pRight = &this->Right; // Pattern succeeds and replacement is right.
     assert(this->Right == NULL);
 
-    for(trainingPair * tp = *allRight;tp;tp = tp->next())
-        {
-        tp->unset(b_solved);
-        }
-    for(trainingPair * tp = *allWrong;tp;tp = tp->next())
-        {
-        tp->unset(b_solved);
-        }
-
-//    fprintf(fprune,"this is node "); this->V->print1(fprune); fprintf(fprune,"\n...........\n");
-//    (*allRight)->printAll(fprune,"allRight\n",'\n');
-//    (*allWrong)->printAll(fprune,"allWrong\n",'\n');
-//    fprintf(fprune,"DETAILS\n");
+    unsetSolved(allRight);
+    unsetSolved(allWrong);
 
     this->splitTrainingPairList(*allRight,pNotApplicableRight,pWrong,pRight,options->suffixOnly());
     this->splitTrainingPairList(*allWrong,pNotApplicableWrong,pWrong,pRight,options->suffixOnly());
@@ -966,12 +1104,11 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
 #endif
         }
 
-//    if(!Wrong)
-//        fprintf(fprune,"NO WRONGS, GOING BACK TO PARENT\n");
-
     if(Wrong)
         {
-        ptrdiff_t N;
+        /* Create candidate rules for all inputs and make pointers to each of
+           the rules from a list. */
+        unsigned long N;
         hashTable VertexHash(1000);
         Wrong->makeCandidateRules(&VertexHash,this->V,false,options);
         if(this->Right)
@@ -984,307 +1121,79 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
             return;
             }
         assert(N > 0);
-#if SMALLMEMORY
-        int wpart = -1; // -1 indicating: no upper bound
-        int rpart = -1;
-        /* If wpart and rpart are positive, the rules are applied to just a 
-           subset of training pairs. This saves time and memory.
-        */
-
-        // hack if number of pairs is very big
-        int ntestpairWrong = Wrong->count();
-        int ntestpairRight = this->Right ? this->Right->count() : 0;
-        double fraction = (double)MAXPAIRS / (double)(ntestpairWrong + ntestpairRight);
-        if(fraction < 1.0)
-            { // Define upper bound to make it managable memory-wise
-            if(options->verbose())
-                {
-                printf("%d < %d N=   %d\n",MAXPAIRS,(ntestpairWrong + ntestpairRight),N);
-                }
-            fprintf(stderr,"***** FAIRLY BIG THIS TRAINING SET IS! %d < %d N=   %d\n",MAXPAIRS,(ntestpairWrong + ntestpairRight),N);
-            wpart = (int)(fraction * (double)wpart);
-            rpart = MAXPAIRS - wpart;
-            }
-        //:hack
-#endif
-        // Test all pairs (up to upper bound) on all candidate rules.
-        //printf("Test all pairs (up to upper bound) on all candidate rules. %d\n",N);
         if(options->verbose())
             {
-            printf("             %td candidate rules %c",N,STARTLINE);
+            printf("             %lu candidate rules %c",N,STARTLINE);
             }
-//        fprintf(fprune,"BEFORE PRUNING\n");
+
+        /* Test all/some pairs (up to upper bound) on all candidate rules. */
         int skipW = skipping(N,Wrong);
         int skipR = skipping(N,this->Right);
-        for(int i = 0;i < N;++i)
+        for(unsigned long i = 0;i < N;++i)
             {
             if(options->verbose())
                 {
                 printf("%d %c",i,STARTLINE);
                 }
-            // Reset all counters in all candidate rules.
+            /* Reset all counters in all candidate rules:
+                    R__W = R__R = W__W = W__R = 0 */
             pv[i]->nlemmatiseStart();
 
-#if SMALLMEMORY
-            pv[i]->nlemmatise(Wrong,wpart,false,skipW);
-            pv[i]->nlemmatise(this->Right,rpart,true,skipR);
-#else
             pv[i]->nlemmatise(Wrong,false,skipW);
             pv[i]->nlemmatise(this->Right,true,skipR);
-#endif
-//            fprintf(fprune,"i:%d ::",i);
-//            pv[i]->print1(fprune);
-//            fprintf(fprune,"\n");
             }
 #if PRUNETRAININGPAIRS
-        trainingPair * deletedRightPairs = 0;
-        if (options->verbose())
-            {
-            printf("pruning right pairs %c",STARTLINE);
-            }
-        this->Right = pruneTrainingPairs(this->Right, deletedRightPairs);
-        trainingPair * deletedWrongPairs = 0;
-        if (options->verbose())
-            {
-            printf("pruning wrong pairs %c",STARTLINE);
-            }
-        Wrong = pruneTrainingPairs(Wrong, deletedWrongPairs);
-        if (options->verbose())
-            {
-            printf("clean up unused candidate rules               <-- %td%c",N,STARTLINE);
-            }
-        N = cleanUpUnusedVertices(pv, pv + N
-#if _NA
-            , deletedRightPairs, deletedWrongPairs
+        N = pruneTheWeirdWords(this->Right, Wrong, pv, N, options);
 #endif
-            ) - pv;
-        if (options->verbose())
-            {
-            printf("clean up unused candidate rules  %td%c", N,STARTLINE);
-            }
-        if (deletedRightPairs)
-            deletedRightPairs->mourn();
-        if(deletedWrongPairs)
-            deletedWrongPairs->mourn();
-        if (options->verbose())
-            {
-            printf("clean up pruned training pairs%c",STARTLINE);
-            }
-#endif
+        /* Point to the pointer to the head of the sequence of children. */
         node ** pnode = &this->IfPatternSucceeds;
-        ptrdiff_t first = 0;
-        ptrdiff_t lastN = N; // Rules having position on list beyond lastN do not
-                       // apply to any of the remaining pairs.
-//        fprintf(fprune,"AFTER PRUNING\n");
-//        for(int i = 0;i < N;++i)
-//            {
-//            fprintf(fprune,"i:%d ::",i);
-//            pv[i]->print1(fprune);
-//            fprintf(fprune,"\n");
-//            }
+        unsigned long first = 0; /* Points at the start of the list of
+                                 candidates. Incremented for each candidate
+                                 that made it to a new node. */
+        unsigned long lastN = N; /* Points to the last
+        /* `Wrong' is the list of training pairs that are not correctly
+           lemmatised by this rule. We make them disappear by creating
+           child nodes that absorb them. */
         while(Wrong)
             {
             if (options->verbose())
                 {
                 printf("Finding the best candidate child rule%c",STARTLINE);
                 }
+            /* Rules having position on list beyond lastN do not apply to any
+               of the remaining pairs, except perhaps if pairs were skipped for
+               saving processing time. */
             if (first >= lastN)
                 {
-                fprintf(stderr,"***** first:%ld >= lastN:%ld\n",(long)first,(long)lastN);
-                fprintf(stderr,"***** (This happens if one or more wrongly lemmatised words aren't handled by any candidate rules.)\n");
-                fprintf(stderr,"***** (List of candidate rules:)\n");
-                fprintf(stderr,"***** pv:\n");
-                for(int i = 0;i < lastN;++i)
-                    {
-                    fprintf(stderr,"i=%d:",i);
-                    pv[i]->print1(stderr);
-                    fprintf(stderr,"\n");
-                    }
-                fprintf(stderr,"***** (List of unmatched words that need better lemmatisation rule(s):)\n");
-                fprintf(stderr,"\n***** Wrong:\n");
-                Wrong->printAll(stderr,"unmatched words that need better lemmatisation rule(s)\n",'\n');
-                if(options->verbose())
-                    {
-                    printf("\nAFFIXTRAIN failed\n");
-                    }
-                fprintf(stderr,"\n***** AFFIXTRAIN failed\n");
-                exit(-1);
+                ifThereAreUnmatchedWordsThenTellUsAndExit(pv, Wrong, first, lastN);
                 }
             assert(first < lastN);
             vertex ** pvf = pv+first;
             vertex ** pvN = pv+lastN;
-            if (comp == comp_parms)
-                {
-                for (vertex ** pvi = pvf; pvi < pvN; ++pvi)
-                    {
-                    computeWeight(*pvi);
-                    }
-                if (options->verbose())
-                    {
-                    printf("Weights computed     %c",STARTLINE);
-                    }
-                if (options->expensiveInfix())
-                    {
-                    for (vertex ** pvi = pvf; pvi < pvN; ++pvi)
-                        {
-                        (*pvi)->adjustWeight();
-                        }
-                    if (options->verbose())
-                        {
-                        printf("Weights adjusted     %c",STARTLINE);
-                        }
-                    }
-                for (vertex ** pvi = pvf + 1; pvi < pvN; ++pvi)
-                    {
-                    if (comp_parms(*pvf, *pvi) < 0)
-                        {
-                        vertex * tmp = *pvf;
-                        *pvf = *pvi;
-                        *pvi = tmp;
-                        }
-                    }
-                if (options->verbose())
-                    {
-                    printf("candidates sorted     %c",STARTLINE);
-                    }
-                }
-            else
-                {
-                for (vertex ** pvi = pvf + 1; pvi < pvN; ++pvi)
-                    {
-                    if (comp(*pvf, *pvi) < 0)
-                        {
-                        vertex * tmp = *pvf;
-                        *pvf = *pvi;
-                        *pvi = tmp;
-                        }
-                    }
-                }
+            letTheBestRuleBeFirst(pvf, pvN, options);
             *pnode = new node(*pvf++);
             (*pnode)->init(&this->Right,&Wrong,level+1,options);
-#if SMALLMEMORY
-            if(wpart < 0)
-#endif
-                {
 #if _NA
-                int outputR = (this->Right ? this->Right->count() : 0); 
-                int outputW = (Wrong ? Wrong->count() : 0);
+            int outputR = (this->Right ? this->Right->count() : 0); 
+            int outputW = (Wrong ? Wrong->count() : 0);
 #endif
-                if (options->verbose())
-                    {
-                    printf("delete the rules that have become irrelevant and adjust counts for the good ones.    %c",STARTLINE);
-                    }
-                for (vertex ** pvi = pvf; pvi < pvN; ++pvi)
-                    {
-                    if(  (*pvi)->R__R == 0 
-                      && (*pvi)->W__R == 0 
-                      && (*pvi)->R__W == 0
-                      && (*pvi)->W__W == 0
-                      )
-                        { // rule has become irrelevant
-                        (*pvi)->destroy();
-                        --pvN;
-                        *pvi = *pvN;
-                        }
-#if _NA
-                    else
-                        {
-                        if(outputR < outputW)
-                            {
-                            if (options->verbose())
-                                {
-                                printf("delete the rules that have become irrelevant and adjust counts for the good ones.  %d right pairs to check %d %c", outputR, outputW,STARTLINE);
-                                }
-                            (*pvi)->adjustNotApplicableCountsByRecalculatingR_NA(this->Right, outputR + outputW);
-                            }
-                        else
-                            {
-                            if (options->verbose())
-                                {
-                                printf("delete the rules that have become irrelevant and adjust counts for the good ones.  %d wrong pairs to check %d %c", outputW, outputR,STARTLINE);
-                                }
-                            (*pvi)->adjustNotApplicableCountsByRecalculatingW_NA(Wrong, outputR + outputW);
-                            }
-                        }
-#endif
-                    }
-                if (options->verbose())
-                    {
-                    printf("delete the rules that have become irrelevant and adjust counts for the good ones. DONE                                            %c",STARTLINE);
-                    }
-                if (pvf == pvN)
-                    {
-                    if(options->verbose()) /* This is not really an error. */
-                        fprintf(stderr,"\n***** destroyed all remaining untested rule candidates because they have become inapplicable\n");
-                    }
-                }
+            if(skipW == 0 && skipR == 0)
+                pvN = adjustCounts(pvf, pvN, options);
 
-#if SMALLMEMORY
-            if(options->verbose() && wpart >= 0)
-                {
-                if(lastN > pvN - pv)
-                    {
-                    printf("Deleted %ld of original %d candidates (%f%%)\n",(long int)(lastN - (pvN - pv)),N,(100.0*(lastN - (pvN - pv))/N));
-                    lastN = pvN - pv;
-                    }
-                }
-            else
-#endif
-                lastN = pvN - pv;
+            lastN = (unsigned long)(pvN - pv);
 
             ++first;
-            if(first >= lastN)
-                {
-                if(options->verbose()) /* This is not really an error. */
-                    fprintf(stderr,"\n***** DANGER first %ld >= lastN %ld\n",(long)first,(long)lastN);
-                }
-#if SMALLMEMORY
-            // hack:
-
-            int CnT;
-#if AMBIGUOUS
-            // Take apart the wrongly lemmatised homographs that have a correctly lemmatised sibling. 
-            Wrong = Wrong->makeWrongAmbiguousIfRightPresent(Ambiguous);
-#endif
-            if(  wpart >= 0 
-              && Wrong 
-              &&    ( CnT = 
-                      Wrong->count() 
-                    + (this->Right ? this->Right->count() : 0) 
-                    )
-                 <= MAXPAIRS
-              )
-                {
-                if(options->verbose())
-                    {
-                    printf("%d > %d lastN=%ld\n",MAXPAIRS,CnT,(long)lastN);
-                    }
-                fprintf(stderr,"***** FAIRLY BIG THIS TRAINING SET IS! BUT NOW %d > %d lastN=%ld\n",MAXPAIRS,CnT,(long)lastN);
-                // Test all remaining pairs on all remaining candidate rules.
-                for(ptrdiff_t i = first;i < lastN;++i)
-                    {
-                    // Reset all counters in remaining candidate rules.
-                    pv[i]->nlemmatiseStart();
-                    pv[i]->nlemmatise(Wrong,-1,false);
-                    pv[i]->nlemmatise(this->Right,-1,true);
-                    }
-                wpart = -1;
-                }
-            // :hack
-#endif
-            if (options->verbose())
-                {
-                printf("Treat the unmatched inputs with this node's next sibling. \n");
-                }
+            if (options->verbose()) printf("Treat the unmatched inputs with this node's next sibling. \n");
             pnode = &(*pnode)->IfPatternFails;
-            }
+            } // while(Wrong)
+
         if (options->verbose())
             {
             printf("All input is handled as it should. Clean up before returning \n");
             }
 
         *pnode = 0;
-        for(int i = 0;i < lastN;++i)
+        for(unsigned long i = 0;i < lastN;++i)
             {
             pv[i]->destroy();
             }

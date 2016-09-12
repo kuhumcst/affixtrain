@@ -133,9 +133,9 @@ class trainingPair
             {
             V = v;
             }
-        int count()
+        unsigned long count()
             {
-            int n = 0;
+            unsigned long n = 0;
             trainingPair * t = this;
             while(t)
                 {

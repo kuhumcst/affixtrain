@@ -7,12 +7,12 @@ typedef  void (vertex::*forallfunc)();
 class hashTable
     {
     private:
-        long hash_size;
-        long record_count;
+        unsigned long hash_size;
+        unsigned long record_count;
         vertex ** hash_table;
         hashTable * next;
     public:
-        long recordCount()const
+        unsigned long recordCount()const
             {
             return record_count;
             }
@@ -34,9 +34,9 @@ class hashTable
             --record_count;
             }
         void rehash(int loadFactor/*1-100*/);
-        long loadfactor()
+        unsigned long loadfactor()
             {
-            if(record_count < 10000000L)
+            if(record_count < 10000000UL)
                 return (100 * record_count) / hash_size;
             else
                 return record_count / (hash_size/100);
@@ -45,7 +45,7 @@ class hashTable
         ~hashTable();
         long key(const char * ckey);
         vertex * find(const char * ckey,vertex **& head);
-        int forall(forallfunc fnc);
+        unsigned long forall(forallfunc fnc);
         vertex * getVertex(vertex * Rule,bool & New);
         bool deleteVertex(vertex * Rule);
     };

@@ -38,7 +38,7 @@ void hashTable::rehash(int loadFactor/*1-100*/)
     long oldsize = hash_size;
     hash_size = nextprime((100 * record_count)/loadFactor);
     vertex ** new_hash_table = new vertex * [hash_size];
-    long i;
+    unsigned long i;
     for(i = 0;i < hash_size;++i)
         new_hash_table[i] = 0;
     if(hash_table)
@@ -66,7 +66,7 @@ hashTable::hashTable(long size):record_count(0),next(0)
     {
     hash_size = nextprime(size);
     hash_table = new vertex * [hash_size];
-    long i;
+    unsigned long i;
     for(i = 0;i < hash_size;++i)
         hash_table[i] = 0;
     ++HashCount;
@@ -74,14 +74,12 @@ hashTable::hashTable(long size):record_count(0),next(0)
 
 hashTable::~hashTable()
     {
-    int i;
-    int n = 0;
+    unsigned long i;
     for(i = 0;i < hash_size;++i)
         {
         vertex * ps = hash_table[i];
         while(ps)
             {
-            ++n;
             ps->Hash = 0;
             ps = ps->getNext();
             }
@@ -125,8 +123,8 @@ vertex * hashTable::find(const char * ckey,vertex **& head)
 vertex ** hashTable::convertToList()
     {
     vertex ** ret = new vertex * [record_count];
-    int i;
-    int n = 0;
+    unsigned long i;
+    unsigned long n = 0;
     for(i = 0;i < hash_size;++i)
         {
         vertex * ps = hash_table[i];
@@ -140,10 +138,10 @@ vertex ** hashTable::convertToList()
     return ret;
     }
 
-int hashTable::forall(forallfunc fnc)
+unsigned long hashTable::forall(forallfunc fnc)
     {
-    int i;
-    int n = 0;
+    unsigned long i;
+    unsigned long n = 0;
     for(i = 0;i < hash_size;++i)
         {
         vertex * ps = hash_table[i];

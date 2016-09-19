@@ -162,21 +162,21 @@ void cleanUpOptions()
 
 optionStruct::~optionStruct()
     {
+    delete[] Argstring;
     delete[] e;
     delete[] f;
-    delete[] I;
     delete[] i;
     delete[] j;
     delete[] n;
     delete[] o;
     delete[] B;
     delete[] P;
-    delete[] X;
     delete[] b;
-    delete[] b;
-    delete[] E;
     delete[] G;
-    delete[] Argstring;
+    delete[] E;
+    delete[] X;
+    delete[] I;
+    delete[] O;
     }
 
 void optionStruct::detectFloatingPointNumbers(const char * S)

@@ -104,6 +104,12 @@ Even a pair of ambiguous results can be in the 'wrong' order.
 const char * prettytxt = NULL;
 const char * prettybra = NULL;
 
+static char start[1000] = { 0 };
+static char end[1000] = { 0 };
+static FILE * fm = 0;
+static FILE * fmbra = 0;
+static int indent = 0;
+
 typedef unsigned char typetype;
 
 static void Strrev(char * s)
@@ -117,7 +123,7 @@ static void Strrev(char * s)
         }
     }
 
-static void printpatBracmat(char ** fields,int findex,char * start,char * end
+static void printpatBracmat(char ** fields,int findex/*,char * start,char * end*/
                      ,char * pattern,char * replacement
                      )
     {
@@ -165,7 +171,7 @@ static void printpatBracmat(char ** fields,int findex,char * start,char * end
     *prep = '\0';
     }
 
-static void printpat(char ** fields,int findex,char * start,char * end,FILE * fm)
+static void printpat(char ** fields,int findex/*,char * start,char * end,FILE * fm*/)
     {
     sprintf(start+strlen(start),"%.*s",(int)(fields[1] - fields[0] - 1),fields[0]);
     fprintf(fm,"%s",start);
@@ -205,13 +211,13 @@ static void printpat(char ** fields,int findex,char * start,char * end,FILE * fm
 static void printrulesBracmat
                 ( char * rules
                 , char * max
-                , char * start
-                , char * end
-                , FILE * fmbra
+//                , char * start
+//                , char * end
+//                , FILE * fmbra
                 , strng * L
                 , strng * R
                 , int & nr
-                , int indent
+//                , int indent
                 );
 
 struct fileBuffer
@@ -279,19 +285,19 @@ struct fileBuffer
 static char * printrules
 (char * rules
 , char * max
-, char * start
-, char * end
-, FILE * fm
-, int indent
+//, char * start
+//, char * end
+//, FILE * fm
+//, int indent
 );
 
 static char * printChain
                 ( char * p
                 , char * e
-                , int indent
-                , char * start
-                , char * end
-                , FILE * fm
+//                , int indent
+//                , char * start
+//                , char * end
+//                , FILE * fm
                 , const char * msg
                 )
     {
@@ -309,10 +315,10 @@ static char * printChain
                 printrules
                     ( p + sizeof(int)
                     , (index == 0) ? e : (p + index)
-                    , start
-                    , end
-                    , fm
-                    , indent
+//                    , start
+//                    , end
+//                    , fm
+//                    , indent
                     );
 
             if(index > 0)
@@ -332,10 +338,10 @@ static char * printChain
 static char * printrules
 ( char * rules
 , char * max
-, char * start
-, char * end
-, FILE * fm
-, int indent
+//, char * start
+//, char * end
+//, FILE * fm
+//, int indent
 )
 	{
 	for (;;)
@@ -372,21 +378,22 @@ static char * printrules
 				}
 			fields[findex] = ++p; // p is now within 3 bytes from the next record.
 			fprintf(fm, "%*s", indent, "");
-			printpat(fields, findex, start, end, fm);
+			printpat(fields, findex/*, start, end, fm*/);
 			ptrdiff_t nxt = p - rules;
 			nxt += sizeof(int) - 1;
 			nxt /= sizeof(int);
 			nxt *= sizeof(int);
 			p = rules + nxt;
+            indent += 2;
 			if (type & 2)
 				{ // several chains of children ahead
 				p = printChain
 					(p
 					, rules + index
-					, indent + 2
-					, start
-					, end
-					, fm
+//					, indent + 2
+//					, start
+//					, end
+//					, fm
 					, " ambiguous children"
 					);
 				}
@@ -395,27 +402,30 @@ static char * printrules
 				p = printrules
 					(p
 					, rules + index
-					, start
-					, end
-					, fm
-					, indent + 2
+//					, start
+//					, end
+//					, fm
+//					, indent + 2
 					);
 				}
+            indent -= 2;
 			start[slen] = '\0';
 			Strrev(end);
 			end[elen] = 0;
 			Strrev(end);
 			if (type & 1)
 				{
+                ++indent;
 				p = printChain
 					(rules + index
 					, max
-					, indent + 1
-					, start
-					, end
-					, fm
+//					, indent + 1
+//					, start
+//					, end
+//					, fm
 					, " ambiguous tails of children"
 					);
+                --indent;
 				assert(p == max);
 				return p;
 				}
@@ -453,16 +463,17 @@ int prettyPrint(const char * flexrulesIn)
         prettytxt = ".pretty.txt";
     sprintf(filenameOut, "%s%s", flexrulesIn,prettytxt);
 
-    FILE * fm = fopen(filenameOut, "wb");
+    /*FILE * */ fm = fopen(filenameOut, "wb");
     ++openfiles;
     if (!fm)
         {
         printf("Error (prettyPrint): Cannot open %s (filenameOut) for writing\n", filenameOut);
         return false;
         }
-    char start[1000] = { 0 };
-    char end[1000] = { 0 };
-    printrules(FileBuffer.buf, FileBuffer.buf + FileBuffer.Length, start, end, fm, 0);
+//    char start[1000] = { 0 };
+//    char end[1000] = { 0 };
+    indent = 0;
+    printrules(FileBuffer.buf, FileBuffer.buf + FileBuffer.Length/*, start, end, fm, 0*/);
     --openfiles;
     fclose(fm);
     return true;
@@ -472,10 +483,10 @@ int prettyPrint(const char * flexrulesIn)
 static void printChainBracmat
         ( char * p
         , char * e
-        , int indent
-        , char * start
-        , char * end
-        , FILE * fmbra
+//        , int indent
+//        , char * start
+//        , char * end
+//        , FILE * fmbra
         , strng * L
         , strng * R
         , int & nr
@@ -495,11 +506,11 @@ static void printChainBracmat
                 printrulesBracmat
                     ( p + sizeof(int)
                     , (index == 0) ? e : (p + index)
-                    , start
-                    , end
-                    , fmbra
+//                    , start
+//                    , end
+//                    , fmbra
                     , L, R, nr
-                    , indent
+//                    , indent
                     );
             fprintf(fmbra, "%*s )\n", indent, "");
 
@@ -521,13 +532,13 @@ static void printChainBracmat
 static void printrulesBracmat
                 ( char * rules
                 , char * max
-                , char * start
-                , char * end
-                , FILE * fmbra
+//                , char * start
+//                , char * end
+//                , FILE * fmbra
                 , strng * L
                 , strng * R
                 , int & nr
-                , int indent
+//                , int indent
                 )
     {
     int parens = 0;
@@ -563,7 +574,7 @@ static void printrulesBracmat
         fprintf(fmbra,"%*s",indent*2,"");
         char pattern[1000];
         char replacement[1000];
-        printpatBracmat(fields,findex,start,end,pattern,replacement);
+        printpatBracmat(fields,findex,/*start,end,*/pattern,replacement);
         strng spattern(pattern);
         strng sreplacement(replacement);
         strng * nLL = 0;
@@ -587,6 +598,7 @@ static void printrulesBracmat
         nxt *= sizeof(int);
         p = rules+nxt;
 
+        indent += 2;
         if (type & 2)
             { // several chains of children ahead
             if(p < rules + index)
@@ -595,10 +607,10 @@ static void printrulesBracmat
                 printChainBracmat
                     ( p
                     , rules + index
-                    , indent + 2
-                    , start
-                    , end
-                    , fmbra
+//                    , indent + 2
+//                    , start
+//                    , end
+//                    , fmbra
                     , &nL, &nR, nr
                     //, " ambiguous children"
                     );
@@ -612,14 +624,15 @@ static void printrulesBracmat
                 printrulesBracmat
                     ( p
                     , rules + index
-                    , start
-                    , end
-                    , fmbra
+//                    , start
+//                    , end
+//                    , fmbra
                     , &nL, &nR, nr
-                    , indent + 2
+//                    , indent + 2
                     );
                 }
             }
+        indent -= 2;
         fprintf(fmbra," ) ");
         start[slen] = '\0';
         Strrev(end);
@@ -628,16 +641,18 @@ static void printrulesBracmat
         rules += index;
         if (type & 1)
             {
+            ++indent;
             printChainBracmat
                 ( rules
                 , max
-                , indent + 1
-                , start
-                , end
-                , fmbra
+//                , indent + 1
+//                , start
+//                , end
+//                , fmbra
                 , L, R, nr
                 //, " ambiguous tails of children"
                 );
+            --indent;
             break;
             }
         }
@@ -661,7 +676,7 @@ int prettyPrintBracmat(const char * flexrulesIn)
         prettybra = ".pretty.bra";
     sprintf(brafile, "%s%s", flexrulesIn,prettybra);
     
-    FILE * fmbra = fopen(brafile, "wb");
+    /*FILE * */fmbra = fopen(brafile, "wb");
     ++openfiles;
     if (!fmbra)
         {
@@ -669,14 +684,15 @@ int prettyPrintBracmat(const char * flexrulesIn)
         return false;
         }
 
-    char start[1000] = { 0 };
-    char end[1000] = { 0 };
+//    char start[1000] = { 0 };
+//    char end[1000] = { 0 };
     
     int nr = 0;
     strng L("");
     strng R("");
 
-    printrulesBracmat(FileBuffer.buf, FileBuffer.buf + FileBuffer.Length, start, end, fmbra, &L, &R, nr, 0);
+    indent = 0;
+    printrulesBracmat(FileBuffer.buf, FileBuffer.buf + FileBuffer.Length/*, start, end, fmbra*/, &L, &R, nr/*, 0*/);
 
     --openfiles;
     fclose(fmbra);

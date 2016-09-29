@@ -41,7 +41,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Full form - lemma pairs that require unique rules are discarded if
 // PRUNETRAININGPAIRS 1
-#define PRUNETRAININGPAIRS 0
+#define PRUNETRAININGPAIRS 1
 
 #if SMALLMEMORY
 #define MAXPAIRS 8000000 //1000000 //500000 //100000 //500000 
@@ -351,7 +351,7 @@ be a bias indicating that "infixes" tend to be near the end, rather than near
 the start, of a word. In that case, reversing words may improve results.
 */
 
-#define _NA 0
+#define _NA 1
 /* NA 1
 Allow weight functions (see comp.cpp) to use the numbers W__NA and N__NA,
 the number of wrongly (correctly) lemmatized words that a candidate rule 

@@ -970,7 +970,14 @@ void letTheBestRuleBeFirst(vertex ** pvf, vertex ** pvN,optionStruct * options)
     }
 
 
-vertex ** adjustCounts(vertex ** pvf, vertex ** pvN,optionStruct * options)
+vertex ** adjustCounts(vertex ** pvf, vertex ** pvN, optionStruct * options
+#if _NA
+					   , trainingPair * Wrong
+					   , trainingPair * Right
+					   , int outputW
+					   , int outputR
+#endif
+					   )
     {
     if (options->verbose())
         {
@@ -997,7 +1004,7 @@ vertex ** adjustCounts(vertex ** pvf, vertex ** pvN,optionStruct * options)
 #if _NA
             if(outputR < outputW)
                 {
-                V->adjustNotApplicableCountsByRecalculatingR_NA(this->Right, outputR + outputW);
+                V->adjustNotApplicableCountsByRecalculatingR_NA(Right, outputR + outputW);
                 }
             else
                 {
@@ -1178,10 +1185,12 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
 #if _NA
             int outputR = (this->Right ? this->Right->count() : 0); 
             int outputW = (Wrong ? Wrong->count() : 0);
+			if(skipW == 0 && skipR == 0)
+				pvN = adjustCounts(pvf, pvN, options, Wrong, this->Right,outputW,outputR);
+#else
+			if (skipW == 0 && skipR == 0)
+				pvN = adjustCounts(pvf, pvN, options);
 #endif
-            if(skipW == 0 && skipR == 0)
-                pvN = adjustCounts(pvf, pvN, options);
-
             lastN = (unsigned long)(pvN - pv);
 
             ++first;

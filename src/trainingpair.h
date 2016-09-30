@@ -108,8 +108,12 @@ class trainingPair
                 likes = L > 3 ? 3 : L;
             }
         bool fewerLikesThan(int thresh) const;
-        int notLemmatizedBy(vertex * V);
-        void mourn();
+#endif
+#if PRUNETRAININGPAIRS || _NA
+		int notLemmatizedBy(vertex * V);
+#endif
+#if PRUNETRAININGPAIRS
+		void mourn();
 #endif
         trainingPair ** pNext()
             {

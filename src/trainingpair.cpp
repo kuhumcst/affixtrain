@@ -632,7 +632,8 @@ bool trainingPair::fewerLikesThan(int thresh) const
     bool ret = !applicableRules || applicableRules->fewerLikesThan(thresh);
     return ret;
     }
-
+#endif
+#if PRUNETRAININGPAIRS || _NA
 int trainingPair::notLemmatizedBy(vertex * V)
     {
     int ret = 0;
@@ -643,7 +644,8 @@ int trainingPair::notLemmatizedBy(vertex * V)
         }
     return ret;
     }
-
+#endif
+#if PRUNETRAININGPAIRS
 void trainingPair::mourn()
     {
     for(trainingPair * p = this;p;p = p->Next)

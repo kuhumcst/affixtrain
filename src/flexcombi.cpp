@@ -921,7 +921,7 @@ void treenode::print(int ind)
 
 ptrdiff_t treenode::copy(char * arr,int ind)
     {
-    ptrdiff_t * FailBranch = (ptrdiff_t*)arr;
+    int * FailBranch = (int*)arr;
     typetype type = 0;
     arr += sizeof(int);
     if (Sibling.more)
@@ -982,7 +982,7 @@ void chain::print(int ind)
 
 ptrdiff_t chain::copy(char * arr, int ind)
     {
-    ptrdiff_t * Other = (ptrdiff_t *)arr;
+    int * Other = (int *)arr;
     arr += sizeof(int);
     if (TreeNode)
         {
@@ -991,7 +991,7 @@ ptrdiff_t chain::copy(char * arr, int ind)
         }
     else
         {
-        *Other = (ptrdiff_t)(Alt ? sizeof(int) : -(int)sizeof(int));
+        *Other = (int)(Alt ? sizeof(int) : -(int)sizeof(int));
         }
     if (Alt)
         arr += Alt->copy(arr, ind);

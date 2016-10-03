@@ -1,3 +1,12 @@
+Version 3.66 - 2016.10.03
+-------------------------
+Fixed error that caused combination of flexrules to fail.
+#define _NA 0
+
+Version 3.65 - 2016.09.29
+-------------------------
+fixed missing arguments
+
 Version 3.64 - 2016.09.19
 -------------------------
 Removed parameters from deeply recursive print functions. 

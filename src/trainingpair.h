@@ -109,7 +109,7 @@ class trainingPair
             }
         bool fewerLikesThan(int thresh) const;
 #endif
-#if PRUNETRAININGPAIRS || _NA
+#if _NA
 		int notLemmatizedBy(vertex * V);
 #endif
 #if PRUNETRAININGPAIRS

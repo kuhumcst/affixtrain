@@ -1,3 +1,8 @@
+Version 3.67 - 2017.03.20
+-------------------------
+Right trimming of tag and other fields. Tag fields, often at the end of a line,
+could contain spurious characters, such as Carriage Return.
+
 Version 3.66 - 2016.10.03
 -------------------------
 Fixed error that caused combination of flexrules to fail.

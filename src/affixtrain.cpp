@@ -20,7 +20,7 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "3.66"
+#define VERSION "3.67"
 
 #include "affixtrain.h"
 #include "testrules.h"
@@ -339,14 +339,21 @@ static tagClass * collectTags(optionStruct * options)
                 {
                 case '3':
                 case 'T':
-                case 't':
-                if (!Tags || !(Tags->has(cols[ii], lengths[ii])))
-                    {
-                    Tags = new tagClass(cols[ii], lengths[ii], Tags);
-                    }
-                break;
+				case 't':
+						{
+						const char * C = cols[ii];
+						size_t L = lengths[ii];
+						// Trim CR, white space and other obnoxious stuff.
+						while (L > 0 && 0 < C[L - 1] && C[L - 1] <= ' ')
+							--L;
+						if (!Tags || !(Tags->has(C, L)))
+							{
+							Tags = new tagClass(C, L, Tags);
+							}
+						break;
+						}
                 default:
-                ;
+		            ;
                 }
             }
         }
@@ -640,51 +647,56 @@ static trainingPair * readTrainingPairs(aFile & afile, size_t & pairs, const cha
              ; ++column, ++ii
              )
             {
-            switch (*column)
+			const char * C = cols[ii];
+			size_t L = lengths[ii];
+			// Trim CR, white space and other obnoxious stuff.
+			while (L > 0 && 0 < C[L - 1] && C[L - 1] <= ' ')
+				--L;
+			switch (*column)
                 {
                 case '1':
                 case 'F':
                 case 'f':
                 case 'W':
                 case 'w':
-                Word = cols[ii];
-                wordlength = lengths[ii];
-                break;
+					Word = C;
+					wordlength = L;
+					break;
                 case '2':
                 case 'B':
                 case 'b':
                 case 'L':
                 case 'l':
-                LemmaHead = cols[ii];
-                lemmalength = lengths[ii];
-                break;
+					LemmaHead = C;
+					lemmalength = L;
+					break;
                 case '3':
                 case 'T':
                 case 't':
-                if (tag && (taglength == (size_t)lengths[ii]) && !strncmp(cols[ii], tag, taglength))
-                    {
-                    doUse = true;
-                    }
-                break;
+					if (tag && (taglength == (size_t)L) && !strncmp(C, tag, taglength))
+						{
+						doUse = true;
+						}
+				    break;
 #if LEMMAINL
                 case '3':
-                Inl = strtol(cols[ii],NULL,10);
-                break;
+	                Inl = strtol(C,NULL,10);
+			        break;
                 case '4':
-                Lemma_Inl = strtol(cols[ii],NULL,10);
+		            Lemma_Inl = strtol(C,NULL,10);
                 break;
 #endif
 #if WORDCLASS
                 case '5':
-                WordClass = cols[ii];
-                wordclasslength = lengths[ii];
-                break;
+	                WordClass = C;
+		            wordclasslength = L;
+			        break;
 #endif
 #if LEMMACLASS
                 case '6':
-                LemmaClass = cols[ii];
-                lemmaclasslength = lengths[ii];
-                break;
+	                LemmaClass = C;
+		            lemmaclasslength = L;
+			        break;
 #endif
                 default:
                 ;
@@ -708,7 +720,7 @@ static trainingPair * readTrainingPairs(aFile & afile, size_t & pairs, const cha
             if (wordlength > 0 && lemmalength > 0)
                 {
                 TrainingPair[pairs].init
-                    (Word
+                    ( Word
                     , wordlength
                     , LemmaHead
                     , lemmalength
@@ -1445,6 +1457,7 @@ void computeParms(optionStruct * options)
                 case esize:
                     brownweight = (double)Count.getCountBySize();
                     break;
+				case econstant:
                 default:
                     brownweight = 0.0;
                 }
@@ -1521,7 +1534,8 @@ void computeParms(optionStruct * options)
                     case esize:
                         currentweight = (double)Count.getCountBySize();
                         break;
-                    default:
+					case econstant:
+					default:
                         ;
                     }
                 printparms(currentNo,currentweight, options);
@@ -1541,6 +1555,7 @@ void computeParms(optionStruct * options)
                     case esize:
                         brownweight = (double)Count.getCountBySize();
                         break;
+					case econstant:
                     default:
                         brownweight = 0.0;
                     }

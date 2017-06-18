@@ -751,14 +751,8 @@ static trainingPair * readTrainingPairs(aFile & afile, size_t & pairs, const cha
     return TrainingPair;
     }
 
-    void FilterTagLines(const char * completeFile,optionStruct * options, const char * tag)
+void FilterTagLines(const char * fname,optionStruct * options, const char * tag)
     {
-    const char * eob;
-    size_t size;
-    union pointers file;
-
-    const char * fname = completeFile;
-        
     assert(fname);
 
     size_t tabcount;

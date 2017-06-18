@@ -51,6 +51,7 @@ class optionStruct
         const char * i; // word list
         const char * j; // temp dir
         const char * n; // columns
+        const char * k; // specific tag ('klasse')
         const char * o; // flexrules
         const char * B; // Best parms
         const char * P; // Current parms
@@ -113,6 +114,7 @@ class optionStruct
         const char * wordLemmaList() const{return i;}
         const char * tempDir() const{return j;}
         const char * columns() const{return n;}
+        const char * POStag() const{ return k; }
         //const char * flexrules() const{return o;}
         const char * flexrules();
         const char * lemmas() const{return O;}
@@ -154,6 +156,7 @@ class optionStruct
         void seto(const char * Result);
         void sete(const char * Extra);
         void setn(const char * Columns);
+        void setk(const char * PoS);
         void setf(const char * Compfunc);
         void setP(const char * ParamFile);
         void setc(int cutoff){c = cutoff;}

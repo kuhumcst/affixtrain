@@ -20,7 +20,7 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "3.67"
+#define VERSION "3.7"
 
 #include "affixtrain.h"
 #include "testrules.h"
@@ -751,6 +751,95 @@ static trainingPair * readTrainingPairs(aFile & afile, size_t & pairs, const cha
     return TrainingPair;
     }
 
+    void FilterTagLines(const char * completeFile,optionStruct * options, const char * tag)
+    {
+    const char * eob;
+    size_t size;
+    union pointers file;
+
+    const char * fname = completeFile;
+        
+    assert(fname);
+
+    size_t tabcount;
+    size_t tagtabcount;
+    const char * column;
+
+    for (column = options->columns(), tagtabcount = 0
+         ;    *column
+         ; ++column
+         )
+        {
+        switch (*column)
+            {
+            case '3':
+            case 'T':
+            case 't':
+                break;
+            default:
+                ++tagtabcount;
+            }
+        }
+    char * tagfilename = new char[strlen(fname) + strlen(tag) + 2];
+    sprintf(tagfilename, "%s_%s",fname,tag);
+    FILE * fp = fopenOrExit(fname, "rb", "Input file");
+    FILE * fpt = fopenOrExit(tagfilename, "wb", "Single tag input file");
+
+    char line[10000];
+    int i = 0;
+    int kar;
+    bool empty = true;
+    while ((kar = getc(fp)) != EOF)
+        {
+        line[i++] = (char)kar;
+        if (kar == '\n')
+            {
+            while (--i >= 0 && 0 <= line[i] && line[i] <= ' ')
+                {
+                line[i] = 0;
+                }
+            if (i == 0) // empty line
+                {
+                if (!empty)
+                    {
+                    fputc('\n', fpt);
+                    empty = true;
+                    }
+                }
+            tabcount = 0;
+            for (i = 0; line[i] && tabcount < tagtabcount;)
+                {
+                if (line[i] == '\t')
+                    {
+                    ++tabcount;
+                    }
+                ++i;
+                }
+            if (tabcount == tagtabcount)
+                {
+                const char * p = tag;
+                while (*p && line[i] == *p)
+                    {
+                    ++i;
+                    ++p;
+                    }
+                if (*p == 0 && (line[i] <= ' '))
+                    {
+                    fwrite(line, strlen(line), 1, fpt);
+                    fputc('\n', fpt);
+                    empty = false;
+                    }
+                }
+            i = 0;
+            }
+        }
+    fclose(fp);
+    fclose(fpt);
+    options->seti(tagfilename);
+    options->setk(tag);
+    options->setArgstring();
+    }
+
 static void markTheAmbiguousPairs(trainingPair * TrainingPair, size_t pairs, optionStruct * options)
     {
     markAmbiguous(pairs, TrainingPair, options);
@@ -1350,7 +1439,7 @@ const unsigned int partOfFile(const char * fbuf, const double fraction, optionSt
     return fraclines;
     }
 
-void computeParms(optionStruct * options)
+void computeParms(optionStruct * options, const char * tagName)
     {
     CHECK("iglobTempDir");
     int maxswath = options->swaths();//MAXSWATH;
@@ -1999,6 +2088,75 @@ static void initOutput(const char * path)
     fclose(fp);
     }
 
+void ParameterComputation(optionStruct * poptions, const char * tagName)
+    {
+    if (poptions->computeParms())
+        {
+        if (poptions->verbose())
+            printf("Computing parameters\n");
+
+        if (poptions->currentParms())
+            initOutput(poptions->currentParms());
+
+        if (poptions->bestParms())
+            initOutput(poptions->bestParms());
+
+        computeParms(poptions, tagName);
+
+        if (poptions->verbose())
+            printf("Computing parameters DONE\n");
+        }
+    }
+
+void ComputeDelta(optionStruct * poptions)
+    {
+    if (poptions->verbose())
+        printf("Going to compute delta.\n");
+
+    init(poptions); // TODO Check that penalties are the best ones, not the last ones tried.
+
+    if (poptions->verbose())
+        printf("Computing delta DONE.\n");
+    }
+
+void TestRules(optionStruct * poptions, const char * tagName)
+    {
+    if (poptions->test() || (poptions->trainTest() && !poptions->tenfoldCrossValidation()))
+        {
+        if (poptions->verbose())
+            printf("Going to test the rules.\n");
+
+        poptions->printArgFile();
+        testrules(poptions, tagName);
+        if (poptions->verbose())
+            printf("Testing the rules DONE.\n");
+        }
+    }
+
+void CreateFlexRules(optionStruct * poptions, const char * tagName)
+    {
+    if (poptions->createFlexRules())
+        {
+        //            printf("CREATE FLEXRULES (<ENTER>)");
+        //            getchar();
+        setCompetitionFunction(poptions);
+        poptions->setReadLines(poptions->lines());
+
+                countAndWeight * Counts = new countAndWeight[1 + (size_t)poptions->cutoff()];
+                trainRules(tagName, poptions, Counts);
+                delete[]Counts;
+        }
+    }
+
+void AllProcessing(optionStruct * poptions, const char * tagName)
+    {
+    ParameterComputation(poptions,tagName);
+    ComputeDelta(poptions);
+    TestRules(poptions,tagName);
+    CreateFlexRules(poptions, tagName);
+    }
+
+
 int main(int argc, char **argv)
     {
     if (argc < 2)
@@ -2051,77 +2209,32 @@ int main(int argc, char **argv)
             return -1;
             }
 
-        if (options.computeParms())
+        tagClass * Tags = NULL;
+        Tags = collectTags(&options);
+        tagClass * theTag = Tags;
+        if (theTag)
             {
             if (options.verbose())
-                printf("Computing parameters\n");
-
-            if (options.currentParms())
-                initOutput(options.currentParms());
-
-            if (options.bestParms())
-                initOutput(options.bestParms());
-
-            computeParms(&options);
-
-            if (options.verbose())
-                printf("Computing parameters DONE\n");
-            }
-
-        if (options.verbose())
-            printf("Going to compute delta.\n");
-
-        init(&options); // TODO Check that penalties are the best ones, not the last ones tried.
-
-        if (options.verbose())
-            printf("Computing delta DONE.\n");
-
-
-        if(options.test() || (options.trainTest() && !options.tenfoldCrossValidation()))
-            {
-            if (options.verbose())
-                printf("Going to test the rules.\n");
-
-            options.printArgFile();
-            testrules(&options);
-            if (options.verbose())
-                printf("Testing the rules DONE.\n");
-            }
-        if(options.createFlexRules())
-            {
-//            printf("CREATE FLEXRULES (<ENTER>)");
-//            getchar();
-            setCompetitionFunction(&options);
-            tagClass * Tags = NULL;
-            options.setReadLines(options.lines());
-            Tags = collectTags(&options);
-
-            tagClass * theTag = Tags;
-            if (theTag)
+                printf("Doing Tags\n");
+            optionStruct originalOptions(options);
+            while (theTag)
                 {
                 if (options.verbose())
-                    printf("Doing Tags\n");
-                while (theTag)
                     {
-                    if (options.verbose())
-                        {
-                        printf("Doing tag %s\n", theTag->name);
-                        }
-                    countAndWeight * Counts = new countAndWeight[1 + (size_t)options.cutoff()];
-                    trainRules(theTag->name, &options,Counts);
-                    delete[]Counts;
-                    theTag = theTag->next;
+                    printf("Doing tag %s\n", theTag->name);
                     }
-                }
-            else
-                {
-                if (options.verbose())
-                    printf("NOT doing Tags\n");
-                countAndWeight * Counts = new countAndWeight[1+(size_t)options.cutoff()];
-                trainRules("", &options,Counts);
-                delete[]Counts;
+                FilterTagLines(originalOptions.wordLemmaList(), &options, theTag->name);
+                AllProcessing(&options,theTag->name);
+                theTag = theTag->next;
                 }
             }
+        else
+            {
+            if (options.verbose())
+                printf("NOT doing Tags\n");
+            AllProcessing(&options, "");
+            }
+
 
         if (options.verbose())
             {

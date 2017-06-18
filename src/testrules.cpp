@@ -1658,11 +1658,12 @@ void trainAndTest
                );
     else
         sprintf(formatprefix
-               ,BASEDIR "%s%c%%s" SEPARATOR "%s_%s%s%s%s%s%s_%%s.txt"
+               ,BASEDIR "%s%c%%s" SEPARATOR "%s_%s-%s%s%s%s%s%s_%%s.txt"
                ,Options->tempDir()
                ,DIRSEP
                ,LGf(Options)
                ,XTRf(Options)
+               , Options->POStag() ? Options->POStag() : "NoTags"
                ,(Options->suffixOnly() ? "_suffix" : "_affix")
                ,XT
                ,TT
@@ -2058,7 +2059,7 @@ static int readFileAndTrainAndTest(optionStruct * Options,bool TrainTest)
     return 0;
     }
 
-int testrules(optionStruct * Options)
+int testrules(optionStruct * Options, const char * tagName)
     {
     if(lemmalistef(Options) && LGf(Options) && XTRf(Options))
         {

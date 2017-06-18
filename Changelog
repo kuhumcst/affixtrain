@@ -1,3 +1,12 @@
+Version 3.7 - 2017.06.18
+------------------------
+Parameters for optimal training of flexrules are now computed for each PoS tag
+separately. New command line option -k <tag name> for training rules for a 
+single PoS tag. If <tag name> is empty and the -n option indicates that one of
+the columns in the training set contains tags, then rules are computed for each
+tag occurring in the training set, each training with individual optimal
+parameters.  
+
 Version 3.67 - 2017.03.20
 -------------------------
 Right trimming of tag and other fields. Tag fields, often at the end of a line,

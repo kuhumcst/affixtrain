@@ -20,7 +20,7 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "3.7"
+#define VERSION "3.71"
 
 #include "affixtrain.h"
 #include "testrules.h"
@@ -626,7 +626,7 @@ static trainingPair * readTrainingPairs(aFile & afile, size_t & pairs, const cha
     CHECK("TglobTempDir");
     pairs = 0;
     size_t line;
-    size_t taglength = tag ? strlen(tag) : 0;
+//    size_t taglength = tag ? strlen(tag) : 0;
     pointers * Lines = afile.Lines;
     if (options->verbose() > 4)
         {
@@ -1478,7 +1478,6 @@ void computeParms(optionStruct * options)
     double iterationsfactor = 1;
     double miniterations = options->minIterations();//MINITERATIONS;
     double maxiterations = options->maxIterations();//MAXITERATIONS;
-    const char * tag = options->POStag();
     node::mostPenalized = options->expectedCutoff() + 1; // parameter to weight function
     if (options->minfraction() > 0.0)
         {

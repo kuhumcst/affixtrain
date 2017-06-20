@@ -1,3 +1,31 @@
+Version 3.71 - 2017.06.20
+-------------------------
+Fixed bugs related to the new behaviour in 3.7
+
+Changed -v option. Before it was a boolean, now it is a natural number or -
+If - or 0, the program is not verbose. If 1 or greater, the program is verbose.
+The greater the number, the more verbose.
+
+When validating the rules, if there are few available word lemma pairs, the
+program does merely n-fold cross validation, where n is the number of clusters
+of word lemma pairs. A cluster, or "clump", is a set of word lemma pairs that
+are linked by having the same word (homographs) or by having the same lemma
+(belonging to same paradigm). If there are many clumps, validation is still
+done by cross validation, but n varies so as to give statistically significant
+results. For example, if there are a million clumps and 1.5 % is used for
+testing, just two iterations are enough to establish reliable values for
+accuracy and precision, since 1.5 % of a million still is 15000 (randomly
+chosen) test pairs.
+
+If no column format is specified, the program guesses whether it is FB or FBT,
+depending on whether it finds two or three columns. If the input has three
+columns, but that column has to be ignored, then explicitly state that on the
+command line, e.g. -n FBO.
+
+If the column format is specified with a column for tags, or the column format
+is not specified, and only two columns are found, then the format FB is
+assumed.
+
 Version 3.7 - 2017.06.18
 ------------------------
 Parameters for optimal training of flexrules are now computed for each PoS tag

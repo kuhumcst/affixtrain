@@ -590,17 +590,17 @@ static ptrdiff_t readlines(int columnfull,int columnbase,int columnPOS,line *& l
         }
 
     srand(1);
-    if (Options->verbose())
+    if (Options->verbose() > 4)
         printf("readlines countLinesAndClumps\n");
     countLinesAndClumps(fpi,Linecnt,clumpcnt);
-    if (Options->verbose())
+    if (Options->verbose() > 4)
         printf("readlines countLinesAndClumps: %td lines\n",Linecnt);
     assert(!lines);
     rewind(fpi);
     lines = new line[(size_t)Linecnt];
     if(clumpcnt)
         {
-        if (Options->verbose())
+        if (Options->verbose() > 4)
             printf("readlines countLinesAndClumps: %d clumps\n",clumpcnt);
         clumps = new clump[(size_t)clumpcnt];
         clumps[0].start = 0;
@@ -608,7 +608,7 @@ static ptrdiff_t readlines(int columnfull,int columnbase,int columnPOS,line *& l
     else
         clumps = NULL;
 
-    if (Options->verbose())
+    if (Options->verbose() > 4)
         printf("readlines fileRead\n");
     Linecnt = fileRead(lines,clumps,fpi,columnfull,columnbase,columnPOS,sep);
     if(Linecnt < 0)
@@ -618,30 +618,33 @@ static ptrdiff_t readlines(int columnfull,int columnbase,int columnPOS,line *& l
         }
     --openfiles;
     fclose(fpi);
-    if(clumpcnt < 2)
+    if (Linecnt > 0)
         {
-        clump Clump = {lines,Linecnt};
-        if (Options->verbose())
-            printf("readlines removeDuplicateLines\n");
-        removeDuplicateLines(&Clump);
-        if (Options->verbose())
-            printf("readlines randomix\n");
-        randomix(Clump.start,Clump.linecnt);
-        lines = Clump.start;
-        Linecnt = Clump.linecnt;
-        }
-    else
-        {
-        if (Options->verbose())
-            printf("readlines removeDuplicateLines in %d clumps\n",clumpcnt);
-        for(int m = 0; m < clumpcnt;++m)
-            removeDuplicateLines(clumps+m);
+        if (clumpcnt < 2)
+            {
+            clump Clump = { lines, Linecnt };
+            if (Options->verbose() > 4)
+                printf("readlines removeDuplicateLines\n");
+            removeDuplicateLines(&Clump);
+            if (Options->verbose() > 4)
+                printf("readlines randomix\n");
+            randomix(Clump.start, Clump.linecnt);
+            lines = Clump.start;
+            Linecnt = Clump.linecnt;
+            }
+        else
+            {
+            if (Options->verbose() > 4)
+                printf("readlines removeDuplicateLines in %d clumps\n", clumpcnt);
+            for (int m = 0; m < clumpcnt; ++m)
+                removeDuplicateLines(clumps + m);
 
-        if (Options->verbose())
-            printf("readlines randomix\n");
-        randomix(clumps,clumpcnt);
+            if (Options->verbose() > 4)
+                printf("readlines randomix\n");
+            randomix(clumps, clumpcnt);
+            }
         }
-    if (Options->verbose())
+    if (Options->verbose() > 4)
         printf("readlines DONE\n");
     return Linecnt;
     }
@@ -726,6 +729,27 @@ static int aTenth(void)
         return 0;
     }
 
+static int NthCnt = -1;
+static int Nth = -1;
+static int anN = 10;
+
+static void nth(int t,int N)
+    {
+    Nth = t;
+    Nth = Nth % N;
+    NthCnt = -1;
+    anN = N;
+    }
+
+static int anNth(void)
+    {
+    ++NthCnt;
+    if ((NthCnt + Nth) % 10 == 0)
+        return RAND_MAX;
+    else
+        return 0;
+    }
+
 static ptrdiff_t splitLemmaList
    (ptrdiff_t clumpcnt
    ,char * training
@@ -742,18 +766,16 @@ static ptrdiff_t splitLemmaList
    ,bool TenFoldXValidation
    ) // 0 <= fraction <= 10000
     {
-    FILE * fptrain = NULL;
-    FILE * fptest = NULL;
-    FILE * fpcontrol = NULL;
-    FILE * fptraintest = NULL;
-    FILE * fptraincontrol = NULL;
-    fptrain = fopen(training,"wb");
-    ++openfiles;
     ptrdiff_t trainlines = 0;
     ptrdiff_t trainclumps = 0;
     ptrdiff_t testclumps = 0;
     int (*Rand)(void);
-    if(TenFoldXValidation)
+    if (clumpcnt <= 10)
+        {
+        fraction = 10000 - 10000 / clumpcnt;
+        Rand = anNth;
+        }
+    if (TenFoldXValidation)
         {
         fraction = 9000;
         Rand = aTenth;
@@ -763,61 +785,74 @@ static ptrdiff_t splitLemmaList
     trainclumps = (int)((double)clumpcnt * (double)fraction / 10000.0);
 
     testclumps = clumpcnt - trainclumps;
-    if(TrainTest)
-        {
-        fptraintest = fopen(traintest,"wb");
-        ++openfiles;
-        fptraincontrol = fopen(traincontrol,"wb");
-        ++openfiles;
-        }
 
-    if(clumpcnt && fptrain)
+    if (trainclumps > 0 && testclumps > 0)
         {
-        fptest = fopen(test,"wb");
+        FILE * fptrain = NULL;
+        FILE * fptest = NULL;
+        FILE * fpcontrol = NULL;
+        FILE * fptraintest = NULL;
+        FILE * fptraincontrol = NULL;
+        fptrain = fopen(training, "wb");
         ++openfiles;
-        fpcontrol = fopen(control,"wb");
-        ++openfiles;
-        if(fptest && fpcontrol && (!TrainTest || (fptraintest && fptraincontrol)))
+        if (TrainTest)
             {
-            while(testclumps > 0 || trainclumps > 0)
-                {
-                int k = 0;
-                while(k < clumpcnt && (testclumps > 0 || trainclumps > 0))
-                    {
-                    int rd = Rand();
-                    int L = 0;
-                    if(  testclumps == 0 
-                      || (  trainclumps > 0
-                         && (double)rd * 10000.0 < (double)RAND_MAX * (double)fraction
-                         )
-                      ) // write to training file
-                        {
-                        assert(trainclumps > 0);
-                        for(;L < clumps[k].linecnt;++L)
-                            printTrain(clumps[k].start+L,fptrain,fptraintest,fptraincontrol,columntest,columncontrol,columntag,TrainTest);
-                        trainlines += clumps[k].linecnt;
-                        --trainclumps;
-                        }
-                    else
-                        {
-                        for(;L < clumps[k].linecnt;++L)
-                            writeTestAndControl(clumps[k].start+L,fptest,fpcontrol,columntest,columncontrol,columntag);
-                        --testclumps;
-                        }
-                    ++k;
-                    }
-                }
-            --openfiles;
-            fclose(fptest);     fptest = NULL;
-            --openfiles;
-            fclose(fpcontrol);  fpcontrol = NULL;
+            fptraintest = fopen(traintest, "wb");
+            ++openfiles;
+            fptraincontrol = fopen(traincontrol, "wb");
+            ++openfiles;
             }
+
+        if (clumpcnt && fptrain)
+            {
+            assert(trainclumps > 0);
+            assert(testclumps > 0);
+            fptest = fopen(test, "wb");
+            ++openfiles;
+            fpcontrol = fopen(control, "wb");
+            ++openfiles;
+            if (fptest && fpcontrol && (!TrainTest || (fptraintest && fptraincontrol)))
+                {
+                while (testclumps > 0 || trainclumps > 0)
+                    {
+                    int k = 0;
+                    while (k < clumpcnt && (testclumps > 0 || trainclumps > 0))
+                        {
+                        int rd = Rand();
+                        int L = 0;
+                        if (testclumps == 0
+                            || (trainclumps > 0
+                            && (double)rd * 10000.0 < (double)RAND_MAX * (double)fraction
+                            )
+                            ) // write to training file
+                            {
+                            assert(trainclumps > 0);
+                            for (; L < clumps[k].linecnt; ++L)
+                                printTrain(clumps[k].start + L, fptrain, fptraintest, fptraincontrol, columntest, columncontrol, columntag, TrainTest);
+                            trainlines += clumps[k].linecnt;
+                            --trainclumps;
+                            }
+                        else
+                            {
+                            for (; L < clumps[k].linecnt; ++L)
+                                writeTestAndControl(clumps[k].start + L, fptest, fpcontrol, columntest, columncontrol, columntag);
+                            --testclumps;
+                            }
+                        ++k;
+                        }
+                    }
+                --openfiles;
+                fclose(fptest);     fptest = NULL;
+                --openfiles;
+                fclose(fpcontrol);  fpcontrol = NULL;
+                }
+            }
+        if (fptest){ --openfiles; fclose(fptest); }
+        if (fpcontrol){ --openfiles; fclose(fpcontrol); }
+        if (fptraintest){ --openfiles; fclose(fptraintest); }
+        if (fptraincontrol){ --openfiles; fclose(fptraincontrol); }
+        if (fptrain){ --openfiles; fclose(fptrain); }
         }
-    if(fptest){--openfiles;fclose(fptest);}
-    if(fpcontrol){--openfiles;fclose(fpcontrol);}
-    if(fptraintest){--openfiles;fclose(fptraintest);}
-    if(fptraincontrol){--openfiles;fclose(fptraincontrol);}
-    if(fptrain){--openfiles;fclose(fptrain);}
     return trainlines;
     }
 
@@ -1721,7 +1756,7 @@ void trainAndTest
     int noOfSteps;
     for(fraction = FRACTION_LOW,noOfSteps = 1;fraction <= FRACTION_HIGH;fraction = nextFraction(fraction),++noOfSteps)
         {
-        if (Options->verbose())
+        if (Options->verbose() > 4)
             printf("Test: take fraction %d\n",fraction);
         if(!fptally)
             {
@@ -1761,6 +1796,8 @@ void trainAndTest
             else if(maxcount > 30)
                 maxcount = 30;
             }
+        if (maxcount > clumpcnt)
+            maxcount = clumpcnt;
         char paramfile[100];
         sprintf(paramfile,"%s%s%s%s%s.txt",LGf(Options),(Options->suffixOnly() ? "_suffix" : "_affix"),XTRf(Options),TT,(Options->redo() ? "redone" : "singleshot"));
         globmaxcount = maxcount;
@@ -1779,8 +1816,10 @@ void trainAndTest
             char controlResult[256];
             char Soutput[256];
             char output[256];
-            if(Options->tenfoldCrossValidation())
+            if (Options->tenfoldCrossValidation())
                 tenth(count - 1);
+            else if (clumpcnt <= 10)
+                nth(count - 1, clumpcnt);
             sprintf(Lemmas,"%s",formatLemmas);
             sprintf(Weird,"%s",formatWeird);
             if(!fptally)
@@ -1830,7 +1869,7 @@ void trainAndTest
                 testOptions.setP(paramfile);
 
                 testOptions.completeArgs();
-                trainRules("",&testOptions,Counts);
+                trainRules(&testOptions,Counts);
                 }
             if (Options->remove())
                 {
@@ -1967,7 +2006,7 @@ static int readFileAndTrainAndTest(optionStruct * Options,bool TrainTest)
     {
     const char * XT;
     const char * TT;
-    if (Options->verbose())
+    if (Options->verbose() > 4)
         printf("Test initialization\n");
     CUTOFF_LOW = 0;
     CUTOFF_HIGH = Options->cutoff();
@@ -2025,7 +2064,7 @@ static int readFileAndTrainAndTest(optionStruct * Options,bool TrainTest)
     line * lines = NULL;
     clump * clumps = NULL;
     int clumpcnt = 0;
-    if (Options->verbose())
+    if (Options->verbose() > 4)
         printf("Test: read file\n");
     ptrdiff_t linecnt = readFile
         (lines
@@ -2034,11 +2073,11 @@ static int readFileAndTrainAndTest(optionStruct * Options,bool TrainTest)
         ,sep
         ,Options
         );
-    if (Options->verbose())
+    if (Options->verbose() > 4)
         printf("Test: read file DONE\n");
     if(linecnt)
         {
-        if(Options->verbose())
+        if (Options->verbose() > 4)
             printf("Test: train and then test\n");
         trainAndTest
             (linecnt
@@ -2051,7 +2090,7 @@ static int readFileAndTrainAndTest(optionStruct * Options,bool TrainTest)
             ,TrainTest
             );
 
-        if (Options->verbose())
+        if (Options->verbose() > 4)
             printf("Test: train and then test DONE\n");
         delete [] lines;
         lines = NULL;
@@ -2059,19 +2098,19 @@ static int readFileAndTrainAndTest(optionStruct * Options,bool TrainTest)
     return 0;
     }
 
-int testrules(optionStruct * Options, const char * tagName)
+int testrules(optionStruct * Options)
     {
     if(lemmalistef(Options) && LGf(Options) && XTRf(Options))
         {
         if(Options->trainTest() && !Options->tenfoldCrossValidation())
             {
-            if (Options->verbose())
+            if (Options->verbose() > 4)
                 printf("trainTest.\n");
             readFileAndTrainAndTest(Options,true);
             }
         if(Options->test())
             {
-            if (Options->verbose())
+            if (Options->verbose() > 4)
                 printf("OOVTest.\n");
             readFileAndTrainAndTest(Options,false);
             }

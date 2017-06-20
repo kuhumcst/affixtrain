@@ -59,7 +59,8 @@ optionStruct::optionStruct(optionStruct & O)
     i = dupl(O.i);
     n = dupl(O.n);
     k = dupl(O.k);
-    o = dupl(O.o);
+//    o = dupl(O.o);
+    o = 0;
     B = dupl(O.B);
     P = dupl(O.P);
     X = dupl(O.X);
@@ -126,7 +127,7 @@ optionStruct::optionStruct()
     ExpensiveInfix = false;
     SuffixOnlyParmSeen = false;
     Argstring = 0;
-    Verbose = false;// verbose
+    Verbose = 0;// verbose
     Remove = true;
     VX = false;
     Minfraction = 0.01; // L
@@ -518,7 +519,20 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
             ExpensiveInfix = locoptarg && *locoptarg == '-' ? false : true;
             break;
         case 'v': // verbose
-            Verbose = locoptarg && *locoptarg == '-' ? false : true;
+            if (locoptarg && *locoptarg)
+                if (*locoptarg == '-')
+                    Verbose = 0;
+                else
+                    {
+                    Verbose = strtol(locoptarg, (char**)0, 10);
+                    if (Verbose < 0)
+                        {
+                        fprintf(stderr, "Option v:Invalid value [%d]. Verbosity can be - or a natural number.\n", Verbose);
+                        exit(-1);
+                        }
+                    }
+            else
+                Verbose = INT_MAX;
             break;
         case 'x':
             Remove = locoptarg && *locoptarg == '-' ? true : false;
@@ -912,8 +926,8 @@ void optionStruct::completeArgs()
         {
         if (k && k[0])
             n = dupl("FBT");// Word, Lemma, TAG
-        else
-            n = dupl("FBO");// Word, Lemma, Other
+//        else
+//            n = dupl("FBO");// Word, Lemma, Other
         }
 
     if (!f)
@@ -999,7 +1013,7 @@ void optionStruct::completeArgs()
     if(Lines > 0)
         ++Blobs;
 
-    if (verbose())
+    if (verbose() > 5)
         printf("blobs:%d lines %d\n", Blobs, Lines);
     --openfiles;
     fclose(fpWrdLem);
@@ -1066,7 +1080,7 @@ OptReturnTp optionStruct::readArgs(int argc, char * argv[])
 
 void optionStruct::print(FILE * fp) const
     {
-    fprintf(fp, "               ; verbose (-v: yes -v-: no)\n-v %s\n", Verbose ? "" : "-");
+    fprintf(fp, "               ; verbose (-v <n>: yes (n=1 high priority n > 1 lower priority) -v-: no)\n-v %s\n", Verbose ? "" : "-");
     fprintf(fp, "               ; keep intermediary files (-x: yes -x-: no)\n-x %s\n", Remove ? "-" : "");
     fprintf(fp, "               ; 10-fold cross validation (-VX: yes, overrules T and t options ;-VX: no)\n%s-VX\n", VX ? "" : ";");
     fprintf(fp, "               ; External training program\n%s-G%s\n", G ? "" : ";", G ? G : "<program name>");
@@ -1263,7 +1277,7 @@ void optionStruct::setArgstring()
         }
     else
         {
-        nameLength = strlen(i) + (e ? 1 + strlen(e) : 0) + (SuffixOnly ? strlen("_suf") : 0) + (ExpensiveInfix ? strlen("_inf") : 0) + (C < 0 ? 0 : strlen("_C") + 1) + (WeightFunction == econstant ? strlen("_XE") : 0) + (WeightFunction == esupport ? strlen("_XW") : 0) + (WeightFunction == eentropy ? strlen("_XE") : 0) + (WeightFunction == edepth ? strlen("_XD") : 0) + (WeightFunction == esize ? strlen("_XS") : 0) + (Redo ? strlen("_R") : 0) + (k && k[0] ? 1 + strlen(k) : 0) + 1 + (VX ? strlen("_VX") : 0);
+        nameLength = strlen(i) + (e ? 1 + strlen(e) : 0) + (SuffixOnly ? strlen("_suf") : 0) + (ExpensiveInfix ? strlen("_inf") : 0) + (C < 0 ? 0 : strlen("_C") + 1) + (WeightFunction == econstant ? strlen("_XE") : 0) + (WeightFunction == esupport ? strlen("_XW") : 0) + (WeightFunction == eentropy ? strlen("_XE") : 0) + (WeightFunction == edepth ? strlen("_XD") : 0) + (WeightFunction == esize ? strlen("_XS") : 0) + (Redo ? strlen("_R") : 0) /*+ (k && k[0] ? 1 + strlen(k) : 0)*/ + 1 + (VX ? strlen("_VX") : 0);
         
         Argstring = new char[nameLength];
         strcpy(Argstring, i);
@@ -1276,11 +1290,11 @@ void optionStruct::setArgstring()
             {
             strcat(Argstring, "_suf");
             }
-        if (k && k[0])
+/*        if (k && k[0])
             {
             strcat(Argstring, "_");
             strcat(Argstring, k);
-            }
+            }*/
         if (ExpensiveInfix)
             {
             strcat(Argstring, "_inf");

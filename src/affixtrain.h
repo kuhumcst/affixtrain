@@ -44,8 +44,8 @@ class countAndWeight
     };
 
 
-//void trainRules(const char * tag, optionStruct * options);
-void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts);
+//void trainRules(optionStruct * options);
+void trainRules(optionStruct * options,countAndWeight * Counts);
 
 extern int openfiles;
 

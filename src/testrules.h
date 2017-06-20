@@ -3,6 +3,6 @@
 
 class optionStruct;
 
-int testrules(optionStruct * Options, const char * tagName);
+int testrules(optionStruct * Options);
 
 #endif

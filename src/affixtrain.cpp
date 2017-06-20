@@ -166,7 +166,7 @@ struct aFile
         assert(fname);
 
         FILE * fp = fopenOrExit(fname, "rb", "Input file");
-        if (options->verbose())
+        if (options->verbose() > 5)
             printf("reading file %s ...", fname);
         CHECK("CglobTempDir");
         this->fname = new char[strlen(fname) + 1];
@@ -225,9 +225,9 @@ struct aFile
                 buf = eob;
                 }
             }
-        if (options->verbose())
+        if (options->verbose() > 5)
             {
-            printf("line %zd\n", line);
+            printf("line " ZD "\n", line);
             }
 
         lines = line;
@@ -263,9 +263,9 @@ struct aFile
                 buf = eob;
                 }
             }
-        if (options->verbose())
+        if (options->verbose() > 5)
             {
-            printf("line %zd read\n", line);
+            printf("line " ZD " read\n", line);
             printf("%s:", fname);
             }
         }
@@ -297,6 +297,7 @@ static bool isSpace(int a)
         return false;
         }
     }
+
 static tagClass * collectTags(optionStruct * options)
 // "123456" means Word, Lemma, Wordfreq, Lemmafreq, Wordclass, Lemmaclass
     {
@@ -306,9 +307,9 @@ static tagClass * collectTags(optionStruct * options)
     tagClass * Tags = NULL;
     size_t line;
     pointers * Lines = afile.Lines;
-    if (options->verbose())
+    if (options->verbose() > 5)
         {
-        printf("Checking %zd lines in %s for tags %s\n", afile.lines, afile.fname, options->columns());
+        printf("Checking " ZD " lines in %s for tags %s\n", afile.lines, afile.fname, options->columns());
         }
     for (line = 0; line < afile.lines; ++line)
         {
@@ -329,8 +330,10 @@ static tagClass * collectTags(optionStruct * options)
         lengths[ii] = (size_t)(limit - cols[ii] - 1);
         unsigned int maxii = ++ii;
         cols[maxii] = q ? q : limit;
-        const char * column;
-        for (column = options->columns(), ii = 0
+        const char * column = options->columns();
+        if (column == 0)
+            column = "FBT";
+        for (ii = 0
              ; *column && (ii < maxii)
              ; ++column, ++ii
              )
@@ -355,6 +358,31 @@ static tagClass * collectTags(optionStruct * options)
                 default:
 		            ;
                 }
+            }
+        }
+    if (Tags == 0)
+        {
+        const char * cols = options->columns();
+        if (cols == 0 || strchr(cols, '3') || strchr(cols, 't') || strchr(cols, 'T'))
+            {
+            options->setn("FB"); // No column with tags found.
+            if (options->verbose() > 0)
+                printf("No column with tags found in %s.\n"
+                "Changed the column format (-n option) to FB.\n", 
+                options->wordLemmaList());
+            }
+        }
+    else
+        {
+        if (options->columns() == 0)
+            {
+            options->setn("FBT"); // Column with tags found.
+            if (options->verbose() > 0)
+                printf("Column with tags found in %s.\n"
+                "I suppose the column format (-n option) is FBT.\n"
+                "If you want to ignore the tags, define -n FBO.\n"
+                "(Or whatever the actual column order is.)\n", 
+                options->wordLemmaList());
             }
         }
     return Tags;
@@ -387,7 +415,7 @@ static int compare(const void * arg1, const void * arg2)
 
 static int markAmbiguous(size_t allPairs, trainingPair * TrainingPair, optionStruct * options)
     {
-    if (options->verbose())
+    if (options->verbose() > 4)
         printf("markAmbiguous\n");
     trainingPair ** pTrainingPair = new trainingPair *[allPairs];
     size_t j;
@@ -515,7 +543,7 @@ static int markAmbiguous(size_t allPairs, trainingPair * TrainingPair, optionStr
         }
 
     delete[] pTrainingPair; // Bart 20081008
-    if (options->verbose())
+    if (options->verbose() > 4)
         printf("markAmbiguous DONE. Returns %d\n",n);
     return n;
     }
@@ -587,11 +615,11 @@ static int markParadigms(size_t allPairs,trainingPair * TrainingPair,FILE * fpar
 
 static trainingPair * globTrainingPair;
 
-static trainingPair * readTrainingPairs(aFile & afile, size_t & pairs, const char * columns, const char * tag, optionStruct * options)
+static trainingPair * readTrainingPairs(aFile & afile, size_t & pairs, const char * columns, optionStruct * options)
     {
-    if (options->verbose())
+    if (options->verbose() > 4)
         printf("readTrainingPairs\n");
-
+    const char * tag = options->POStag();
     trainingPair * TrainingPair = new trainingPair[afile.lines];
     globTrainingPair = TrainingPair;
     // "123456" means Word, Lemma, Wordfreq, Lemmafreq, Wordclass, Lemmaclass
@@ -600,7 +628,7 @@ static trainingPair * readTrainingPairs(aFile & afile, size_t & pairs, const cha
     size_t line;
     size_t taglength = tag ? strlen(tag) : 0;
     pointers * Lines = afile.Lines;
-    if (options->verbose())
+    if (options->verbose() > 4)
         {
         printf("readLines with tag %s\n", (tag && *tag) ? tag : "_ (UNDEFINED)");
         }
@@ -640,7 +668,7 @@ static trainingPair * readTrainingPairs(aFile & afile, size_t & pairs, const cha
         unsigned int maxii = ++ii;
         cols[maxii] = q ? q : limit;
         const char * column;
-        bool doUse = ((tag == NULL) || !*tag);
+        //bool doUse = ((tag == NULL) || !*tag);
         for (column = columns, ii = 0
              ;    *column
              && (ii < maxii)
@@ -673,11 +701,13 @@ static trainingPair * readTrainingPairs(aFile & afile, size_t & pairs, const cha
                 case '3':
                 case 'T':
                 case 't':
+                    /*
 					if (tag && (taglength == (size_t)L) && !strncmp(C, tag, taglength))
 						{
 						doUse = true;
 						}
 				    break;
+                    */
 #if LEMMAINL
                 case '3':
 	                Inl = strtol(C,NULL,10);
@@ -702,9 +732,9 @@ static trainingPair * readTrainingPairs(aFile & afile, size_t & pairs, const cha
                 ;
                 }
             }
-        if (Word && doUse)
+        if (Word /*&& doUse*/)
             {
-            doUse = ((tag == NULL) || !*tag);
+            //doUse = ((tag == NULL) || !*tag);
             while (wordlength > 0 && isSpace(Word[wordlength - 1]))
                 --wordlength;
             while (lemmalength > 0 && isSpace(LemmaHead[lemmalength - 1]))
@@ -740,12 +770,12 @@ static trainingPair * readTrainingPairs(aFile & afile, size_t & pairs, const cha
                 }
             }
         }
-    if (options->verbose())
+    if (options->verbose() > 4)
         {
         if (tag && *tag)
-            printf("%zd characters and %zd lines, %zd selected with tag %s       \n", afile.size, afile.lines, pairs, tag);
+            printf(ZD " characters and " ZD " lines, " ZD " selected with tag %s       \n", afile.size, afile.lines, pairs, tag);
         else
-            printf("%zd characters and %zd lines%c", afile.size, afile.lines,STARTLINE);
+            printf(ZD " characters and " ZD " lines%c", afile.size, afile.lines,STARTLINE);
         printf("readTrainingPairs DONE\n");
         }
     return TrainingPair;
@@ -776,6 +806,12 @@ void FilterTagLines(const char * fname,optionStruct * options, const char * tag)
         }
     char * tagfilename = new char[strlen(fname) + strlen(tag) + 2];
     sprintf(tagfilename, "%s_%s",fname,tag);
+
+    options->seti(tagfilename);
+    options->setk(tag);
+    options->setArgstring();
+    options->seto(0);
+
     FILE * fp = fopenOrExit(fname, "rb", "Input file");
     FILE * fpt = fopenOrExit(tagfilename, "wb", "Single tag input file");
 
@@ -792,7 +828,7 @@ void FilterTagLines(const char * fname,optionStruct * options, const char * tag)
                 {
                 line[i] = 0;
                 }
-            if (i == 0) // empty line
+            if (i <= 0) // empty line
                 {
                 if (!empty)
                     {
@@ -829,9 +865,6 @@ void FilterTagLines(const char * fname,optionStruct * options, const char * tag)
         }
     fclose(fp);
     fclose(fpt);
-    options->seti(tagfilename);
-    options->setk(tag);
-    options->setArgstring();
     }
 
 static void markTheAmbiguousPairs(trainingPair * TrainingPair, size_t pairs, optionStruct * options)
@@ -1156,9 +1189,8 @@ static bool doTraining
 , int cutoff
 , const char * nflexrulesFormat
 , const char * columns
-, char * pairsToTrainInNextPassName
+, char * pairsToTrainInNextPassName 
 , countAndWeight * Counts
-, const char * tag
 , size_t * filelines
 , optionStruct * options
 )
@@ -1172,7 +1204,7 @@ static bool doTraining
         *filelines = afile.lines;
 
     size_t allPairs;
-    trainingPair * TrainingPair = readTrainingPairs(afile, allPairs, columns, tag, options);
+    trainingPair * TrainingPair = readTrainingPairs(afile, allPairs, columns, options);
     markTheAmbiguousPairs(TrainingPair, allPairs, options);
     hashTable Hash(10);
     trainingPair * train = NULL;
@@ -1200,11 +1232,11 @@ static bool doTraining
     bool New;
     vertex * best = Hash.getVertex(&ROOT, New);
 
-    if (options->verbose())
+    if (options->verbose() > 4)
         printf("Going to build a decision tree\n");
 
     top = new node(best);
-    if (options->verbose())
+    if (options->verbose() > 4)
         printf("Top node is created\n");
 
     trainingPair * Right = NULL;
@@ -1214,7 +1246,7 @@ static bool doTraining
 //    fprintf(fprune,"____________\n");
     top->init(&Right, &train, 0, options);
     fclose(fpmourn);
-    if (options->verbose())
+    if (options->verbose() > 4)
         printf("Decision tree built\n");
     //    fclose(fprune);
     top = top->cleanup(NULL);
@@ -1433,7 +1465,7 @@ const unsigned int partOfFile(const char * fbuf, const double fraction, optionSt
     return fraclines;
     }
 
-void computeParms(optionStruct * options, const char * tagName)
+void computeParms(optionStruct * options)
     {
     CHECK("iglobTempDir");
     int maxswath = options->swaths();//MAXSWATH;
@@ -1446,7 +1478,7 @@ void computeParms(optionStruct * options, const char * tagName)
     double iterationsfactor = 1;
     double miniterations = options->minIterations();//MINITERATIONS;
     double maxiterations = options->maxIterations();//MAXITERATIONS;
-    const char * tag = "";
+    const char * tag = options->POStag();
     node::mostPenalized = options->expectedCutoff() + 1; // parameter to weight function
     if (options->minfraction() > 0.0)
         {
@@ -1482,7 +1514,7 @@ void computeParms(optionStruct * options, const char * tagName)
         size_t lines = 0;
         size_t fraclines = 0;
 
-        if (options->verbose())
+        if (options->verbose() > 5)
             printf("Computing parameters: swath %d of %d\n",swath, maxswath);
 
         if (options->minfraction() > 0.0)
@@ -1493,10 +1525,10 @@ void computeParms(optionStruct * options, const char * tagName)
             else
                 {
                 filename = fbuf;
-                if (options->verbose())
+                if (options->verbose() > 5)
                     printf("Computing parameters: take a sample of training data\n");
                 fraclines = partOfFile(fbuf, fraction, options);
-                if (options->verbose())
+                if (options->verbose() > 5)
                     printf("Computing parameters: take a sample of training data DONE\n");
                 }
             CHECK("D1globTempDir");
@@ -1508,7 +1540,7 @@ void computeParms(optionStruct * options, const char * tagName)
                 copybest(); // go on with best result so far.
             size_t filelines;
 
-            if (options->verbose())
+            if (options->verbose() > 5)
                 printf("Computing parameters: initial training\n");
 
             doTraining
@@ -1519,7 +1551,6 @@ void computeParms(optionStruct * options, const char * tagName)
                 ,/* const char *                                */  options->columns()
                 ,/* char * pairsToTrainInNextPassName           */  NULL
                 ,/* countAndWeight *                            */  &Count
-                ,/* const char *                                */  tag
                 ,/* int * filelines                             */  &filelines
                 ,                                                   options
                 ); // sets Nnodes
@@ -1550,7 +1581,7 @@ void computeParms(optionStruct * options, const char * tagName)
             }
         int looplimit = (int)(maxiterations*pow(iterationsfactor, -swath));
 
-        if (options->verbose())
+        if (options->verbose() > 5)
             printf("Computing parameters: iterate and train, improve parameters by trial and error.\n");
 
         for (int iterations = 0; iterations < looplimit; ++iterations)
@@ -1575,7 +1606,7 @@ void computeParms(optionStruct * options, const char * tagName)
                 flog = 0;
                 }
             CHECK("D2fglobTempDir");
-            if (options->verbose())
+            if (options->verbose() > 5)
                 {
                 printf("%d.%d ", swath, iterations);
                 }
@@ -1590,14 +1621,13 @@ void computeParms(optionStruct * options, const char * tagName)
                 ,/* const char *                                */  options->columns()
                 ,/* char * pairsToTrainInNextPassName           */  NULL
                 ,/* countAndWeight *                            */  &Count
-                ,/* const char *                                */  tag
                 ,/* int * filelines                             */  &filelines
                 ,                                                   options
                 ); // sets Nnodes
             if (lines == 0)                 
                 fraclines = lines = filelines;
 
-            if (options->verbose())
+            if (options->verbose() > 5)
                 {
                 printf("%c%d %d %f %d %f           \n", STARTLINE, iterations, currentNo, currentweight, brownNo, brownweight);
                 }
@@ -1644,7 +1674,7 @@ void computeParms(optionStruct * options, const char * tagName)
                     }
                 printparms(brownNo,brownweight, options);
 
-                if (options->verbose())
+                if (options->verbose() > 5)
                     printf("swath %d brownNo %d currentNo %d\n", swath, brownNo, currentNo);
 
                 if (  (  brownNo <= currentNo
@@ -1670,7 +1700,7 @@ void computeParms(optionStruct * options, const char * tagName)
                                               ) 
                                            )
                                         );
-                    if (options->verbose())
+                    if (options->verbose() > 5)
                         printf("%s\n", improvement ? "IMPROVEMENT" : "same");
                     currentNo = brownNo;
                     currentweight = brownweight;
@@ -1682,7 +1712,7 @@ void computeParms(optionStruct * options, const char * tagName)
                     }
                 }
             }
-        if (options->verbose())
+        if (options->verbose() > 5)
             printf("br1 %d br2 %d\n", br1, br2);
         }
     remove(fbuf);
@@ -1736,10 +1766,11 @@ bool haswritabledir(const char * name)
         return canwriteindir("");
     }
 
-void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts)
+void trainRules(optionStruct * options,countAndWeight * Counts)
     {
     CHECK("jglobTempDir");
     assert(options->flexrules() != NULL);
+    const char * tag = options->POStag();
     const char * nflexrules = options->flexrules();
     const char * fname = options->wordLemmaList();
     bool moreToDo = true;
@@ -1767,9 +1798,9 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
     char nflexrulesTag[1256];
     if (nflexrules)
         {
-        if (tag && *tag)
+/*        if (tag && *tag)
             sprintf(nflexrulesTag, "%s.%s", nflexrules, tag);
-        else
+        else*/
             strcpy(nflexrulesTag, nflexrules);
         nflexrules = nflexrulesTag;
         }
@@ -1857,7 +1888,6 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
                 ,/* const char *     */  passes > 1 ? "12" : options->columns()
                 ,/* char *           */  pairsToTrainInNextPassName
                 ,/* countAndWeight * */  Counts
-                ,/* const char *     */  passes > 1 ? NULL : tag
                 ,/* int * filelines  */  NULL
                 ,/* optionStruct *   */  options
                 );
@@ -1870,7 +1900,7 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
         */
         if (options->redo() && moreToDo)
             {
-            if (options->verbose())
+            if (options->verbose() > 5)
                 {
                 printf("More training to do with file \"%s\"\n", pairsToTrainInNextPassName);
                 }
@@ -1882,7 +1912,6 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
                 ,/* const char *                      */  options->columns()
                 ,/* char * pairsToTrainInNextPassName */  NULL
                 ,/* countAndWeight *                  */  Counts
-                ,/* const char *                      */  tag
                 ,/* int * filelines                   */  NULL
                 ,/* optionStruct *                    */  options
                 )
@@ -1895,7 +1924,7 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
                     }
                 }
             }
-        else if (options->verbose())
+        else if (options->verbose() > 4)
             {
             if (moreToDo)
                 printf("No retraining done on ingested pairs, although ambiguous pairs were found and may have caused noise. (Faster) \n");
@@ -1945,7 +1974,7 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
                     printf("trainRules: newbestflexrules 2 small");
                     exit(-1);
                     }
-                if (options->verbose())
+                if (options->verbose() > 5)
                     {
                     printf("flexcombi best %s + next best %s -> combined %s\n", bestflexrules, nextbestflexrules, bestflexrules);
                     }
@@ -1960,7 +1989,7 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
         accumulatedFormat = AccumulatedFlexrulePassFormat;
         } while (moreToDo && passes < 30);
 
-        if (options->verbose())
+        if (options->verbose() > 5)
             {
             putchar('\n'); // to compensate for missing newline in readTrainingPairs
             }
@@ -1983,33 +2012,33 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
                     filename = nflexrules;
                     sprintf(dirname, "%d", cut);
                     }
-                if (options->verbose())
+                if (options->verbose() > 3)
                     printf("dirname %s\n", dirname);
 
                 char testfile[500];
                 sprintf(testfile, "%s%cTESTFILE", dirname, DIRSEP);
-                if (options->verbose())
+                if (options->verbose() > 3)
                     printf("testfile %s\n", testfile);
                 FILE * fptest = fopen(testfile, "w");
                 ++openfiles;
                 bool hasDir = false;
                 if (fptest)
                     {
-                    if (options->verbose())
+                    if (options->verbose() > 3)
                         printf("testfile created\n");
                     --openfiles;
                     fclose(fptest);
                     remove(testfile);
-                    if (options->verbose())
+                    if (options->verbose() > 3)
                         printf("testfile deleted\n");
                     hasDir = true;
                     }
                 else
                     {
-                    if (options->verbose())
+                    if (options->verbose() > 3)
                         printf("testfile not created\n");
                     sprintf(command, "%s %s", MKDIR, dirname);
-                    if (options->verbose())
+                    if (options->verbose() > 3)
                         printf("command %s\n", command);
                     if (!system(command))
                         {
@@ -2017,12 +2046,12 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
                         ++openfiles;
                         if (fptest)
                             {
-                            if (options->verbose())
+                            if (options->verbose() > 3)
                                 printf("testfile created\n");
                             --openfiles;
                             fclose(fptest);
                             remove(testfile);
-                            if (options->verbose())
+                            if (options->verbose() > 3)
                                 printf("testfile deleted\n");
                             hasDir = true;
                             }
@@ -2062,7 +2091,7 @@ void trainRules(const char * tag, optionStruct * options,countAndWeight * Counts
                 char spass[10];
                 sprintf(spass, ".pass%d", passes);
                 sprintf(dest, "%s%s%s", nflexrules, scut, spass);
-                if (options->verbose())
+                if (options->verbose() > 3)
                     printf("Remove %s \n", dest);
                 if (remove(dest))
                     break;
@@ -2086,7 +2115,7 @@ void ParameterComputation(optionStruct * poptions, const char * tagName)
     {
     if (poptions->computeParms())
         {
-        if (poptions->verbose())
+        if (poptions->verbose() > 4)
             printf("Computing parameters\n");
 
         if (poptions->currentParms())
@@ -2095,39 +2124,39 @@ void ParameterComputation(optionStruct * poptions, const char * tagName)
         if (poptions->bestParms())
             initOutput(poptions->bestParms());
 
-        computeParms(poptions, tagName);
+        computeParms(poptions);
 
-        if (poptions->verbose())
+        if (poptions->verbose() > 4)
             printf("Computing parameters DONE\n");
         }
     }
 
 void ComputeDelta(optionStruct * poptions)
     {
-    if (poptions->verbose())
+    if (poptions->verbose() > 2)
         printf("Going to compute delta.\n");
 
     init(poptions); // TODO Check that penalties are the best ones, not the last ones tried.
 
-    if (poptions->verbose())
+    if (poptions->verbose() > 2)
         printf("Computing delta DONE.\n");
     }
 
-void TestRules(optionStruct * poptions, const char * tagName)
+void TestRules(optionStruct * poptions)
     {
     if (poptions->test() || (poptions->trainTest() && !poptions->tenfoldCrossValidation()))
         {
-        if (poptions->verbose())
+        if (poptions->verbose() > 2)
             printf("Going to test the rules.\n");
 
         poptions->printArgFile();
-        testrules(poptions, tagName);
-        if (poptions->verbose())
+        testrules(poptions);
+        if (poptions->verbose() > 2)
             printf("Testing the rules DONE.\n");
         }
     }
 
-void CreateFlexRules(optionStruct * poptions, const char * tagName)
+void CreateFlexRules(optionStruct * poptions)
     {
     if (poptions->createFlexRules())
         {
@@ -2137,17 +2166,37 @@ void CreateFlexRules(optionStruct * poptions, const char * tagName)
         poptions->setReadLines(poptions->lines());
 
                 countAndWeight * Counts = new countAndWeight[1 + (size_t)poptions->cutoff()];
-                trainRules(tagName, poptions, Counts);
+                trainRules(poptions, Counts);
                 delete[]Counts;
         }
     }
 
 void AllProcessing(optionStruct * poptions, const char * tagName)
     {
+    if (poptions->verbose())
+        {
+        printf("ParameterComputation %s\n", tagName);
+        }
     ParameterComputation(poptions,tagName);
+    if (poptions->verbose())
+        {
+        printf("ComputeDelta %s\n", tagName);
+        }
     ComputeDelta(poptions);
-    TestRules(poptions,tagName);
-    CreateFlexRules(poptions, tagName);
+    if (poptions->verbose())
+        {
+        printf("TestRules %s\n", tagName);
+        }
+    TestRules(poptions);
+    if (poptions->verbose())
+        {
+        printf("CreateFlexRules %s\n", tagName);
+        }
+    CreateFlexRules(poptions);
+    if (poptions->verbose())
+        {
+        printf("AllProcessing %s DONE\n", tagName);
+        }
     }
 
 

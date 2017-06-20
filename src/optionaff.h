@@ -76,13 +76,15 @@ class optionStruct
         int Swath;
         int SwathIteration;
         int NumberOfNodes;
+        int Verbose;// Verbosity. Positive number:
+                    // lower value = higher priority.
+                    // - or 0: no verbosity
         size_t TrainingPairsLines;
         bool ComputeParms;// compute parms
         bool SuffixOnly;// suffix only
         bool ExpensiveInfix;/*to create intermediate between full affix
                             and suffix only (which is better than affix,
                             sometimes, for unclear reasons.)*/
-        bool Verbose;   // verbose
         bool Test;
         bool TrainTest;
         bool Remove;    // remove test files after use (default false)
@@ -126,10 +128,10 @@ class optionStruct
         const char * externalLemmatizer() const{return E;}
         const int maxRecursionDepthRuleCreation()const{return Q;}
 //        const int percentageTestPairs()const{return q;}
-        const bool computeParms()const{return ComputeParms;}
+        const int verbose()const{ return Verbose; }
+        const bool computeParms()const{ return ComputeParms; }
         const bool suffixOnly()const{return SuffixOnly;}
         const bool expensiveInfix(){ return ExpensiveInfix; }
-        const bool verbose()const{return Verbose;}
         const bool remove()const{ return Remove; }
         const bool tenfoldCrossValidation()const{ return VX; }
         const bool test()const{return Test;}

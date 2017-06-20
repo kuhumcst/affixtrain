@@ -2203,7 +2203,7 @@ int main(int argc, char **argv)
     {
     if (argc < 2)
         {
-        printf("affixtrain - supervised learning of affix rules for AFFIXTRAIN, version " VERSION "\n");
+        printf("affixtrain - supervised learning of affix rules for CSTLEMMA, version " VERSION "\n");
         printf("%s -h for usage\n", argv[0]);
         return 0;
         }

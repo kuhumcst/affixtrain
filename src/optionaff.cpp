@@ -390,20 +390,10 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
             printf("-t: test the rules with data not used for training\n");
             printf("-T: test the rules with the training data\n");
             printf("-F; create flexrules. Can be combined with computation (-p) and testing (-t, -T)\n");
-            printf("-n: columns (default 120):\n");
-            printf("  1:Word\n");
-            printf("  F:Word\n");
-            printf("  f:Word\n");
-            printf("  W:Word\n");
-            printf("  w:Word\n");
-            printf("  2:Lemma\n");
-            printf("  B:Lemma\n");
-            printf("  b:Lemma\n");
-            printf("  L:Lemma\n");
-            printf("  l:Lemma\n");
-            printf("  3:POS tag (create rules for each of them)\n");
-            printf("  T:POS tag (create rules for each of them)\n");
-            printf("  t:POS tag (create rules for each of them)\n");
+            printf("-n: columns (default FBT if there are three or more columns in the input, otherwise FB):\n");
+            printf("  1 or F or f or W or w:Word\n");
+            printf("  2 or B or b or L or l:Lemma\n");
+            printf("  3 or T or t:POS tag (create rules for each of them)\n");
 #if LEMMAINL
             printf("  3:Word Frequency\n");
             printf("  4:Lemma Frequency\n");
@@ -414,7 +404,7 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
 #if LEMMACLASS
             printf("  6:Lemma Class\n");
 #endif
-            printf("  0:Other (don't care). (Use this to skip and ignore e.g. column with POS tags.)\n");
+            printf("  0 or O or o:Other (don't care). (Use this to skip and ignore e.g. column with POS tags.)\n");
             printf("-k: Can be set to a tag name. In that case only lines with that tag name are processed.\n");
             printf("-f: Name or index of comparison function (which look at number of right, wrong and not applicable cases):\n");
             printf("  0:parms (Compute good parameter settings. Use -L and -H if training set must grow.)\n");

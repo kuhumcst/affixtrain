@@ -424,7 +424,7 @@ void trainingPair::makeCandidateRules(hashTable * Hash,vertex * parent,bool alre
             int nr = tp->makeCorrectRules(Hash, &SimilData, similarArray, parent, 1, options->maxRecursionDepthRuleCreation(), options);
             if (nr == 0 && !alreadyRight)
                 {
-                if (options->verbose())
+                if (options->verbose() > 4)
                     { // This is by design. Increasing RECURSE will eventually help.
                     fprintf(stderr, "Error (makeCandidateRules): Cannot construct rule for training pair ");
                     tp->print(stderr);
@@ -465,7 +465,7 @@ int printRules(node * nd
         // specifies the differences with its parent pattern.
         // pat starts with '^' and ends with '$'.
         // Wildcards are the character in the constant ANY (currently ':')
-        if(options->verbose())
+        if (options->verbose() > 6)
             printf("pat [%s] rep [%s]\n",nd->V->Pattern.itsTxt(),nd->V->Replacement.itsTxt());
         strng * pat = nd->V->Pattern.substr(1,(ptrdiff_t)strlen(nd->V->Pattern.itsTxt()) - 2);
         strng * rep = nd->V->Replacement.substr(1, (ptrdiff_t)strlen(nd->V->Replacement.itsTxt()) - 2);

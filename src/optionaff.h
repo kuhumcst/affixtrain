@@ -51,6 +51,7 @@ class optionStruct
         const char * i; // word list
         const char * j; // temp dir
         const char * n; // columns
+        const char * k; // specific tag ('klasse')
         const char * o; // flexrules
         const char * B; // Best parms
         const char * P; // Current parms
@@ -75,13 +76,15 @@ class optionStruct
         int Swath;
         int SwathIteration;
         int NumberOfNodes;
+        int Verbose;// Verbosity. Positive number:
+                    // lower value = higher priority.
+                    // - or 0: no verbosity
         size_t TrainingPairsLines;
         bool ComputeParms;// compute parms
         bool SuffixOnly;// suffix only
         bool ExpensiveInfix;/*to create intermediate between full affix
                             and suffix only (which is better than affix,
                             sometimes, for unclear reasons.)*/
-        bool Verbose;   // verbose
         bool Test;
         bool TrainTest;
         bool Remove;    // remove test files after use (default false)
@@ -113,6 +116,7 @@ class optionStruct
         const char * wordLemmaList() const{return i;}
         const char * tempDir() const{return j;}
         const char * columns() const{return n;}
+        const char * POStag() const{ return k; }
         //const char * flexrules() const{return o;}
         const char * flexrules();
         const char * lemmas() const{return O;}
@@ -124,10 +128,10 @@ class optionStruct
         const char * externalLemmatizer() const{return E;}
         const int maxRecursionDepthRuleCreation()const{return Q;}
 //        const int percentageTestPairs()const{return q;}
-        const bool computeParms()const{return ComputeParms;}
+        const int verbose()const{ return Verbose; }
+        const bool computeParms()const{ return ComputeParms; }
         const bool suffixOnly()const{return SuffixOnly;}
         const bool expensiveInfix(){ return ExpensiveInfix; }
-        const bool verbose()const{return Verbose;}
         const bool remove()const{ return Remove; }
         const bool tenfoldCrossValidation()const{ return VX; }
         const bool test()const{return Test;}
@@ -154,6 +158,7 @@ class optionStruct
         void seto(const char * Result);
         void sete(const char * Extra);
         void setn(const char * Columns);
+        void setk(const char * PoS);
         void setf(const char * Compfunc);
         void setP(const char * ParamFile);
         void setc(int cutoff){c = cutoff;}

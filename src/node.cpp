@@ -926,7 +926,7 @@ void letTheBestRuleBeFirst(vertex ** pvf, vertex ** pvN,optionStruct * options)
             {
             computeWeight(*pvi);
             }
-        if (options->verbose())
+        if (options->verbose() > 5)
             {
             printf("Weights computed     %c",STARTLINE);
             }
@@ -936,7 +936,7 @@ void letTheBestRuleBeFirst(vertex ** pvf, vertex ** pvN,optionStruct * options)
                 {
                 (*pvi)->adjustWeight();
                 }
-            if (options->verbose())
+            if (options->verbose() > 5)
                 {
                 printf("Weights adjusted     %c",STARTLINE);
                 }
@@ -950,7 +950,7 @@ void letTheBestRuleBeFirst(vertex ** pvf, vertex ** pvN,optionStruct * options)
                 *pvi = tmp;
                 }
             }
-        if (options->verbose())
+        if (options->verbose() > 5)
             {
             printf("candidates sorted     %c",STARTLINE);
             }
@@ -979,7 +979,7 @@ vertex ** adjustCounts(vertex ** pvf, vertex ** pvN, optionStruct * options
 #endif
 					   )
     {
-    if (options->verbose())
+    if (options->verbose() > 5)
         {
         printf("delete the rules that have become irrelevant and adjust counts for the good ones.    %c",STARTLINE);
         }
@@ -1014,7 +1014,7 @@ vertex ** adjustCounts(vertex ** pvf, vertex ** pvN, optionStruct * options
             ++pvi;
             }
         }
-    if (options->verbose())
+    if (options->verbose() > 5)
         {
         printf("delete the rules that have become irrelevant and adjust counts for the good ones. DONE                                            %c",STARTLINE);
         }
@@ -1073,7 +1073,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
        pattern matches all of a word. The leftovers consist of at most one
        training pair.)
     */
-    if (options->verbose())
+    if (options->verbose() > 5)
         printNumbers(allRight,allWrong);
 
     trainingPair * NotApplicableRight = NULL;
@@ -1128,7 +1128,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
             return;
             }
         assert(N > 0);
-        if(options->verbose())
+        if (options->verbose() > 5)
             {
             printf("             %lu candidate rules %c",N,STARTLINE);
             }
@@ -1138,7 +1138,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
         int skipR = skipping(N,this->Right);
         for(unsigned long i = 0;i < N;++i)
             {
-            if(options->verbose())
+            if (options->verbose() > 5)
                 {
                 printf("%lu %c",i,STARTLINE);
                 }
@@ -1165,7 +1165,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
            child nodes that absorb them. */
         while(Wrong)
             {
-            if (options->verbose())
+            if (options->verbose() > 5)
                 {
                 printf("Finding the best candidate child rule%c",STARTLINE);
                 }
@@ -1194,11 +1194,11 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
             lastN = (unsigned long)(pvN - pv);
 
             ++first;
-            if (options->verbose()) printf("Treat the unmatched inputs with this node's next sibling. \n");
+            if (options->verbose() > 5) printf("Treat the unmatched inputs with this node's next sibling. \n");
             pnode = &(*pnode)->IfPatternFails;
             } // while(Wrong)
 
-        if (options->verbose())
+        if (options->verbose() > 5)
             {
             printf("All input is handled as it should. Clean up before returning \n");
             }
@@ -1209,7 +1209,7 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
             pv[i]->destroy();
             }
         delete [] pv;
-        if (options->verbose())
+        if (options->verbose() > 5)
             {
             printf("Cleaned up. Return. \n");
             }

@@ -2643,20 +2643,23 @@ void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,siz
     options->setWeight(weight);
 
     options->printArgFile();
-    printf("%d.%d %d  \tparms ",swath,iterations,Nnodes);
-    int i = 0;
-    for(;i < NPARMS;++i)
+    if (options->verbose() > 5)
         {
-        printf("%7.6f",parms.Matrix[i]);
-        if(((i+1) % parms.ROWPARMS) == 0)
+        printf("%d.%d %d  \tparms ", swath, iterations, Nnodes);
+        int i = 0;
+        for (; i < NPARMS; ++i)
             {
-            if(i == NPARMS - 1)
-                printf("\n");
+            printf("%7.6f", parms.Matrix[i]);
+            if (((i + 1) % parms.ROWPARMS) == 0)
+                {
+                if (i == NPARMS - 1)
+                    printf("\n");
+                else
+                    printf(";\n");
+                }
             else
-                printf(";\n");
+                printf(";");
             }
-        else
-            printf(";");
         }
 
     FILE * f = fopen(options->bestParms(),"a");
@@ -2673,7 +2676,7 @@ void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,siz
                );
 
         fprintf(f
-               ,"/* number of nodes: %d, nodes/line: %.*e weight (%s used): %.*e blobs %d lines %zd * fraction %.*e = %zd lines*/\n"
+                , "/* number of nodes: %d, nodes/line: %.*e weight (%s used): %.*e blobs %d lines " ZD " * fraction %.*e = " ZD " lines*/\n"
                ,Nnodes
                ,DBL_DIG+2,(double)Nnodes/(double)fraclines
                , (options->getWeightFunction() == esupport || options->getWeightFunction() == eentropy) ? "" : "not "
@@ -3172,10 +3175,13 @@ void setCompetitionFunction(optionStruct * options)
                           && !strncmp(bests[j].langbase,options->extra(),strlen(bests[j].langbase))
                           )
                             {
-                            printf("bests[%d].suffixonly == [%s] bests[%d].langbase == [%s]\n",j,bests[j].suffixonly ? "true" : "false",j,bests[j].langbase);
-                            printf("comp = comp_parms0_off\n");
                             comp = comp_parms0_off;
-                            printf("bests[%d].rows == [%d]\n",j,bests[j].rowss);
+                            if (options->verbose() > 5)
+                                {
+                                printf("bests[%d].suffixonly == [%s] bests[%d].langbase == [%s]\n", j, bests[j].suffixonly ? "true" : "false", j, bests[j].langbase);
+                                printf("comp = comp_parms0_off\n");
+                                printf("bests[%d].rows == [%d]\n", j, bests[j].rowss);
+                                }
                             nparms = bests[j].rowss * parms.ROWPARMS;
                             if(nparms > NPARMS)
                                 {

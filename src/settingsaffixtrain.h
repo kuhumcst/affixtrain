@@ -31,10 +31,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define COPY "copy "
 #define MKDIR "mkdir "
 #define DIRSEP '\\'
+#define ZD "%Iu"
+// %zd not working in Microsoft C, so use %Id instead. 
+// See https://msdn.microsoft.com/en-us/library/tcxf1dw6.aspx
+
 #else
 #define COPY "cp -f "
 #define MKDIR "mkdir "
 #define DIRSEP '/'
+#define ZD "%zd"
 #endif
 
 #define DOIMPEDANCE 0
@@ -43,6 +48,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // PRUNETRAININGPAIRS 1
 #define PRUNETRAININGPAIRS 0
 
+#define SMALLMEMORY 0
 #if SMALLMEMORY
 #define MAXPAIRS 8000000 //1000000 //500000 //100000 //500000 
 #endif

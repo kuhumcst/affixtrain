@@ -1,3 +1,17 @@
+Version 3.72 - 2017.08.09
+-------------------------
+Adapted example/readme.txt to the new default behaviour when the -n parameter
+is not given explictly. Also explained that you always need to generate
+flexrules on the basis of a fullform / lemma list, disregarding POS tags in the
+training data, even if you have plans to also generate flexrules on a per POS
+tag basis. The neutral flexrules are needed as a last resort for words with
+tags that are not represented in the training data.
+
+The help text (affixtrain -h) explains that affixtrain assumes -n FBT if there
+are three or more columns in the training data and otherwise -n FB. 
+(Previously, the default has been -n FB in all cases. That was the reason why
+the example did not work as intended.)
+
 Version 3.71 - 2017.06.20
 -------------------------
 Fixed bugs related to the new behaviour in 3.7

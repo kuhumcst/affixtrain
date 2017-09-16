@@ -872,6 +872,8 @@ static ptrdiff_t splitLemmaList
    ,bool TenFoldXValidation
    ) // 0 <= fraction <= 10000
     {
+    if (TrainTest)
+        printf("splitLemmaList %d\n",fraction);
     FILE * fptrain = NULL;
     FILE * fptest = NULL;
     FILE * fpcontrol = NULL;
@@ -896,6 +898,8 @@ static ptrdiff_t splitLemmaList
         trainlines = (int)((double)linecnt * (double)fraction / 10000.0);
     else
         trainlines = linecnt;
+    if (TrainTest)
+        printf("trainlines %d\n", trainlines);
 
     testlines = linecnt - trainlines;
     ret = trainlines;
@@ -909,7 +913,9 @@ static ptrdiff_t splitLemmaList
 
     if(linecnt && fptrain)
         {
-        if(fraction < 10000)
+        if (TrainTest)
+            printf("linecnt %d\n", linecnt);
+        if (fraction < 10000)
             {
             fptest = fopen(test,"wb");
             ++openfiles;
@@ -954,6 +960,8 @@ static ptrdiff_t splitLemmaList
             }
         else
             {
+            if (TrainTest)
+                printf("printTrain %d\n", linecnt);
             int k = 0;
             while(k < linecnt)
                 {
@@ -1862,7 +1870,7 @@ void trainAndTest
             if(trainlines > 0)
                 {
                 if (Options->verbose() > 4)
-                    printf("Test: trainlines = %d\n", trainlines);
+                    printf("Test: trainlines = %ld\n", trainlines);
                 ttrainlines += trainlines;
 
                 optionStruct testOptions(*Options);
@@ -1885,7 +1893,7 @@ void trainAndTest
             if(ttrainlines > 0)
                 {
                 if (Options->verbose() > 4)
-                    printf("Test: ttrainlines = %d\n", ttrainlines);
+                    printf("Test: ttrainlines = %ld\n", ttrainlines);
                 for (int cutoff = CUTOFF_LOW; cutoff <= CUTOFF_HIGH; ++cutoff)
                     {
                     if (Options->verbose() > 4)

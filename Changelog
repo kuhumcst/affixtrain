@@ -3,6 +3,9 @@ Version 3.73 - 2017.09.16
 Added description of -R option in output from affixtrain -h.
 Do not require -D option if -G is set. (-D Parameters are for affixtrain
 itself, not for external training programs.)
+-c option is set to 0 if -G is set.
+A bug is fixed so that one can test with the training set also if the training
+set is clustered. (Which is meaningless if test set == training set).
 
 Version 3.72 - 2017.08.09
 -------------------------

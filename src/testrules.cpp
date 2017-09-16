@@ -590,26 +590,20 @@ static ptrdiff_t readlines(int columnfull,int columnbase,int columnPOS,line *& l
         }
 
     srand(1);
-    if (Options->verbose() > 4)
-        printf("readlines countLinesAndClumps\n");
     countLinesAndClumps(fpi,Linecnt,clumpcnt);
     if (Options->verbose() > 4)
-        printf("readlines countLinesAndClumps: %td lines\n",Linecnt);
+        printf("readlines countLinesAndClumps: %td lines %d clumps\n",Linecnt,clumpcnt);
     assert(!lines);
     rewind(fpi);
     lines = new line[(size_t)Linecnt];
     if(clumpcnt)
         {
-        if (Options->verbose() > 4)
-            printf("readlines countLinesAndClumps: %d clumps\n",clumpcnt);
         clumps = new clump[(size_t)clumpcnt];
         clumps[0].start = 0;
         }
     else
         clumps = NULL;
 
-    if (Options->verbose() > 4)
-        printf("readlines fileRead\n");
     Linecnt = fileRead(lines,clumps,fpi,columnfull,columnbase,columnPOS,sep);
     if(Linecnt < 0)
         {
@@ -766,8 +760,6 @@ static ptrdiff_t splitLemmaClumpList
    ,bool TenFoldXValidation
    ) // 0 <= fraction <= 10000
     {
-    if (TrainTest)
-        printf("splitLemmaClumpList1 %d\n", fraction);
     ptrdiff_t trainlines = 0;
     ptrdiff_t trainclumps = 0;
     ptrdiff_t testclumps = 0;
@@ -874,8 +866,6 @@ static ptrdiff_t splitLemmaLineList
    ,bool TenFoldXValidation
    ) // 0 <= fraction <= 10000
     {
-    if (TrainTest)
-        printf("splitLemmaLineList2 %d\n",fraction);
     FILE * fptrain = NULL;
     FILE * fptest = NULL;
     FILE * fpcontrol = NULL;
@@ -900,8 +890,6 @@ static ptrdiff_t splitLemmaLineList
         trainlines = (int)((double)linecnt * (double)fraction / 10000.0);
     else
         trainlines = linecnt;
-    if (TrainTest)
-        printf("trainlines %d\n", trainlines);
 
     testlines = linecnt - trainlines;
     ret = trainlines;
@@ -915,8 +903,6 @@ static ptrdiff_t splitLemmaLineList
 
     if(linecnt && fptrain)
         {
-        if (TrainTest)
-            printf("linecnt %d\n", linecnt);
         if (fraction < 10000)
             {
             fptest = fopen(test,"wb");
@@ -962,8 +948,6 @@ static ptrdiff_t splitLemmaLineList
             }
         else
             {
-            if (TrainTest)
-                printf("printTrain %d\n", linecnt);
             int k = 0;
             while(k < linecnt)
                 {
@@ -1919,8 +1903,6 @@ void trainAndTest
                     ++openfiles;
                     if(fptally)
                         {
-                        if (Options->verbose() > 4)
-                            printf("Test: fptally created\n");
                         if (Options->externalLemmatizer())
                             {
                             char * command = new char[strlen(Options->externalLemmatizer())+strlen(TrainTest ? traintest : test)+strlen(Affixrules)+strlen(output)+5];

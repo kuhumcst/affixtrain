@@ -1903,6 +1903,9 @@ void trainAndTest
                             {
                             char * command = new char[strlen(Options->externalLemmatizer())+strlen(TrainTest ? traintest : test)+strlen(Affixrules)+strlen(output)+5];
                             sprintf(command,"%s %s %s %s",Options->externalLemmatizer(),TrainTest ? traintest : test,Affixrules,output);
+                            if (Options->verbose())
+                                printf("External lemmatizer command: [%s]\n",command);
+
                             if(system(command))
                                 fprintf(stderr,"Cannot execute system command \"%s\".\n",command);
                             delete [] command;

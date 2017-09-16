@@ -1848,7 +1848,9 @@ void trainRules(optionStruct * options,countAndWeight * Counts)
                 char * command = new char[strlen(options->externalTrainer())+strlen(fname)+strlen(dest)+strlen("noofrules.txt")+15];
                 sprintf(command,"%s %s %s %s",options->externalTrainer(),fname,dest,"noofrules.txt");
                 delete [] dest;
-                if(!system(command))
+                if (options->verbose())
+                    printf("External trainer command: [%s]\n", command);
+                if (!system(command))
                     {
                     FILE * noofrules = fopen("noofrules.txt","r");
                     if(noofrules)

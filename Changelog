@@ -1,6 +1,8 @@
 Version 3.73 - 2017.09.16
 -------------------------
 Added description of -R option in output from affixtrain -h.
+Do not require -D option if -G is set. (-D Parameters are for affixtrain
+itself, not for external training programs.)
 
 Version 3.72 - 2017.08.09
 -------------------------

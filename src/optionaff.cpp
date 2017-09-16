@@ -923,7 +923,7 @@ void optionStruct::completeArgs()
 
     if (!f)
         {
-        if (!ComputeParms && !D)
+        if (!ComputeParms && !D && !G)
             {
             fprintf(stderr, "Error: No parameters provided. (-D option).\n"
                 "Add -p if you want to compute the parameters.\n"

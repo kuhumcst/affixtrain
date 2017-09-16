@@ -151,16 +151,16 @@ optionStruct::optionStruct()
 
 void cleanUpOptions()
     {
-	if (optionSets > 0)
-		{
-		for (int I = 0; I < optionSets; ++I)
-			{
-			delete[] Poptions[I];
-			delete[] Ppoptions[I];
-			}
-		delete[] Poptions;
-		delete[] Ppoptions;
-		}
+    if (optionSets > 0)
+        {
+        for (int I = 0; I < optionSets; ++I)
+            {
+            delete[] Poptions[I];
+            delete[] Ppoptions[I];
+            }
+        delete[] Poptions;
+        delete[] Ppoptions;
+        }
     }
 
 optionStruct::~optionStruct()
@@ -284,7 +284,7 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
             if (locoptarg && *locoptarg)
                 c = *locoptarg - '0';
 
-            if (c < 0 || c > 9)
+            if (c < 0 || c > 9 || G)
                 c = 0;
             break;
         case 'C': // pruning threshold (cutoff) for weightedcount
@@ -432,7 +432,7 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
             printf("  19:parmsoff (obsolete, same as -f18)\n");
             printf("-b: Name of binary rule file. Pretty print rule file and create Bracmat\n    version of rule file. Optionally (-I) lemmatise file.\n");
             printf("-Q: Max recursion depth when attempting to create candidate rule\n");
-            printf("-G: External training program\n");
+            printf("-G: External training program (implies -c0 and -p-)\n");
             printf("-E: External lemmatizer program (arg1=input, arg2=rules, arg3=output)\n");
             printf("-VX: 10-fold cross validation\n");
             printf("-x: Keep all intermediary files. (default: -x- delete them)\n");
@@ -469,6 +469,8 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
             break;
         case 'p': // compute parms
             ComputeParms = locoptarg && *locoptarg == '-' ? false : true;
+            if (G)
+                ComputeParms = false;
             break;
             // GNU >>
         case 'w':
@@ -559,11 +561,12 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
                 exit(-1);
                 }
             break;
-        case 'E': // External training program
+        case 'E': // External lemmatizer
             E = dupl(locoptarg);
             break;
-        case 'G': // External lemmatizer
+        case 'G': // External training program
             G = dupl(locoptarg);
+            ComputeParms = false;
             break;
         case 'V': // Tenfold cross-validation
             VX = locoptarg && *locoptarg == 'X';
@@ -1383,7 +1386,6 @@ void optionStruct::printEvaluation(const char * introduction,char * evaluation,c
         fclose(fp);
         }
     }
-
 
 const char * optionStruct::flexrules()
     {

@@ -1678,6 +1678,8 @@ void trainAndTest
         )
     {
     lineab AffixLine[CUTOFFS];
+    if (Options->verbose() > 3)
+        printf("trainAndTest\n");
 
     char formatprefix[500];
     if(Options->externalTrainer() || Options->externalLemmatizer())
@@ -1809,6 +1811,8 @@ void trainAndTest
             ; ++count
             )
             {
+            if (Options->verbose() > 4)
+                printf("Test: count = %d maxcount = %d\n", count, maxcount);
             char test[256];
             char Tcontrol[256];
             char Ttraincontrol[256];
@@ -1857,6 +1861,8 @@ void trainAndTest
                 trainlines = splitLemmaList(linecnt,Ttraining,test,Tcontrol,1,2,3,fraction,traintest,Ttraincontrol,lines,TrainTest,Options->tenfoldCrossValidation());
             if(trainlines > 0)
                 {
+                if (Options->verbose() > 4)
+                    printf("Test: trainlines = %d\n", trainlines);
                 ttrainlines += trainlines;
 
                 optionStruct testOptions(*Options);
@@ -1878,9 +1884,13 @@ void trainAndTest
 
             if(ttrainlines > 0)
                 {
-                for(int cutoff = CUTOFF_LOW;cutoff <= CUTOFF_HIGH;++cutoff)
+                if (Options->verbose() > 4)
+                    printf("Test: ttrainlines = %d\n", ttrainlines);
+                for (int cutoff = CUTOFF_LOW; cutoff <= CUTOFF_HIGH; ++cutoff)
                     {
-                    sprintf(controlResult,formatcontrolResult,fraction,count,cutoff);
+                    if (Options->verbose() > 4)
+                        printf("Test: cutoff = %d CUTOFF_HIGH = %d\n", cutoff, CUTOFF_HIGH);
+                    sprintf(controlResult, formatcontrolResult, fraction, count, cutoff);
                     char Affixrules[250];
                     const char * lastslash = strrchr(Options->flexrules(),DIRSEP);
                     const char * filename;
@@ -1899,7 +1909,9 @@ void trainAndTest
                     ++openfiles;
                     if(fptally)
                         {
-                        if(Options->externalLemmatizer())
+                        if (Options->verbose() > 4)
+                            printf("Test: fptally created\n");
+                        if (Options->externalLemmatizer())
                             {
                             char * command = new char[strlen(Options->externalLemmatizer())+strlen(TrainTest ? traintest : test)+strlen(Affixrules)+strlen(output)+5];
                             sprintf(command,"%s %s %s %s",Options->externalLemmatizer(),TrainTest ? traintest : test,Affixrules,output);

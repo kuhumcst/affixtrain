@@ -1768,6 +1768,8 @@ bool haswritabledir(const char * name)
 void trainRules(optionStruct * options,countAndWeight * Counts)
     {
     CHECK("jglobTempDir");
+    if (options->verbose() > 4)
+        printf("trainRules\n");
     assert(options->flexrules() != NULL);
     const char * tag = options->POStag();
     const char * nflexrules = options->flexrules();
@@ -1810,7 +1812,9 @@ void trainRules(optionStruct * options,countAndWeight * Counts)
     do
         {
         ++passes;
-//        printf("passes:%d\n",passes);
+        if (options->verbose() > 4)
+            printf("do pass %d\n", passes);
+        //        printf("passes:%d\n",passes);
         char flexrulesPass[1256];
         sprintf(flexrulesPass, FlexrulePassFormat, nflexrules, passes);
         char ext[100];
@@ -1836,6 +1840,8 @@ void trainRules(optionStruct * options,countAndWeight * Counts)
 
         if(options->externalTrainer())
             {
+            if (options->verbose() > 4)
+                printf("options->externalTrainer() %s\n", options->externalTrainer());
             if (sizeof(bestRulesFormat) <= (size_t)sprintf(bestRulesFormat, accumulatedFormat, nflexrules, 1))
                 {
                 printf("trainRules: bestRulesFormat 2 small");
@@ -1843,12 +1849,14 @@ void trainRules(optionStruct * options,countAndWeight * Counts)
                 }
             for(int threshold = 0;threshold <= options->cutoff();++threshold)
                 {
-                char * dest = new char[strlen(bestRulesFormat)+10];
+                if (options->verbose() > 4)
+                    printf("threshold %d\n", threshold);
+                char * dest = new char[strlen(bestRulesFormat) + 10];
                 sprintf(dest, bestRulesFormat, threshold);
                 char * command = new char[strlen(options->externalTrainer())+strlen(fname)+strlen(dest)+strlen("noofrules.txt")+15];
                 sprintf(command,"%s %s %s %s",options->externalTrainer(),fname,dest,"noofrules.txt");
                 delete [] dest;
-                if (options->verbose())
+                if (options->verbose() > 4)
                     printf("External trainer command: [%s]\n", command);
                 if (!system(command))
                     {
@@ -2145,6 +2153,8 @@ void ComputeDelta(optionStruct * poptions)
 
 void TestRules(optionStruct * poptions)
     {
+    if (poptions->verbose() > 1)
+        printf("TestRules\n");
     if (poptions->test() || (poptions->trainTest() && !poptions->tenfoldCrossValidation()))
         {
         if (poptions->verbose() > 2)
@@ -2165,10 +2175,12 @@ void CreateFlexRules(optionStruct * poptions)
         //            getchar();
         setCompetitionFunction(poptions);
         poptions->setReadLines(poptions->lines());
+        if (poptions->verbose() > 1)
+            printf("poptions->createFlexRules()\n");
 
-                countAndWeight * Counts = new countAndWeight[1 + (size_t)poptions->cutoff()];
-                trainRules(poptions, Counts);
-                delete[]Counts;
+        countAndWeight * Counts = new countAndWeight[1 + (size_t)poptions->cutoff()];
+        trainRules(poptions, Counts);
+        delete[]Counts;
         }
     }
 

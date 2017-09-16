@@ -1,3 +1,7 @@
+Version 3.73 - 2017.09.16
+-------------------------
+Added description of -R option in output from affixtrain -h.
+
 Version 3.72 - 2017.08.09
 -------------------------
 Adapted example/readme.txt to the new default behaviour when the -n parameter

@@ -390,6 +390,7 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
             printf("-t: test the rules with data not used for training\n");
             printf("-T: test the rules with the training data\n");
             printf("-F; create flexrules. Can be combined with computation (-p) and testing (-t, -T)\n");
+            printf("-R; Redo training with unambiguous training set after each training with\n    ambiguous training set, not using the candidates that would not be\n    lemmatised correctly anyway by the produced rules.\n");
             printf("-n: columns (default FBT if there are three or more columns in the input, otherwise FB):\n");
             printf("  1 or F or f or W or w:Word\n");
             printf("  2 or B or b or L or l:Lemma\n");
@@ -564,7 +565,7 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
         case 'G': // External lemmatizer
             G = dupl(locoptarg);
             break;
-        case 'V': // External lemmatizer
+        case 'V': // Tenfold cross-validation
             VX = locoptarg && *locoptarg == 'X';
             break;
             /*

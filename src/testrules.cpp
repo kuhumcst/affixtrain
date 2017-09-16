@@ -750,7 +750,7 @@ static int anNth(void)
         return 0;
     }
 
-static ptrdiff_t splitLemmaList
+static ptrdiff_t splitLemmaClumpList
    (ptrdiff_t clumpcnt
    ,char * training
    ,char * test
@@ -766,6 +766,8 @@ static ptrdiff_t splitLemmaList
    ,bool TenFoldXValidation
    ) // 0 <= fraction <= 10000
     {
+    if (TrainTest)
+        printf("splitLemmaClumpList1 %d\n", fraction);
     ptrdiff_t trainlines = 0;
     ptrdiff_t trainclumps = 0;
     ptrdiff_t testclumps = 0;
@@ -786,7 +788,7 @@ static ptrdiff_t splitLemmaList
 
     testclumps = clumpcnt - trainclumps;
 
-    if (trainclumps > 0 && testclumps > 0)
+    if (trainclumps > 0 /*&& testclumps > 0*/)
         {
         FILE * fptrain = NULL;
         FILE * fptest = NULL;
@@ -856,7 +858,7 @@ static ptrdiff_t splitLemmaList
     return trainlines;
     }
 
-static ptrdiff_t splitLemmaList
+static ptrdiff_t splitLemmaLineList
    (ptrdiff_t linecnt
    ,char * training
    ,char * test
@@ -873,7 +875,7 @@ static ptrdiff_t splitLemmaList
    ) // 0 <= fraction <= 10000
     {
     if (TrainTest)
-        printf("splitLemmaList %d\n",fraction);
+        printf("splitLemmaLineList2 %d\n",fraction);
     FILE * fptrain = NULL;
     FILE * fptest = NULL;
     FILE * fpcontrol = NULL;
@@ -1864,9 +1866,9 @@ void trainAndTest
 
             ptrdiff_t trainlines = 0;
             if(clumpcnt > 1)
-                trainlines = splitLemmaList(clumpcnt,Ttraining,test,Tcontrol,1,2,3,fraction,traintest,Ttraincontrol,clumps,TrainTest,Options->tenfoldCrossValidation());
+                trainlines = splitLemmaClumpList(clumpcnt,Ttraining,test,Tcontrol,1,2,3,fraction,traintest,Ttraincontrol,clumps,TrainTest,Options->tenfoldCrossValidation());
             else
-                trainlines = splitLemmaList(linecnt,Ttraining,test,Tcontrol,1,2,3,fraction,traintest,Ttraincontrol,lines,TrainTest,Options->tenfoldCrossValidation());
+                trainlines = splitLemmaLineList(linecnt,Ttraining,test,Tcontrol,1,2,3,fraction,traintest,Ttraincontrol,lines,TrainTest,Options->tenfoldCrossValidation());
             if(trainlines > 0)
                 {
                 if (Options->verbose() > 4)

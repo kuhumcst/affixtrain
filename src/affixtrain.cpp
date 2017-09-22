@@ -20,7 +20,7 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "3.73"
+#define VERSION "3.74"
 
 #include "affixtrain.h"
 #include "testrules.h"
@@ -1080,9 +1080,11 @@ static bool writeRules(node * tree, const char * ext, int threshold, const char 
         {
 #if RULESASTEXTINDENTED
         fprintf(foo,"threshold %d\n",threshold);
+        int Nnodes = 0;
         int NnodesR = 0;
         int N = tree->print(foo,0,Nnodes,NnodesR);
-        fprintf(foo,"threshold %d:%d words %d nodes %d weight %f nodes with words\n\n",threshold,N,Nnodes,NnodesR,weight);
+//        fprintf(foo,"threshold %d:%d words %d nodes %d weight %f nodes with words\n\n",threshold,N,Nnodes,NnodesR,weight);
+        fprintf(foo,"threshold %d:%d words %d nodes %d nodes with words\n\n",threshold,N,Nnodes,NnodesR);
         --openfiles;
         fclose(foo);
         sprintf(filename,"rules_%d%s.txt",threshold,ext);
@@ -1109,7 +1111,8 @@ static bool writeRules(node * tree, const char * ext, int threshold, const char 
             )
             {
 #if RULESASTEXTINDENTED
-            fprintf(foo,"tree={%d %f}\n",Nnodes,weight); // "rules_%d%s.txt"
+            //fprintf(foo,"tree={%d %f}\n",Nnodes,weight); // "rules_%d%s.txt"
+            fprintf(foo,"tree={%d}\n",Nnodes); // "rules_%d%s.txt"
 #endif
             int nr = 0;
             strng L("");
@@ -1249,7 +1252,7 @@ static bool doTraining
     if (options->verbose() > 4)
         printf("Decision tree built\n");
     //    fclose(fprune);
-    top = top->cleanup(NULL);
+    top = top->cleanup(NULL,0);
 
     FILE * nexttrain = pairsToTrainInNextPassName ? fopenOrExit(tempFolder(pairsToTrainInNextPassName, options), "wb", "nexttrain") : NULL;
     if (nexttrain)
@@ -1305,7 +1308,7 @@ static bool doTraining
         for (int thresh = 1; thresh <= cutoff; thresh++)
             {
             top->pruneAll(thresh);
-            top = top->cleanup(NULL);
+            top = top->cleanup(NULL,0);
             if (sizeof(name) <= (size_t)sprintf(name, nflexrulesFormat, thresh))
                 {
                 printf("doTraining: name 2 small");

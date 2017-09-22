@@ -109,16 +109,16 @@ class node // node in decision tree
         bool compatibleSibling(node * sib);
     public:
         static int mostPenalized;
-        void Counting(int & nodes,int & pairs,FILE * f);
+        //void Counting(int & nodes,int & pairs,FILE * f);
         vertex * V;
         int Ncandidates;
         int IDXcandidates;
         node * IfPatternSucceeds; 
         node * IfPatternFails;
         trainingPair * Right; // Pattern succeeds and replacement is right.
-        void printSep(FILE * f,int level);
+        //void printSep(FILE * f,int level);
 
-        node * cleanup(node * parent);
+        node * cleanup(node * parent, int recursionDepth);
         int count()
             {
             int ret = 0;
@@ -161,7 +161,9 @@ class node // node in decision tree
             return n;
             }
 
+#if RULESASTEXTINDENTED
         int print(FILE * fo,int ind,int & Nnodes,int &NnodesR);
+#endif
         void printNumbers(trainingPair ** allRight,trainingPair ** allWrong);
         void init(trainingPair ** allRight,trainingPair ** allWrong,int level,optionStruct * options);
         void splitTrainingPairList(trainingPair * all,trainingPair **& pNotApplicable,trainingPair **& pWrong,trainingPair **& pRight,bool SuffixOnly);

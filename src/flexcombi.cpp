@@ -949,12 +949,12 @@ ptrdiff_t treenode::copy(char * arr,int ind)
 
     if (Sibling.one)
         {
-        *FailBranch = arr - (char*)FailBranch;
+        *FailBranch = (int)(arr - (char*)FailBranch);
         arr += Sibling.one->copy(arr, ind);
         }
     else if (Sibling.more)
         {
-        *FailBranch = arr - (char*)FailBranch;
+        *FailBranch = (int)(arr - (char*)FailBranch);
         arr += Sibling.more->copy(arr, ind + 2);
         }
     else
@@ -987,7 +987,7 @@ ptrdiff_t chain::copy(char * arr, int ind)
     if (TreeNode)
         {
         arr += TreeNode->copy(arr,ind);
-        *Other = Alt ? arr - (char *)Other : 0;
+        *Other = Alt ? (int)(arr - (char *)Other) : 0;
         }
     else
         {

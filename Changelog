@@ -1,3 +1,10 @@
+Version 3.74 - 2017.09.22
+-------------------------
+Fixed errors when RULESASTEXTINDENTED = 1, added typecasts to stop complaining,
+made node::compatibleSibling(node *) iterative, set maximum recursion depth at
+30000 for cleanup(node *,int), removed wrong assert() in testrules.cpp.
+
+
 Version 3.73 - 2017.09.16
 -------------------------
 Added description of -R option in output from affixtrain -h.

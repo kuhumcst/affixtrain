@@ -766,7 +766,7 @@ static ptrdiff_t splitLemmaClumpList
     int (*Rand)(void);
     if (clumpcnt <= 10)
         {
-        fraction = 10000 - 10000 / clumpcnt;
+        fraction = 10000 - 10000 / (int)clumpcnt;
         Rand = anNth;
         }
     if (TenFoldXValidation)
@@ -800,7 +800,7 @@ static ptrdiff_t splitLemmaClumpList
         if (clumpcnt && fptrain)
             {
             assert(trainclumps > 0);
-            assert(testclumps > 0);
+            //assert(testclumps > 0);
             fptest = fopen(test, "wb");
             ++openfiles;
             fpcontrol = fopen(control, "wb");

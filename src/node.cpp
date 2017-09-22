@@ -472,7 +472,7 @@ char * Strrev(char * s)
     }
 #endif
 
-
+/*
 void node::Counting(int & nodes,int & pairs,FILE * f)
     {
     int Nodes = 0;
@@ -488,7 +488,7 @@ void node::Counting(int & nodes,int & pairs,FILE * f)
     nodes += Nodes;
     pairs += Pairs;
     }
-
+*/
 double node::weightedcount()
     {
     double ret = 0.0;
@@ -598,7 +598,7 @@ int node::prune(int threshold)
     return N;
     }
 
-
+/*
 void node::printSep(FILE * f,int level)
     {
     this->V->print(f,level);
@@ -609,7 +609,8 @@ void node::printSep(FILE * f,int level)
     if(this->IfPatternFails)
         this->IfPatternFails->printSep(f,level);
     }
-
+*/
+#if RULESASTEXTINDENTED
 int node::print(FILE * fo,int ind,int & Nnodes,int &NnodesR)
     {
     V->print(fo,ind);
@@ -629,6 +630,7 @@ int node::print(FILE * fo,int ind,int & Nnodes,int &NnodesR)
         n += IfPatternFails->print(fo,ind,Nnodes,NnodesR);
     return n;
     }
+#endif
 
 node::node(vertex * V):V(V),IfPatternSucceeds(0),IfPatternFails(0),Right(0)
     {
@@ -699,76 +701,93 @@ void node::splitTrainingPairList(trainingPair * pair,trainingPair **& pNotApplic
 
 bool node::compatibleSibling(node * sib)
     {
-    if(this->V->Pattern.dif(&sib->V->Pattern) != dif_incompatible)
-        return true;
-    else if(IfPatternFails)
-        return IfPatternFails->compatibleSibling(sib);
-    else
-        return false;
+	char * P = sib->V->Pattern.itsTxt();
+	assert(strlen(P) >= 2);
+	if(P[1] == ANY && P[strlen(P)-2] == ANY)
+		return true;
+	node * N = this;
+	while(N)
+		{
+		if(N->V->Pattern.dif(&sib->V->Pattern) != dif_incompatible)
+			return true;
+		N = N->IfPatternFails;
+		}
+    return false;
     }
 
-node * node::cleanup(node * parent)
+int maxRecursionDepth = 30000;
+// Windows, 32 bit: stack overflow when recursionDepth = 41521
+node * node::cleanup(node * parent,int recursionDepth)
     {
-    if(this->IfPatternSucceeds) 
-        {
-        this->IfPatternSucceeds = this->IfPatternSucceeds->cleanup(this);
-        }
-    if(IfPatternFails)
-        {
-        IfPatternFails = IfPatternFails->cleanup(parent);
-        }
-    if(  IfPatternFails 
-      && (  this->IfPatternSucceeds 
-         || IfPatternFails->compatibleSibling(this)
-         )
-      )
-        {
-        return this;
-        }
-    else if(parent)
-        {
-        if(this->Right)
-            {
-            if(!parent->IfPatternFails && !parent->Right)
-                {
-                // remove parent, keep this.
-                return this;
-                }
-            trainingPair * R = this->Right;
-            for(;;)
-                {
-                matchResult res = parent->V->lemmatise(R);
+	if(recursionDepth > maxRecursionDepth)
+		{
+		//maxRecursionDepth = recursionDepth;
+		//printf("maxRecursionDepth %d\n",maxRecursionDepth);
+		return this;
+		}
+	else
+		{
+		if(this->IfPatternSucceeds) 
+			{
+			this->IfPatternSucceeds = this->IfPatternSucceeds->cleanup(this,recursionDepth+1);
+			}
+		if(IfPatternFails)
+			{
+			IfPatternFails = IfPatternFails->cleanup(parent,recursionDepth+1);
+			}
+		if(  IfPatternFails 
+		  && (  this->IfPatternSucceeds 
+			 || IfPatternFails->compatibleSibling(this)
+			 )
+		  )
+			{
+			return this;
+			}
+		else if(parent)
+			{
+			if(this->Right)
+				{
+				if(!parent->IfPatternFails && !parent->Right)
+					{
+					// remove parent, keep this.
+					return this;
+					}
+				trainingPair * R = this->Right;
+				for(;;)
+					{
+					matchResult res = parent->V->lemmatise(R);
 
-                if(res != right)
-                    {
-                    return this;
-                    }
-                if(R->next())
-                    R = R->next();
-                else
-                    break;
-                }
-            R->setNext(parent->Right);
-            parent->Right = this->Right;
-            this->Right = 0;
-            }
-        node * ret = IfPatternFails;
-        if(ret)
-            {
-            IfPatternFails = 0;
-            }
-        else
-            {
-            ret = this->IfPatternSucceeds;
-            this->IfPatternSucceeds = 0;
-            }
-        delete this;
-        return ret;
-        }
-    else
-        {
-        return this;
-        }
+					if(res != right)
+						{
+						return this;
+						}
+					if(R->next())
+						R = R->next();
+					else
+						break;
+					}
+				R->setNext(parent->Right);
+				parent->Right = this->Right;
+				this->Right = 0;
+				}
+			node * ret = IfPatternFails;
+			if(ret)
+				{
+				IfPatternFails = 0;
+				}
+			else
+				{
+				ret = this->IfPatternSucceeds;
+				this->IfPatternSucceeds = 0;
+				}
+			delete this;
+			return ret;
+			}
+		else
+			{
+			return this;
+			}
+		}
     }
 
 #if PRUNETRAININGPAIRS

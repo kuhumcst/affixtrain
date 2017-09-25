@@ -37,6 +37,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "hashtable.h"
 #include "ruletemplate.h"
 
+int maxRecursionDepth = 2000; // On Windows 30000 is ok
+
 //int (*comp)(const vertex * a,const vertex * b) = 0; 
 // returns b > a ? 1 : b < a ? -1 : 0
 // (Chosen like this to let qsort sort in descending order.)
@@ -715,7 +717,6 @@ bool node::compatibleSibling(node * sib)
     return false;
     }
 
-int maxRecursionDepth = 30000;
 // Windows, 32 bit: stack overflow when recursionDepth = 41521
 node * node::cleanup(node * parent,int recursionDepth)
     {

@@ -20,7 +20,7 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "3.74"
+#define VERSION "3.8"
 
 #include "affixtrain.h"
 #include "testrules.h"
@@ -1999,7 +1999,7 @@ void trainRules(optionStruct * options,countAndWeight * Counts)
 
         accumulatedFormatPrev = accumulatedFormat;
         accumulatedFormat = AccumulatedFlexrulePassFormat;
-        } while (moreToDo && passes < 30);
+        } while (moreToDo && passes < options->maxPasses());
 
         if (options->verbose() > 5)
             {

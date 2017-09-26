@@ -1,3 +1,9 @@
+Version 3.8 - 2017.09.26
+-------------------------
+New option -m that sets the maximum ambiguity of the created rules.
+Default is -m 30. -m 1 means: create unambiguous rules.
+If m > 1 affixtrain creates two or more trees and merges them.
+
 Version 3.74 - 2017.09.22
 -------------------------
 Fixed errors when RULESASTEXTINDENTED = 1, added typecasts to stop complaining,

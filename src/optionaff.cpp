@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <assert.h>
 #include <math.h>
 
-static char opts[] = "?@:A:B:b:C:c:D:d:E:e:F:f:G:hH:I:i:j:K:k:L:M:N:n:O:o:P:p:Q:"/*q:*/"R:s:T:t:V:v:X:x:W:" /* GNU: */ "wr";
+static char opts[] = "?@:A:B:b:C:c:D:d:E:e:F:f:G:hH:I:i:j:K:k:L:M:m:N:n:O:o:P:p:Q:"/*q:*/"R:s:T:t:V:v:X:x:W:" /* GNU: */ "wr";
 static char *** Ppoptions = NULL;
 static char ** Poptions = NULL;
 static int optionSets = 0;
@@ -86,6 +86,7 @@ optionStruct::optionStruct(optionStruct & O)
     F = O.F;
     TrainTest = O.TrainTest;
     Q = O.Q;
+    MaxPasses = O.MaxPasses;
     //q = O.q;
     K = O.K;
     M = O.M;
@@ -137,6 +138,7 @@ optionStruct::optionStruct()
     F = true;
     TrainTest = true;
     Q = 1;
+    MaxPasses = 30;
     //q = 1;
     K = 20;   // Number of differently sized fractions of trainingdata 
     M = 10.0; // # Iterations when training with Maxfraction of input
@@ -313,41 +315,83 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
             f = dupl(locoptarg);
             break;
         case 'L':
-            Minfraction = strtod(locoptarg, (char**)0);
-            if (Minfraction <= 0.0 || 1.0 < Minfraction)
+            if (locoptarg && *locoptarg)
                 {
-                printf("%s", "Option -L: value must be greater than 0.0 and not greater than 1.0");
+                Minfraction = strtod(locoptarg, (char**)0);
+                if (Minfraction <= 0.0 || 1.0 < Minfraction)
+                    {
+                    printf("%s", "Option -L: value must be greater than 0.0 and not greater than 1.0");
+                    exit(-1);
+                    }
+                }
+            else
+                {
+                fprintf(stderr, "Option -L:No parameter value found.\n");
                 exit(-1);
                 }
             break;
         case 'H':
-            Maxfraction = strtod(locoptarg, (char**)0);
-            if (Maxfraction > 1.0)
+            if (locoptarg && *locoptarg)
                 {
-                printf("%s", "Option -H: value must be greater than 0.0 and not greater than 1.0");
+                Maxfraction = strtod(locoptarg, (char**)0);
+                if (Maxfraction > 1.0)
+                    {
+                    printf("%s", "Option -H: value must be greater than 0.0 and not greater than 1.0");
+                    exit(-1);
+                    }
+                }
+            else
+                {
+                fprintf(stderr, "Option -H:No parameter value found.\n");
                 exit(-1);
                 }
             break;
         case 'K':
-            K = strtol(locoptarg,0,10);
-            if(K <= 0)
+            if (locoptarg && *locoptarg)
                 {
-                printf("%s","Option -K: value must be 1 or more");
+                K = strtol(locoptarg, 0, 10);
+                if (K <= 0)
+                    {
+                    printf("%s", "Option -K: value must be 1 or more");
+                    exit(-1);
+                    }
+                }
+            else
+                {
+                fprintf(stderr, "Option -K:No parameter value found.\n");
                 exit(-1);
                 }
+            break;
         case 'M':
-            M = strtod(locoptarg, (char**)0);
-            if (M < 1.0)
+            if (locoptarg && *locoptarg)
                 {
-                printf("%s", "Option -M: value must be 1.0 or greater");
+                M = strtod(locoptarg, (char**)0);
+                if (M < 1.0)
+                    {
+                    printf("%s", "Option -M: value must be 1.0 or greater");
+                    exit(-1);
+                    }
+                break;
+                }
+            else
+                {
+                fprintf(stderr, "Option -M:No parameter value found.\n");
                 exit(-1);
                 }
             break;
         case 'N':
-            N = strtod(locoptarg, (char**)0);
-            if (N < 1.0)
+            if (locoptarg && *locoptarg)
                 {
-                printf("%s", "Option -N: value must be 1.0 or greater");
+                N = strtod(locoptarg, (char**)0);
+                if (N < 1.0)
+                    {
+                    printf("%s", "Option -N: value must be 1.0 or greater");
+                    exit(-1);
+                    }
+                }
+            else
+                {
+                fprintf(stderr, "Option -N:No parameter value found.\n");
                 exit(-1);
                 }
             break;
@@ -432,6 +476,7 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
             printf("  19:parmsoff (obsolete, same as -f18)\n");
             printf("-b: Name of binary rule file. Pretty print rule file and create Bracmat\n    version of rule file. Optionally (-I) lemmatise file.\n");
             printf("-Q: Max recursion depth when attempting to create candidate rule\n");
+            printf("-m; max ambiguity. -m 1 results in unambiguous rules. Default -m 30\n");
             printf("-G: External training program (implies -c0 and -p-)\n");
             printf("-E: External lemmatizer program (arg1=input, arg2=rules, arg3=output)\n");
             printf("-VX: 10-fold cross validation\n");
@@ -541,6 +586,22 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
             break;
         case 'R':
             Redo = locoptarg && *locoptarg == '-' ? false : true;
+            break;
+        case 'm':
+            if (locoptarg && *locoptarg)
+                {
+                MaxPasses = strtol(locoptarg, (char**)0, 10);
+                if (MaxPasses < 1)
+                    {
+                    fprintf(stderr, "Option m:Invalid value [%d]. Max ambiguity  candidate rule must be >= 1\n", MaxPasses);
+                    exit(-1);
+                    }
+                }
+            else
+                {
+                fprintf(stderr, "Option m:No parameter value found.\n");
+                exit(-1);
+                }
             break;
         case 'b': // raw rules
             b = dupl(locoptarg);
@@ -1108,6 +1169,7 @@ void optionStruct::print(FILE * fp) const
         fprintf(fp, "               ; columns (1=word,2=lemma,3=tags,0=other)\n;-n %s (N/A)\n", n ? n : "");
         fprintf(fp, "               ; specific POS tag (default: empty string)\n;-k %s (N/A)\n", k ? k : "");
         fprintf(fp, "               ; max recursion depth when attempting to create candidate rule\n;-Q %d (N/A)\n", Q);
+        fprintf(fp, "               ; max ambiguity\n;-m %d (N/A)\n", MaxPasses);
         fprintf(fp, "               ; flex rules (output, binary format)\n;-o %s (N/A)\n", o ? o : "");
         fprintf(fp, "               ; temp dir (including separator at end!)\n;-j %s (N/A)\n", j ? j : "");
 //        fprintf(fp, "               ; percentage of training pairs to set aside for testing\n;-q %d (N/A)\n", q);
@@ -1141,7 +1203,8 @@ void optionStruct::print(FILE * fp) const
         fprintf(fp, "               ; columns (1 or F or W=word,2 or B or L=lemma,3 or T=tags,0 or O=other)\n-n %s\n", n);
         fprintf(fp, "               ; specific POS tag (default: empty string)\n-k %s\n", k);
         fprintf(fp, "               ; max recursion depth when attempting to create candidate rule\n-Q %d\n", Q);
-        fprintf(fp, "               ; flex rules (output, binary format, can be left unspecified)\n%s-o %s\n",o ? "" : ";", o ? o : "(Not specified, autogenerated)");
+        fprintf(fp, "               ; max ambiguity\n-m %d\n", MaxPasses);
+        fprintf(fp, "               ; flex rules (output, binary format, can be left unspecified)\n%s-o %s\n", o ? "" : ";", o ? o : "(Not specified, autogenerated)");
         fprintf(fp, "               ; temp dir\n-j %s\n", j ? j : "");
 //        fprintf(fp, "               ; percentage of training pairs to set aside for testing\n-q %d\n", q);
         fprintf(fp, "               ; penalties to decide which rule survives (4 or 6 floating point numbers: R=>R;W=>R;R=>W;W=>W[;R=>N/A;W=>NA], where R=#right cases, W=#wrong cases, N/A=#not applicable cases, previous success state=>success state after rule application)\n"); if (nD > 0){ fprintf(fp, "-D "); for (int i = 0; i < nD; ++i)fprintf(fp, "%.10f;", D[i]); fprintf(fp, "\n"); } else fprintf(fp, ";-D not specified\n");

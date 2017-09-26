@@ -79,6 +79,7 @@ class optionStruct
         int Verbose;// Verbosity. Positive number:
                     // lower value = higher priority.
                     // - or 0: no verbosity
+        int MaxPasses; // > 1 if ambiguous lemma predictions allowed (or wanted)
         size_t TrainingPairsLines;
         bool ComputeParms;// compute parms
         bool SuffixOnly;// suffix only
@@ -140,6 +141,7 @@ class optionStruct
         const double maxfraction()const{return Maxfraction;}
         const bool redo()const{return Redo;}
         const int swaths()const{return K;}
+        const int maxPasses()const{ return MaxPasses; }
         const double minIterations()const{return M;}
         const double maxIterations()const{return N;}
         const int numberOfParms()const{return nD;}

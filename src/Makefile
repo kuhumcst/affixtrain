@@ -1,8 +1,7 @@
 VERSION=1
 MINOR_NUMBER=1
 
-BIN=~/bin/
-#BIN=
+BIN=../
 
 AFFIXTRAIN=$(BIN)affixtrain
 AFFIXTRAINI=$(BIN)affixtraini

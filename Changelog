@@ -1,3 +1,8 @@
+Version 3.81 - 2017.12.8
+-------------------------
+Renamed the global boolean variable UTF8 (defined in letterfunc/utf8func.h) to globUTF8.
+Renamed the parameter file "parms.txt" to "approx_parms.txt".
+
 Version 3.8 - 2017.09.26
 -------------------------
 New option -m that sets the maximum ambiguity of the created rules.

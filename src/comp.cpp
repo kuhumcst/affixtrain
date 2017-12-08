@@ -687,7 +687,7 @@ int (*comp)(const vertex * a,const vertex * b) = comp_parms;
 
 // You can find a local optimum for the parameters by using comp_parms as the
 // weight function and setting compute_parms = true. The parameters parms.Matrix[] 
-// can be seeded with non-zero values by hard coding. The file parms.txt
+// can be seeded with non-zero values by hard coding. The file approx_parms.txt
 // will contain the currently best parameters.
 
 // Optimal parameters == resulting in smallest rule set.

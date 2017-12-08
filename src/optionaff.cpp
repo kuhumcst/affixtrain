@@ -430,7 +430,7 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
             printf("  E Trees evenly distributing examples over the nodes have lowest penalty. (Strive for max entropy)\n");
             printf("  W Rules with one less supporting examples than the expected pruning threshold. Set expected pruning threshold with -C parameter.\n");
             printf("  S Rules with longer patterns contribute more. Or: a rule's contribution is proportional with number of characters in the rule pattern, including wildcards.\n");
-            printf("-P: write parameters to file (default parms.txt if -p or -f0, otherwise no parameter file)\n");
+            printf("-P: write parameters to file (default approx_parms.txt if -p or -f0, otherwise no parameter file)\n");
             printf("-t: test the rules with data not used for training\n");
             printf("-T: test the rules with the training data\n");
             printf("-F; create flexrules. Can be combined with computation (-p) and testing (-t, -T)\n");
@@ -905,7 +905,7 @@ void optionStruct::completeArgs()
                 {
                 if (Verbose)
                     printf("computeParms == true\n");
-                P = dupl("parms.txt");
+                P = dupl("approx_parms.txt");
                 }
             else
                 {
@@ -992,7 +992,7 @@ void optionStruct::completeArgs()
             fprintf(stderr, "Error: No parameters provided. (-D option).\n"
                 "Add -p if you want to compute the parameters.\n"
                 "If the parameters are already computed, edit the generated parameter file\n"
-                "(e.g., parms.txt) and then run the program with\n\n\taffixtrain -@ parms.txt\n"
+                "(e.g., approx_parms.txt) and then run the program with\n\n\taffixtrain -@ approx_parms.txt\n"
                 );
             exit(2);
             }

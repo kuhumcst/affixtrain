@@ -20,7 +20,7 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "3.8"
+#define VERSION "3.81"
 
 #include "affixtrain.h"
 #include "testrules.h"
@@ -158,10 +158,11 @@ struct aFile
     union pointers * Lines;
     const char * eob;
     char * fname;
+    const char * columns;
     size_t size;
     size_t lines;
     int filesize;
-    aFile(const char * fname, optionStruct * options) :Lines(NULL), eob(NULL), lines(0), filesize(0)
+    aFile(const char * fname, optionStruct * options, const char * columns) :Lines(NULL), eob(NULL), columns(columns), lines(0), filesize(0)
         {
         assert(fname);
 
@@ -301,7 +302,7 @@ static bool isSpace(int a)
 static tagClass * collectTags(optionStruct * options)
 // "123456" means Word, Lemma, Wordfreq, Lemmafreq, Wordclass, Lemmaclass
     {
-    struct aFile afile(options->wordLemmaList(), options);
+    struct aFile afile(options->wordLemmaList(), options, NULL);
 
     CHECK("SglobTempDir");
     tagClass * Tags = NULL;
@@ -556,8 +557,10 @@ static int compare2(const void * arg1, const void * arg2)
     int ret = A->cmpLemma(B);
     if(!ret)
         {
+#if LEMMACLASS
         ret = A->cmpLemmaClass(B);
         if(!ret)
+#endif
             {
             ret = A->cmpWord(B);
             }
@@ -569,7 +572,7 @@ static int markParadigms(size_t allPairs,trainingPair * TrainingPair,FILE * fpar
     {
     //    FILE * allFile = fopenwb("allFile.txt");
     trainingPair ** pTrainingPair = new trainingPair * [allPairs];
-    int j;
+    size_t j;
     for(j = 0;j < allPairs;++j)
         pTrainingPair[j] = TrainingPair + j;
     qsort((void *)pTrainingPair, allPairs, sizeof(trainingPair *), compare2);
@@ -577,7 +580,7 @@ static int markParadigms(size_t allPairs,trainingPair * TrainingPair,FILE * fpar
     int n = 0;
     for(j = 0;j < allPairs/* - 1*/;)
         {
-        int k;
+        size_t k;
         trainingPair * pAlt = pTrainingPair[j];
         if(fparadigms)
             {
@@ -615,14 +618,13 @@ static int markParadigms(size_t allPairs,trainingPair * TrainingPair,FILE * fpar
 
 static trainingPair * globTrainingPair;
 
-static trainingPair * readTrainingPairs(aFile & afile, size_t & pairs, const char * columns, optionStruct * options)
+static trainingPair * readTrainingPairs(aFile & afile, size_t & pairs, optionStruct * options)
     {
     if (options->verbose() > 4)
         printf("readTrainingPairs\n");
     const char * tag = options->POStag();
     trainingPair * TrainingPair = new trainingPair[afile.lines];
     globTrainingPair = TrainingPair;
-    // "123456" means Word, Lemma, Wordfreq, Lemmafreq, Wordclass, Lemmaclass
     CHECK("TglobTempDir");
     pairs = 0;
     size_t line;
@@ -668,8 +670,8 @@ static trainingPair * readTrainingPairs(aFile & afile, size_t & pairs, const cha
         unsigned int maxii = ++ii;
         cols[maxii] = q ? q : limit;
         const char * column;
-        //bool doUse = ((tag == NULL) || !*tag);
-        for (column = columns, ii = 0
+        // "-n 123456" means Word, Lemma, Wordfreq, Lemmafreq, Wordclass, Lemmaclass
+        for (column = afile.columns, ii = 0
              ;    *column
              && (ii < maxii)
              ; ++column, ++ii
@@ -802,7 +804,9 @@ void FilterTagLines(const char * fname,optionStruct * options, const char * tag)
                 break;
             default:
                 ++tagtabcount;
+                continue;
             }
+        break;
         }
     char * tagfilename = new char[strlen(fname) + strlen(tag) + 2];
     sprintf(tagfilename, "%s_%s",fname,tag);
@@ -872,7 +876,7 @@ static void markTheAmbiguousPairs(trainingPair * TrainingPair, size_t pairs, opt
     markAmbiguous(pairs, TrainingPair, options);
 
 #if PESSIMISTIC
-    sprintf(filename,"paradigms_%s.txt",ext);
+    char * filename = "paradigms.txt";
     FILE * fparadigms = fopenOrExit(filename,"wb","fparadigms");
     markParadigms(pairs,TrainingPair,fparadigms);
     if(fparadigms)
@@ -1186,38 +1190,11 @@ static bool writeRules(node * tree, const char * ext, int threshold, const char 
     return false;
     }
 
-static bool doTraining
-( const char * fname
-, const char * ext
-, int cutoff
-, const char * nflexrulesFormat
-, const char * columns
-, char * pairsToTrainInNextPassName 
-, countAndWeight * Counts
-, size_t * filelines
-, optionStruct * options
-)
+trainingPair * createChainOfPointersToTrainingPairs(trainingPair * TrainingPair,size_t allPairs)
     {
-    bool moreToDo = false;
-    VertexPointerCount = 0;
-
-    aFile afile(fname, options);
-
-    if (filelines)
-        *filelines = afile.lines;
-
-    size_t allPairs;
-    trainingPair * TrainingPair = readTrainingPairs(afile, allPairs, columns, options);
-    markTheAmbiguousPairs(TrainingPair, allPairs, options);
-    hashTable Hash(10);
-    trainingPair * train = NULL;
-    // Split list of pairs in those that are to be used for training and those
-    // that are to be used for testing.
-    // Pairs that are doublets are not added to either list.
-    // Nor are pairs that are not well-formed (e.g. contain a ' ').
-    size_t pairs = 0;
+    trainingPair * train;
     trainingPair ** ptrain = &train;
-    for (pairs = 0; pairs < allPairs; ++pairs)
+    for (size_t pairs = 0; pairs < allPairs; ++pairs)
         {
 #if AMBIGUOUS
         if (!TrainingPair[pairs].isset(b_doublet | b_skip))
@@ -1229,7 +1206,51 @@ static bool doTraining
             ptrain = &TrainingPair[pairs].Next;
             }
         }
+    return train;
+    }
 
+trainingPair * saveChainOfPointersToTrainingPairsToFile(trainingPair * train, const char * fileName, const char * tagName)
+    {
+    FILE * fp;
+    if(tagName && tagName[0])
+        {
+        char * name = new char[strlen(fileName) + strlen(tagName) + 2];
+        sprintf(name,"%s_%s",fileName,tagName);
+        fp = fopen(name,"w");
+        delete [] name;
+        }
+    else
+        {
+        fp = fopen(fileName,"w");
+        }
+    trainingPair * ptrain = train;
+    for (; ptrain; ptrain = ptrain->next())
+        {
+        ptrain->fprintTraining(fp);
+        }
+    fclose(fp);
+    return train;
+    }
+
+static bool doTraining
+                ( aFile & afile
+                , const char * ext
+                , int cutoff
+                , const char * nflexrulesFormat
+                , char * pairsToTrainInNextPassName 
+                , countAndWeight * Counts
+                , optionStruct * options
+                )
+    {
+    size_t allPairs;
+    trainingPair * TrainingPair = readTrainingPairs(afile, allPairs, options);
+    markTheAmbiguousPairs(TrainingPair, allPairs, options);
+    trainingPair * train = createChainOfPointersToTrainingPairs(TrainingPair,allPairs);
+
+    bool moreToDo = false;
+    VertexPointerCount = 0;
+
+    hashTable Hash(10);
     node * top;
     vertex ROOT(StartAnyEnd, StartAnyEnd);
     bool New;
@@ -1243,12 +1264,20 @@ static bool doTraining
         printf("Top node is created\n");
 
     trainingPair * Right = NULL;
+#if PRUNETRAININGPAIRS
     fpmourn = fopen("prunedTrainingPairs.txt","w");
+#endif
 //    fprune = fopen("prunedTrainingPairs.txt","w");
 //    train->printAll(fprune,"ALL\n",'\n');
 //    fprintf(fprune,"____________\n");
     top->init(&Right, &train, 0, options);
+    /* After top->init, the chain of pointers to training pairs, that starts 
+       with 'train', is broken and spread over the generated nodes in the
+       decision tree. To traverse the training pairs, we have to use the
+       table 'TrainingPair', as is done below. */
+#if PRUNETRAININGPAIRS
     fclose(fpmourn);
+#endif
     if (options->verbose() > 4)
         printf("Decision tree built\n");
     //    fclose(fprune);
@@ -1545,15 +1574,16 @@ void computeParms(optionStruct * options)
             if (options->verbose() > 5)
                 printf("Computing parameters: initial training\n");
 
+            aFile afile(filename, options,options->columns());
+            filelines = afile.lines;
+
             doTraining
-                (/* const char *                                */  filename
+                (/* aFile &                                     */  afile
                 ,/* const char *                                */  ext
                 ,/* int cutoff                                  */  0
                 ,/* const char * nflexrulesFormat               */  0//options->flexrules()
-                ,/* const char *                                */  options->columns()
                 ,/* char * pairsToTrainInNextPassName           */  NULL
                 ,/* countAndWeight *                            */  &Count
-                ,/* int * filelines                             */  &filelines
                 ,                                                   options
                 ); // sets Nnodes
             if (lines == 0)
@@ -1614,16 +1644,16 @@ void computeParms(optionStruct * options)
                 }
             CHECK("D2globTempDir");
 
-            size_t filelines;
+            aFile afile(filename, options, options->columns());
+            size_t filelines = afile.lines;
+
             doTraining
-                (/* const char *                                */  filename
+                (/* aFile &                                     */  afile
                 ,/* const char *                                */  ext
                 ,/* int cutoff                                  */  0
                 ,/* const char * nflexrulesFormat               */  0//options->flexrules()
-                ,/* const char *                                */  options->columns()
                 ,/* char * pairsToTrainInNextPassName           */  NULL
                 ,/* countAndWeight *                            */  &Count
-                ,/* int * filelines                             */  &filelines
                 ,                                                   options
                 ); // sets Nnodes
             if (lines == 0)                 
@@ -1892,15 +1922,14 @@ void trainRules(optionStruct * options,countAndWeight * Counts)
             }
         else
             {
+            aFile afile(fname, options, passes > 1 ? "12" : options->columns());
             moreToDo = doTraining
-                (/* const char *     */  fname
+                (/* aFile &          */  afile
                 ,/* const char *     */  ext
                 ,/* int cutoff       */  options->cutoff()
                 ,/* const char *     */  flexrulesPass
-                ,/* const char *     */  passes > 1 ? "12" : options->columns()
                 ,/* char *           */  pairsToTrainInNextPassName
                 ,/* countAndWeight * */  Counts
-                ,/* int * filelines  */  NULL
                 ,/* optionStruct *   */  options
                 );
             }
@@ -1916,15 +1945,16 @@ void trainRules(optionStruct * options,countAndWeight * Counts)
                 {
                 printf("More training to do with file \"%s\"\n", pairsToTrainInNextPassName);
                 }
+
+            aFile afile(tempFolder(allIngestedPairsName, options), options, options->columns());
+
             if(doTraining
-                (/* const char *                      */  tempFolder(allIngestedPairsName, options)
+                (/* aFile &                           */  afile
                 ,/* const char *                      */  ext
                 ,/* int                               */  options->cutoff()
                 ,/* const char *                      */  flexrulesPass
-                ,/* const char *                      */  options->columns()
                 ,/* char * pairsToTrainInNextPassName */  NULL
                 ,/* countAndWeight *                  */  Counts
-                ,/* int * filelines                   */  NULL
                 ,/* optionStruct *                    */  options
                 )
               ) // sets Nnodes
@@ -2187,27 +2217,28 @@ void CreateFlexRules(optionStruct * poptions)
         }
     }
 
+void printNiceInput(optionStruct * options, const char * tagName)
+    {
+    aFile afile(options->wordLemmaList(), options, options->columns());
+    size_t allPairs;
+    trainingPair * TrainingPair = readTrainingPairs(afile, allPairs, options);
+    markTheAmbiguousPairs(TrainingPair, allPairs, options);
+    trainingPair * train = createChainOfPointersToTrainingPairs(TrainingPair,allPairs);
+    saveChainOfPointersToTrainingPairsToFile(train,"clearedFile",tagName);
+    }
+
 void AllProcessing(optionStruct * poptions, const char * tagName)
     {
     if (poptions->verbose())
         {
-        printf("ParameterComputation %s\n", tagName);
+        printf("AllProcessing %s\n", tagName);
         }
+
+    printNiceInput(poptions,tagName);
+
     ParameterComputation(poptions,tagName);
-    if (poptions->verbose())
-        {
-        printf("ComputeDelta %s\n", tagName);
-        }
     ComputeDelta(poptions);
-    if (poptions->verbose())
-        {
-        printf("TestRules %s\n", tagName);
-        }
     TestRules(poptions);
-    if (poptions->verbose())
-        {
-        printf("CreateFlexRules %s\n", tagName);
-        }
     CreateFlexRules(poptions);
     if (poptions->verbose())
         {

@@ -31,7 +31,9 @@ class hashTable;
 class optionStruct;
 class ruleTemplate;
 
+#if PRUNETRAININGPAIRS
 extern FILE * fpmourn;
+#endif
 
 enum eResult {undecided, yes, no
 #if AMBIGUOUS

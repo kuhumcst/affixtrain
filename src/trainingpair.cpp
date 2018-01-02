@@ -31,7 +31,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "hashtable.h"
 
 
+#if PRUNETRAININGPAIRS
 FILE * fpmourn = 0;
+#endif
 
 int TrainingPairCount = 0;
 trainingPair::trainingPair():Next(0),Mask(0),Lemma(0),V(0),applicableRules(0),ambs(undecided),tentativeAmbs(undecided)

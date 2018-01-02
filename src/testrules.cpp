@@ -414,9 +414,9 @@ static int fileRead(line * lines,
                                         delete [] bu;
                                     bu = new char[len+len];
                                     strcpy(bu,cf);
-                                    bool UTF8 = true;
+                                    bool globUTF8 = true;
                                     const char *pcf = bu;
-                                    getUTF8char(pcf,UTF8);
+                                    getUTF8char(pcf,globUTF8);
                                     len = 0;
                                     cf = changeCase(pcf,true,len);
                                     strcpy(bu+(pcf-bu),cf);

@@ -267,8 +267,8 @@ void trainingPair::fprintTraining(FILE * fp
 #endif
                                   )
     {
-    if( UTF8 
-      ? isUpper(UTF8char(this->Word,UTF8)) && !isUpper(UTF8char(this->LemmaHead,UTF8)) 
+    if( globUTF8 
+      ? isUpper(UTF8char(this->Word,globUTF8)) && !isUpper(UTF8char(this->LemmaHead,globUTF8)) 
       : isUpperISO(this->Word) && !isUpperISO(this->LemmaHead)
       )
         {
@@ -288,13 +288,13 @@ void trainingPair::fprintTraining(FILE * fp
             char * plemma = lemma;
             const char * pword = this->Word;
             size_t len = this->wordlength;
-            if(UTF8)
+            if(globUTF8)
                 {
                 while(len-- > 0 && *plemma)
                     {
                     char * lemma = plemma;
-                    int LEMMA = (int)upperEquivalent(getUTF8char((const char *&)plemma,UTF8));
-                    int WORD =  getUTF8char(pword,UTF8);
+                    int LEMMA = (int)upperEquivalent(getUTF8char((const char *&)plemma,globUTF8));
+                    int WORD =  getUTF8char(pword,globUTF8);
                     if(LEMMA == WORD)
                         {
                         char NLEMMA[7];

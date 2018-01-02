@@ -41,7 +41,7 @@ shortRulePair::shortRulePair(trainingPair * trainingpair, ruleTemplate * Templat
     int inc;
     while (Template->itsNPatternArray()[i] && Template->itsNReplacementArray()[i2])
         {
-        while (UTF8 && Template->itsNPatternArray()[i] && Template->itsNPatternArray()[i] != equal)
+        while (globUTF8 && Template->itsNPatternArray()[i] && Template->itsNPatternArray()[i] != equal)
             {
             star = false;
             inc = copyUTF8char(trainingpair->itsWord() + k, patternArray + j);
@@ -57,7 +57,7 @@ shortRulePair::shortRulePair(trainingPair * trainingpair, ruleTemplate * Templat
             ++k;
             ++i;
             }
-        while (UTF8 && Template->itsNReplacementArray()[i2] && Template->itsNReplacementArray()[i2] != equal)
+        while (globUTF8 && Template->itsNReplacementArray()[i2] && Template->itsNReplacementArray()[i2] != equal)
             {
             star = false;
             inc = copyUTF8char(trainingpair->itsLemmaHead() + k2, replacementArray + j2);
@@ -89,7 +89,7 @@ shortRulePair::shortRulePair(trainingPair * trainingpair, ruleTemplate * Templat
             i2++;
             }
         }
-    while (UTF8 && Template->itsNPatternArray()[i])
+    while (globUTF8 && Template->itsNPatternArray()[i])
         {
         inc = copyUTF8char(trainingpair->itsWord() + k, patternArray + j);
         j += inc;
@@ -103,7 +103,7 @@ shortRulePair::shortRulePair(trainingPair * trainingpair, ruleTemplate * Templat
         ++k;
         ++i;
         }
-    while (UTF8 && Template->itsNReplacementArray()[i2])
+    while (globUTF8 && Template->itsNReplacementArray()[i2])
         {
         inc = copyUTF8char(trainingpair->itsLemmaHead() + k2, replacementArray + j2);
         j2 += inc;

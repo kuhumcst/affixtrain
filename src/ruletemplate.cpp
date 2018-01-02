@@ -53,7 +53,7 @@ ruleTemplate::~ruleTemplate(){ --RuleTemplateCount; }
 
 void similData::match(trainingPair * trainingpair)
     {
-    if (UTF8)
+    if (globUTF8)
         {
         size_t wordLen = trainingpair->itsWordlength();
         size_t lemmaLen = trainingpair->itsLemmalength();

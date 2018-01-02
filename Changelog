@@ -1,10 +1,15 @@
-Version 3.81 - 2017.12.20
+Version 3.82 - 2017.12.20
 -------------------------
 Made it possible to compute optimal training parameters with a training set
 that has more than two columns, e.g. a text corpus in with tab seperations
 between word, lemma and tag, one text word per line. However, it is still 
 better to prepare a training list without duplicate lines, as affixtrain
 does not remove duplicates. 
+
+Version 3.81 - 2017.12.8
+-------------------------
+Renamed the global boolean variable UTF8 (defined in letterfunc/utf8func.h) to globUTF8.
+Renamed the parameter file "parms.txt" to "approx_parms.txt".
 
 Version 3.8 - 2017.09.26
 -------------------------

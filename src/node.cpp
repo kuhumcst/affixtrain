@@ -442,7 +442,7 @@ char * strnrev(const char * s,size_t n)
         }
     size_t i = n;
     char * d = ret;
-    if(UTF8)
+    if(globUTF8)
         {
         while(i > 0)
             {

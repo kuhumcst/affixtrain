@@ -57,7 +57,7 @@ void vertex::computeImpedance()
         double len = 0.0;
         //while(*++p)
         int k;
-        while((k = getUTF8char(p,UTF8)) != 0)
+        while((k = getUTF8char(p,globUTF8)) != 0)
             {
             if(k == ANY) // the second, third, ... star
                 {

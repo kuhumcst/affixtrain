@@ -456,6 +456,8 @@ int printRules(node * nd
              )
     {
     int n = 0;
+    if (options->verbose() > 6)
+        printf("ind==(%d)\n",ind);
     while(nd)
         {
         strng * nLL = 0;
@@ -577,6 +579,8 @@ int printRules(node * nd
         delete nRR;
         nd = nd->IfPatternFails;
         }
+    if (options->verbose() > 6)
+        printf("ind==(%d)DONE n==(%d)\n",ind,n);
     return n;
     }
 

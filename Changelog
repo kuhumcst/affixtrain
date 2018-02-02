@@ -1,3 +1,7 @@
+Version 3.83 - 2018.02.02
+-------------------------
+Extra print statement when verbose.
+
 Version 3.82 - 2017.12.20
 -------------------------
 Made it possible to compute optimal training parameters with a training set

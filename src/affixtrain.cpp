@@ -1121,6 +1121,8 @@ static bool writeRules(node * tree, const char * ext, int threshold, const char 
             int nr = 0;
             strng L("");
             strng R("");
+            if (options->verbose() > 6)
+                printf("Calling printRules\n");
             printRules
                 (tree
 #if RULESASTEXTINDENTED
@@ -1134,10 +1136,14 @@ static bool writeRules(node * tree, const char * ext, int threshold, const char 
                 , nr
                 , options
                 );
+            if (options->verbose() > 6)
+                printf("Calling printRules DONE\n");
 #if RULESASTEXTINDENTED
             --openfiles;
             fclose(foo);
 #endif
+            if (options->verbose() > 6)
+                printf("Calling rearrange\n");
             rearrange
                 ( FlexRuleFileName// the binary output of the training, 
                 // third command line argument
@@ -1147,6 +1153,8 @@ static bool writeRules(node * tree, const char * ext, int threshold, const char 
                 // positions, like in the binary output.
 #endif
                 );
+            if (options->verbose() > 6)
+                printf("Calling rearrange DONE\n");
             --openfiles;
             fclose(folel);
             if (remove(tempFolder(filename, options))) // del ".lel"
@@ -1333,6 +1341,8 @@ static bool doTraining
             exit(-1);
             }
         countNodes(top,Counts+0,options);
+        if (options->verbose() > 6)
+            printf("Calling writeRules %s %s\n",name,ext);
         writeRules(top, ext, 0, name, options);
         for (int thresh = 1; thresh <= cutoff; thresh++)
             {
@@ -1344,8 +1354,12 @@ static bool doTraining
                 exit(-1);
                 }
             countNodes(top,Counts+thresh,options);
+            if (options->verbose() > 6)
+                printf("Calling writeRules %s %s thresh %d\n",name,ext,thresh);
             writeRules(top, ext, thresh, name, options);
             }
+        if (options->verbose() > 6)
+            printf("Calling writeRules %s %s DONE\n",name,ext);
         }
     else
         {
@@ -1577,6 +1591,8 @@ void computeParms(optionStruct * options)
             aFile afile(filename, options,options->columns());
             filelines = afile.lines;
 
+            if (options->verbose() > 6)
+                printf("A Calling doTraining %s\n",ext);
             doTraining
                 (/* aFile &                                     */  afile
                 ,/* const char *                                */  ext
@@ -1586,6 +1602,8 @@ void computeParms(optionStruct * options)
                 ,/* countAndWeight *                            */  &Count
                 ,                                                   options
                 ); // sets Nnodes
+            if (options->verbose() > 6)
+                printf("A Calling doTraining %s DONE\n",ext);
             if (lines == 0)
                 fraclines = lines = filelines;
 
@@ -1647,6 +1665,8 @@ void computeParms(optionStruct * options)
             aFile afile(filename, options, options->columns());
             size_t filelines = afile.lines;
 
+            if (options->verbose() > 6)
+                printf("B Calling doTraining %s\n",ext);
             doTraining
                 (/* aFile &                                     */  afile
                 ,/* const char *                                */  ext
@@ -1656,6 +1676,8 @@ void computeParms(optionStruct * options)
                 ,/* countAndWeight *                            */  &Count
                 ,                                                   options
                 ); // sets Nnodes
+            if (options->verbose() > 6)
+                printf("B Calling doTraining %s DONE\n",ext);
             if (lines == 0)                 
                 fraclines = lines = filelines;
 
@@ -1923,6 +1945,8 @@ void trainRules(optionStruct * options,countAndWeight * Counts)
         else
             {
             aFile afile(fname, options, passes > 1 ? "12" : options->columns());
+            if (options->verbose() > 6)
+                printf("C Calling doTraining %s, %s, %s\n",ext,flexrulesPass, pairsToTrainInNextPassName);
             moreToDo = doTraining
                 (/* aFile &          */  afile
                 ,/* const char *     */  ext
@@ -1932,6 +1956,8 @@ void trainRules(optionStruct * options,countAndWeight * Counts)
                 ,/* countAndWeight * */  Counts
                 ,/* optionStruct *   */  options
                 );
+            if (options->verbose() > 6)
+                printf("C Calling doTraining %s, %s, %s DONE\n",ext,flexrulesPass, pairsToTrainInNextPassName);
             }
         /*
         Re-do the training, but only with those pairs that made it into
@@ -1948,6 +1974,8 @@ void trainRules(optionStruct * options,countAndWeight * Counts)
 
             aFile afile(tempFolder(allIngestedPairsName, options), options, options->columns());
 
+            if (options->verbose() > 6)
+                printf("D Calling doTraining %s, %s\n",ext,flexrulesPass);
             if(doTraining
                 (/* aFile &                           */  afile
                 ,/* const char *                      */  ext
@@ -1965,6 +1993,8 @@ void trainRules(optionStruct * options,countAndWeight * Counts)
                     getchar();
                     }
                 }
+            if (options->verbose() > 6)
+                printf("D Calling doTraining %s, %s DONE\n",ext,flexrulesPass);
             }
         else if (options->verbose() > 4)
             {

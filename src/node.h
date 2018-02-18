@@ -153,6 +153,7 @@ class node // node in decision tree
         LONG countBySize();
         double weightedcount();
         double entropy(double Nnodes);
+#ifdef OLDPRUNE
         int prune(int threshold);
 
         int pruneAll(int threshold)
@@ -160,7 +161,9 @@ class node // node in decision tree
             int n = prune(threshold);
             return n;
             }
-
+#else
+        node * Prune(int threshold);
+#endif
 #if RULESASTEXTINDENTED
         int print(FILE * fo,int ind,int & Nnodes,int &NnodesR);
 #endif

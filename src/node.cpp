@@ -564,6 +564,7 @@ double node::entropy(double Nnodes)
     return ret;
     }
 
+#ifdef OLDPRUNE
 int node::prune(int threshold)
     {
     int N = 0;
@@ -572,10 +573,10 @@ int node::prune(int threshold)
         N = IfPatternFails->prune(threshold);
         if(0 <= N && N <= threshold)
             {
-            node * child = IfPatternFails;
-            IfPatternFails = child->IfPatternFails;
-            child->IfPatternFails = 0;
-            delete child;
+            node * sib = IfPatternFails;
+            IfPatternFails = sib->IfPatternFails;
+            sib->IfPatternFails = 0;
+            delete sib;
             continue;
             }
         break;
@@ -600,6 +601,34 @@ int node::prune(int threshold)
     return N;
     }
 
+#else
+node * node::Prune(int threshold)
+    {
+    node * ret = this;
+    node ** prev = &ret;
+    int add = 0;
+    for (node * current = *prev; current; current = *prev)
+        {
+        if (current->IfPatternSucceeds)
+            current->IfPatternSucceeds = current->IfPatternSucceeds->Prune(threshold);
+
+        if (  current->IfPatternSucceeds == 0 
+           && current->Right->count() < (threshold + add) // The old implementation is ambiguous: it uses both <= and < (and no `add' variable)
+           )
+            {
+            *prev = current->IfPatternFails;
+            current->IfPatternFails = 0;
+            delete current;
+            }
+        else
+            {
+            prev = &current->IfPatternFails;
+            }
+        add = 1; // This trick makes sure the result is the same as that of the old implementation.
+        }
+    return ret;
+    }
+#endif
 /*
 void node::printSep(FILE * f,int level)
     {
@@ -646,6 +675,16 @@ node::~node()
     delete IfPatternSucceeds;
     delete IfPatternFails;
     V->destroy();
+    /*
+    node * current = IfPatternFails;
+    while (current)
+        {
+        node * next = current->IfPatternFails;
+        current->IfPatternFails = 0;
+        delete current;
+        current = next;
+        }
+    */
     }
 
 
@@ -703,92 +742,92 @@ void node::splitTrainingPairList(trainingPair * pair,trainingPair **& pNotApplic
 
 bool node::compatibleSibling(node * sib)
     {
-	char * P = sib->V->Pattern.itsTxt();
-	assert(strlen(P) >= 2);
-	if(P[1] == ANY && P[strlen(P)-2] == ANY)
-		return true;
-	node * N = this;
-	while(N)
-		{
-		if(N->V->Pattern.dif(&sib->V->Pattern) != dif_incompatible)
-			return true;
-		N = N->IfPatternFails;
-		}
+    char * P = sib->V->Pattern.itsTxt();
+    assert(strlen(P) >= 2);
+    if (P[1] == ANY && P[strlen(P) - 2] == ANY)
+        return true;
+    node * N = this;
+    while (N)
+        {
+        if (N->V->Pattern.dif(&sib->V->Pattern) != dif_incompatible)
+            return true;
+        N = N->IfPatternFails;
+        }
     return false;
     }
 
 // Windows, 32 bit: stack overflow when recursionDepth = 41521
-node * node::cleanup(node * parent,int recursionDepth)
+node * node::cleanup(node * parent, int recursionDepth)
     {
-	if(recursionDepth > maxRecursionDepth)
-		{
-		//maxRecursionDepth = recursionDepth;
-		//printf("maxRecursionDepth %d\n",maxRecursionDepth);
-		return this;
-		}
-	else
-		{
-		if(this->IfPatternSucceeds) 
-			{
-			this->IfPatternSucceeds = this->IfPatternSucceeds->cleanup(this,recursionDepth+1);
-			}
-		if(IfPatternFails)
-			{
-			IfPatternFails = IfPatternFails->cleanup(parent,recursionDepth+1);
-			}
-		if(  IfPatternFails 
-		  && (  this->IfPatternSucceeds 
-			 || IfPatternFails->compatibleSibling(this)
-			 )
-		  )
-			{
-			return this;
-			}
-		else if(parent)
-			{
-			if(this->Right)
-				{
-				if(!parent->IfPatternFails && !parent->Right)
-					{
-					// remove parent, keep this.
-					return this;
-					}
-				trainingPair * R = this->Right;
-				for(;;)
-					{
-					matchResult res = parent->V->lemmatise(R);
+    if (recursionDepth > maxRecursionDepth)
+        {
+        //maxRecursionDepth = recursionDepth;
+        //printf("maxRecursionDepth %d\n",maxRecursionDepth);
+        return this;
+        }
+    else
+        {
+        if (this->IfPatternSucceeds)
+            {
+            this->IfPatternSucceeds = this->IfPatternSucceeds->cleanup(this, recursionDepth + 1);
+            }
+        if (IfPatternFails)
+            {
+            IfPatternFails = IfPatternFails->cleanup(parent, recursionDepth + 1);
+            }
+        if  (   IfPatternFails
+            &&  (  this->IfPatternSucceeds
+                || IfPatternFails->compatibleSibling(this)
+                )
+            )
+            {
+            return this;
+            }
+        else if (parent)
+            {
+            if (this->Right)
+                {
+                if (!parent->IfPatternFails && !parent->Right)
+                    {
+                    // remove parent, keep this.
+                    return this;
+                    }
+                trainingPair * R = this->Right;
+                for (;;)
+                    {
+                    matchResult res = parent->V->lemmatise(R);
 
-					if(res != right)
-						{
-						return this;
-						}
-					if(R->next())
-						R = R->next();
-					else
-						break;
-					}
-				R->setNext(parent->Right);
-				parent->Right = this->Right;
-				this->Right = 0;
-				}
-			node * ret = IfPatternFails;
-			if(ret)
-				{
-				IfPatternFails = 0;
-				}
-			else
-				{
-				ret = this->IfPatternSucceeds;
-				this->IfPatternSucceeds = 0;
-				}
-			delete this;
-			return ret;
-			}
-		else
-			{
-			return this;
-			}
-		}
+                    if (res != right)
+                        {
+                        return this;
+                        }
+                    if (R->next())
+                        R = R->next();
+                    else
+                        break;
+                    }
+                R->setNext(parent->Right);
+                parent->Right = this->Right;
+                this->Right = 0;
+                }
+            node * ret = IfPatternFails;
+            if (ret)
+                {
+                IfPatternFails = 0;
+                }
+            else
+                {
+                ret = this->IfPatternSucceeds;
+                this->IfPatternSucceeds = 0;
+                }
+            delete this;
+            return ret;
+            }
+        else
+            {
+            return this;
+            }
+        }
     }
 
 #if PRUNETRAININGPAIRS
@@ -992,12 +1031,12 @@ void letTheBestRuleBeFirst(vertex ** pvf, vertex ** pvN,optionStruct * options)
 
 vertex ** adjustCounts(vertex ** pvf, vertex ** pvN, optionStruct * options
 #if _NA
-					   , trainingPair * Wrong
-					   , trainingPair * Right
-					   , int outputW
-					   , int outputR
+	    , trainingPair * Wrong
+	    , trainingPair * Right
+	    , int outputW
+	    , int outputR
 #endif
-					   )
+	    )
     {
     if (options->verbose() > 5)
         {
@@ -1203,13 +1242,13 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
             *pnode = new node(*pvf++);
             (*pnode)->init(&this->Right,&Wrong,level+1,options);
 #if _NA
-            int outputR = (this->Right ? this->Right->count() : 0); 
+            int outputR = (this->Right ? this->Right->count() : 0);
             int outputW = (Wrong ? Wrong->count() : 0);
-			if(skipW == 0 && skipR == 0)
-				pvN = adjustCounts(pvf, pvN, options, Wrong, this->Right,outputW,outputR);
+            if (skipW == 0 && skipR == 0)
+                pvN = adjustCounts(pvf, pvN, options, Wrong, this->Right, outputW, outputR);
 #else
-			if (skipW == 0 && skipR == 0)
-				pvN = adjustCounts(pvf, pvN, options);
+            if (skipW == 0 && skipR == 0)
+                pvN = adjustCounts(pvf, pvN, options);
 #endif
             lastN = (unsigned long)(pvN - pv);
 

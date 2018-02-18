@@ -336,118 +336,118 @@ static char * printChain
     }
 
 static char * printrules
-( char * rules
-, char * max
-//, char * start
-//, char * end
-//, FILE * fm
-//, int indent
+(char * rules
+ , char * max
+ //, char * start
+ //, char * end
+ //, FILE * fm
+ //, int indent
 )
-	{
-	for (;;)
-		{
-		if (max <= rules)
-			{
-			assert(rules == max);
-			return rules;
-			}
-		else
-			{
-			ptrdiff_t index = *(int *)rules;
-			assert(!(index & 3));
-			if (index == 0)
-				index = max - rules;
-			assert(!(index & 3));
-			char * p = rules + sizeof(int);
-			typetype type = *(typetype*)p;
-			if (type > 3)
-				type = 0;
-			else
-				p += sizeof(typetype);
-			size_t slen = strlen(start);
-			size_t elen = strlen(end);
-			char * fields[44];
-			fields[0] = p;
-			int findex = 1;
-			while (*p != '\n')
-				{
-				if (*p == '\t')
-					fields[findex++] = ++p;
-				else
-					++p;
-				}
-			fields[findex] = ++p; // p is now within 3 bytes from the next record.
-			fprintf(fm, "%*s", indent, "");
-			printpat(fields, findex/*, start, end, fm*/);
-			ptrdiff_t nxt = p - rules;
-			nxt += sizeof(int) - 1;
-			nxt /= sizeof(int);
-			nxt *= sizeof(int);
-			p = rules + nxt;
+    {
+    for (;;)
+        {
+        if (max <= rules)
+            {
+            assert(rules == max);
+            return rules;
+            }
+        else
+            {
+            ptrdiff_t index = *(int *)rules;
+            assert(!(index & 3));
+            if (index == 0)
+                index = max - rules;
+            assert(!(index & 3));
+            char * p = rules + sizeof(int);
+            typetype type = *(typetype*)p;
+            if (type > 3)
+                type = 0;
+            else
+                p += sizeof(typetype);
+            size_t slen = strlen(start);
+            size_t elen = strlen(end);
+            char * fields[44];
+            fields[0] = p;
+            int findex = 1;
+            while (*p != '\n')
+                {
+                if (*p == '\t')
+                    fields[findex++] = ++p;
+                else
+                    ++p;
+                }
+            fields[findex] = ++p; // p is now within 3 bytes from the next record.
+            fprintf(fm, "%*s", indent, "");
+            printpat(fields, findex/*, start, end, fm*/);
+            ptrdiff_t nxt = p - rules;
+            nxt += sizeof(int) - 1;
+            nxt /= sizeof(int);
+            nxt *= sizeof(int);
+            p = rules + nxt;
             indent += 2;
-			if (type & 2)
-				{ // several chains of children ahead
-				p = printChain
-					(p
-					, rules + index
-//					, indent + 2
-//					, start
-//					, end
-//					, fm
-					, " ambiguous children"
-					);
-				}
-			else
-				{
-				p = printrules
-					(p
-					, rules + index
-//					, start
-//					, end
-//					, fm
-//					, indent + 2
-					);
-				}
+            if (type & 2)
+                { // several chains of children ahead
+                p = printChain
+                (p
+                 , rules + index
+//              , indent + 2
+//              , start
+//              , end
+//              , fm
+                 , " ambiguous children"
+                );
+                }
+            else
+                {
+                p = printrules
+                (p
+                 , rules + index
+//              , start
+//              , end
+//              , fm
+//              , indent + 2
+                );
+                }
             indent -= 2;
-			start[slen] = '\0';
-			Strrev(end);
-			end[elen] = 0;
-			Strrev(end);
-			if (type & 1)
-				{
+            start[slen] = '\0';
+            Strrev(end);
+            end[elen] = 0;
+            Strrev(end);
+            if (type & 1)
+                {
                 ++indent;
-				p = printChain
-					(rules + index
-					, max
-//					, indent + 1
-//					, start
-//					, end
-//					, fm
-					, " ambiguous tails of children"
-					);
+                p = printChain
+                (rules + index
+                 , max
+//              , indent + 1
+//              , start
+//              , end
+//              , fm
+                 , " ambiguous tails of children"
+                );
                 --indent;
-				assert(p == max);
-				return p;
-				}
-			else
-				{
-				/*
-				p = printrules
-				(rules + index
-				, max
-				, start
-				, end
-				, fm
-				, indent
-				);
-				assert(p == max);
-				return p;
-				*/
-				rules += index;
-				}
-			}
-		}
-	}
+                assert(p == max);
+                return p;
+                }
+            else
+                {
+                /*
+                p = printrules
+                (rules + index
+                , max
+                , start
+                , end
+                , fm
+                , indent
+                );
+                assert(p == max);
+                return p;
+                */
+                rules += index;
+                }
+            }
+        }
+    }
 
 int prettyPrint(const char * flexrulesIn)
     {
@@ -750,6 +750,7 @@ class oneOrMore
     chain * more;
     oneOrMore(treenode * un, chain * plus) :one(un), more(plus){}
     treenode * get(treenode * example);
+    void setSib(treenode * Sib) { one = Sib; }
     void merge(oneOrMore * Y);
     ~oneOrMore();
     };
@@ -775,8 +776,9 @@ class treenode
                 tp += 2;
             return (typetype)tp;
             }
-        treenode(char * rl, char * end, treenode * Sib, chain * ASib, treenode * Chld, chain * AChld)
-            :Rule(rl,end),Sibling(Sib,ASib),Child(Chld,AChld){}
+        treenode(char * rl, char * end, chain * ASib, treenode * Chld, chain * AChld)
+            :Rule(rl,end),Sibling(0,ASib),Child(Chld,AChld){}
+        void setSib(treenode * Sib) { Sibling.setSib(Sib); }
         ~treenode();
         void merge(treenode * Y)
             {
@@ -786,7 +788,7 @@ class treenode
         bool merge(oneOrMore * Y);
     };
 
-treenode * treenodeFactory(char * buf, char * end);
+void treenodeFactory(char * buf, char * end, treenode ** NodePointerNeedingValue);
 
 class chain
     {
@@ -805,7 +807,7 @@ class chain
                     Next = -Next;
                 }
             buf += sizeof(int);
-            TreeNode = treenodeFactory(buf, (Next == 0) ? end : buf+Next);
+            /*TreeNode =*/ treenodeFactory(buf, (Next == 0) ? end : buf+Next,&TreeNode);
             }
         void append(chain * C)
             {
@@ -1009,62 +1011,99 @@ oneOrMore::~oneOrMore()
     }
 
 
-treenode * treenodeFactory(char * buf,char * end)
+void treenodeFactory(char * buf,char * end, treenode ** NodePointerNeedingValue)
     {
-    assert(((end - buf) & 3) == 0);
-    if (end < buf+2*sizeof(int))
-        return NULL;
-    else
+    assert(NodePointerNeedingValue != 0);
+    for (;;)
         {
-        treenode * Sibling = NULL;
-        chain * ASibling = NULL;
-        treenode * Child = NULL;
-        chain * AChild = NULL;
-
-        char * Fail = buf;
-        unsigned int OnFail = *(unsigned int*)buf;
-        buf += sizeof(unsigned int);
-        typetype type = *(typetype*)buf;
-        if (type > 3)
-            type = 0;
-        else
-            buf += sizeof(typetype);
-        char * ChildEnd = end;
-        if (OnFail)
+        assert(((end - buf) & 3) == 0);
+        if (end < buf + 2 * sizeof(int))
             {
-            ChildEnd = Fail + OnFail;
-            if (type & 1)
-                ASibling = new chain(Fail + OnFail, end);
+            *NodePointerNeedingValue = NULL;
+            return;
+            }
+        else
+            {
+            treenode * Sibling = NULL;
+            chain * ASibling = NULL;
+            treenode * Child = NULL;
+            chain * AChild = NULL;
+
+            char * Fail = buf;
+            unsigned int OnFail = *(unsigned int*)buf;
+            buf += sizeof(unsigned int);
+            typetype type = *(typetype*)buf;
+            if (type > 3)
+                type = 0;
             else
-                Sibling = treenodeFactory(Fail + OnFail, end);
-            }
-        char * rule = buf;
-        char * e = rule;
-        while (*e != '\n')
-            {
-            ++e;
-            }
-        ptrdiff_t ichild = e - Fail;
-        ichild += sizeof(int);
-        ichild /= sizeof(int);
-        ichild *= sizeof(int);
-        buf = Fail + ichild;
-        if (type & 2)
-            AChild = new chain(buf, ChildEnd);
-        else
-            Child = treenodeFactory(buf, ChildEnd);
+                buf += sizeof(typetype);
 
-        switch (type)
-            {
-                case 0:
-                    return new treenode(rule, e+1, Sibling, 0, Child, 0);
-                case 1:
-                    return new treenode(rule, e+1, 0, ASibling, Child, 0);
-                case 2:
-                    return new treenode(rule, e+1, Sibling, 0, 0, AChild);
-                case 3:
-                default:
-                    return new treenode(rule, e+1, 0, ASibling, 0, AChild);
+            char * rule = buf;
+            char * e = rule;
+            while (*e != '\n')
+                {
+                ++e;
+                }
+
+            ptrdiff_t ichild = e - Fail;
+            ichild += sizeof(int);
+            ichild /= sizeof(int);
+            ichild *= sizeof(int);
+
+            buf = Fail + ichild;
+
+            if (OnFail == 0)
+                {
+                if (type & 2)
+                    {
+                    AChild = new chain(buf, end);
+                    *NodePointerNeedingValue = new treenode(rule, e + 1, 0, 0, AChild);
+                    return;
+                    }
+                else
+                    {
+                    treenodeFactory(buf, end, &Child);
+                    *NodePointerNeedingValue = new treenode(rule, e + 1, 0, Child, 0);
+                    return;
+                    }
+                }
+            else
+                {
+                if (type & 1)
+                    {
+                    if (type & 2)
+                        {
+                        AChild = new chain(buf, Fail + OnFail);
+                        ASibling = new chain(Fail + OnFail, end);
+                        *NodePointerNeedingValue = new treenode(rule, e + 1, ASibling, 0, AChild);
+                        return;
+                        }
+                    else
+                        {
+                        treenodeFactory(buf, Fail + OnFail, &Child);
+                        ASibling = new chain(Fail + OnFail, end);
+                        *NodePointerNeedingValue = new treenode(rule, e + 1, ASibling, Child, 0);
+                        return;
+                        }
+                    }
+                else
+                    {
+                    if (type & 2)
+                        {
+                        Child = 0;
+                        AChild = new chain(buf, Fail + OnFail);
+                        }
+                    else
+                        {
+                        treenodeFactory(buf, Fail + OnFail, &Child);
+                        AChild = 0;
+                        }
+                    treenode * ret = new treenode(rule, e + 1, 0, Child, AChild);
+                    *NodePointerNeedingValue = ret;
+                    NodePointerNeedingValue = &ret->Sibling.one;
+                    buf = Fail + OnFail;
+                    }
+                }
             }
         }
     }
@@ -1159,12 +1198,14 @@ bool flexcombi(const char * bestflexrules, const char * nextbestflexrules, const
         return false;
         }
     fprintf(f,"\r%.2s\r","V31");
-    treenode * TreeNode = treenodeFactory(FileBuffer.buf, FileBuffer.buf+FileBuffer.Length);
+    treenode * TreeNode = NULL;
+    treenodeFactory(FileBuffer.buf, FileBuffer.buf + FileBuffer.Length, &TreeNode);
     if (TreeNode)
         {
         //printf("\nTree:\n");
         //TreeNode->print(0);
-        treenode * NextTreeNode = treenodeFactory(NextFileBuffer.buf, NextFileBuffer.buf + NextFileBuffer.Length);
+        treenode * NextTreeNode = NULL;
+        treenodeFactory(NextFileBuffer.buf, NextFileBuffer.buf + NextFileBuffer.Length, &NextTreeNode);
         //printf("\nNext Tree:\n");
         //NextTreeNode->print(0);
         TreeNode->merge(NextTreeNode);

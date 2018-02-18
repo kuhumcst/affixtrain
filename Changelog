@@ -8,6 +8,8 @@ to compensate for the fact that ambiguous words occur twice (or more often) in
 the test set. However, other statistics did count with respect to number of
 test lines, and did not "corrigate" for ambiguity.
 
+Made start with conversion of recursive calls to iterations. 
+
 Version 3.83 - 2018.02.02
 -------------------------
 Extra print statement when verbose.

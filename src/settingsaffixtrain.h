@@ -426,4 +426,5 @@ Read word class from file.
 
 typedef enum {failure,wrong,right} matchResult;
 
+//#define OLDPRUNE
 #endif

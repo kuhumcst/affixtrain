@@ -283,7 +283,7 @@ static char ** addLemma(char ** lemmas, const char * lemma)
     }
 
 
-static char ** lemmatiseerV3(const char * word, const char * wordend, const char * buf, const char * maxpos, const char * parentcandidate, char ** lemmas);
+static void lemmatiseerV3(const char * word, const char * wordend, const char * buf, const char * maxpos, const char * parentcandidate, char ** lemmas, char *** presult, char *** pprevresult, const char * Candidate);
 
 static char ** chainV3(const char * word, const char * wordend, const char * buf, const char * maxpos, const char * parentcandidate, char ** lemmas)
     {
@@ -301,7 +301,9 @@ static char ** chainV3(const char * word, const char * wordend, const char * buf
             }
         else
             {
-            char ** temp = lemmatiseerV3(word, wordend, buf + sizeof(int), next > 0 ? buf + next : maxpos, parentcandidate, lemmas);
+            char ** temp = NULL;
+            char ** K = NULL;
+            lemmatiseerV3(word, wordend, buf + sizeof(int), next > 0 ? buf + next : maxpos, parentcandidate, lemmas, &temp,&K,NULL);
             if (temp)
                 {
                 lemmas = temp;
@@ -317,110 +319,142 @@ static char ** chainV3(const char * word, const char * wordend, const char * buf
     return lemmas;
     }
 
-static char ** lemmatiseerV3(const char * word, const char * wordend, const char * buf, const char * maxpos, const char * parentcandidate, char ** lemmas)
+static void lemmatiseerV3(const char * word, const char * wordend, const char * buf, const char * maxpos, const char * parentcandidate, char ** lemmas, char *** presult, char *** pprevresult, const char * Candidate)
     {
-    if (maxpos <= buf)
-        return 0;
-    const char * cword = word;
-    const char * cwordend = wordend;
-    int pos = 0;
-    pos = *(int*)buf;
-    const char * until;
-    char ** result;
-    assert((pos & 3) == 0);
-    assert(pos >= 0);
-    if (pos == 0)
-        until = maxpos;
-    else
-        until = buf + pos;
-    typetype type;
-    const char * p = buf + sizeof(int);
-    type = *(typetype*)p;
-    /*
-    buf+4:   
-    first bit  0: Fail branch is unambiguous, buf points to tree. (A)
-    first bit  1: Fail branch is ambiguous, buf points to chain. (B)
-    second bit 0: Success branch is unambiguous, buf+8 points to tree (C)
-    second bit 1: Success branch is ambiguous, buf+8 points to chain (D)
-    */
-    if (type < 4)
+    for (;;)
         {
-        ++p;
-        }
-    else
-        {
-        type = 0; // no ambiguity
-        }
-    char * candidate = rewrite(cword, cwordend, p);
-    p = strchr(p, '\n');
-    ptrdiff_t off = p - buf;
-    off += sizeof(int);
-    off /= sizeof(int);
-    off *= sizeof(int);
-    p = buf + off;
-    if (candidate)
-        {
-        const char * defaultCandidate = candidate[0] ? candidate : parentcandidate;
-        /* 20150806 A match resulting in a zero-length candidate is valid for
-        descending, but if all descendants fail, the candidate is overruled by
-        an ancestor that is not zero-length. (The top rule just copies the
-        input, so there is a always a non-zero length ancestor.) */
-        switch (type)
+        if (maxpos <= buf)
             {
-            case 0:
-            case 1:
+            *presult = 0;
+            if (pprevresult)
+                *pprevresult = addLemma(lemmas, parentcandidate);
+            delete[] Candidate;
+            return;
+            }
+        else
+            {
+            const char * cword = word;
+            const char * cwordend = wordend;
+            int pos = 0;
+            pos = *(int*)buf;
+            const char * until;
+            assert((pos & 3) == 0);
+            assert(pos >= 0);
+            if (pos == 0)
+                until = maxpos;
+            else
+                until = buf + pos;
+            typetype type;
+            const char * p = buf + sizeof(int);
+            type = *(typetype*)p;
+            /*
+            buf+4:
+            first bit  0: Fail branch is unambiguous, buf points to tree. (A)
+            first bit  1: Fail branch is ambiguous, buf points to chain. (B)
+            second bit 0: Success branch is unambiguous, buf+8 points to tree (C)
+            second bit 1: Success branch is ambiguous, buf+8 points to chain (D)
+            */
+            if (type < 4)
                 {
-                /* Unambiguous children. If no child succeeds, take the
-                candidate, otherwise take the succeeding child's result. */
-                char ** childcandidates = lemmatiseerV3(cword, cwordend, p, until, defaultCandidate, lemmas);
-                result = childcandidates ? childcandidates : addLemma(lemmas, defaultCandidate);
-                delete[] candidate;
-                break;
+                ++p;
                 }
-            case 2:
-            case 3:
+            else
                 {
-                /* Ambiguous children. If no child succeeds, take the
-                candidate, otherwise take the succeeding children's result
-                Some child may in fact refer to its parent, which is our
-                current candidate. We pass the candidate so it can be put
-                in the right position in the sequence of answers. */
-                char ** childcandidates = chainV3(cword, cwordend, p, until, defaultCandidate, lemmas);
-                result = childcandidates ? childcandidates : addLemma(lemmas, defaultCandidate);
-                delete[] candidate;
-                break;
+                type = 0; // no ambiguity
                 }
-            default:
-                result = lemmas;
+            char * candidate = rewrite(cword, cwordend, p);
+            p = strchr(p, '\n');
+            ptrdiff_t off = p - buf;
+            off += sizeof(int);
+            off /= sizeof(int);
+            off *= sizeof(int);
+            p = buf + off;
+            if (candidate)
+                {
+                const char * defaultCandidate = candidate[0] ? candidate : parentcandidate;
+                /* 20150806 A match resulting in a zero-length candidate is valid for
+                descending, but if all descendants fail, the candidate is overruled by
+                an ancestor that is not zero-length. (The top rule just copies the
+                input, so there is a always a non-zero length ancestor.) */
+                switch (type)
+                    {
+                    case 0:
+                    case 1:
+                        {
+                        /* Unambiguous children. If no child succeeds, take the
+                        candidate, otherwise take the succeeding child's result. */
+                        char ** childcandidates = NULL;
+                        lemmatiseerV3(cword, cwordend, p, until, defaultCandidate, lemmas, &childcandidates, presult, candidate);
+                        //                    *presult = childcandidates ? childcandidates : addLemma(lemmas, defaultCandidate);
+                        //                    delete[] candidate;
+                        if (pprevresult)
+                            *pprevresult = *presult ? *presult : addLemma(lemmas, parentcandidate);
+                        delete[] Candidate;
+                        return;
+                        }
+                    case 2:
+                    case 3:
+                        {
+                        /* Ambiguous children. If no child succeeds, take the
+                        candidate, otherwise take the succeeding children's result
+                        Some child may in fact refer to its parent, which is our
+                        current candidate. We pass the candidate so it can be put
+                        in the right position in the sequence of answers. */
+                        char ** childcandidates = chainV3(cword, cwordend, p, until, defaultCandidate, lemmas);
+                        *presult = childcandidates ? childcandidates : addLemma(lemmas, defaultCandidate);
+                        delete[] candidate;
+                        if (pprevresult)
+                            *pprevresult = *presult ? *presult : addLemma(lemmas, parentcandidate);
+                        delete[] Candidate;
+                        return;
+                        }
+                    default:
+                        *presult = lemmas;
+                        if (pprevresult)
+                            *pprevresult = *presult ? *presult : addLemma(lemmas, parentcandidate);
+                        delete[] Candidate;
+                        return;
+                    }
+                }
+            else
+                {
+                switch (type)
+                    {
+                    case 0:
+                    case 2:
+                        {
+                        /* Unambiguous siblings. If no sibling succeeds, take the
+                        parent's candidate. */
+                        char ** childcandidates = NULL;
+                        lemmatiseerV3(word, wordend, until, maxpos, parentcandidate, lemmas, &childcandidates, presult, NULL);
+                        //                    *presult = childcandidates ? childcandidates : addLemma(lemmas, parentcandidate);
+                        if (pprevresult)
+                            *pprevresult = *presult ? *presult : addLemma(lemmas, parentcandidate);
+                        delete[] Candidate;
+                        return;
+                        }
+                    case 1:
+                    case 3:
+                        {
+                        /* Ambiguous siblings. If a sibling fails, the parent's
+                        candidate is taken. */
+                        char ** childcandidates = chainV3(word, wordend, until, maxpos, parentcandidate, lemmas);
+                        *presult = childcandidates ? childcandidates : addLemma(lemmas, parentcandidate);
+                        if (pprevresult)
+                            *pprevresult = *presult ? *presult : addLemma(lemmas, parentcandidate);
+                        delete[] Candidate;
+                        return;
+                        }
+                    default:
+                        *presult = lemmas;
+                        if (pprevresult)
+                            *pprevresult = *presult ? *presult : addLemma(lemmas, parentcandidate);
+                        delete[] Candidate;
+                        return;
+                    }
+                }
             }
         }
-    else
-        {
-        switch (type)
-            {
-            case 0:
-            case 2:
-                {
-                /* Unambiguous siblings. If no sibling succeeds, take the
-                parent's candidate. */
-                char ** childcandidates = lemmatiseerV3(word, wordend, until, maxpos, parentcandidate, lemmas);
-                result = childcandidates ? childcandidates : addLemma(lemmas, parentcandidate);
-                break;
-                }
-            case 1:
-            case 3:
-                {
-                /* Ambiguous siblings. If a sibling fails, the parent's
-                candidate is taken. */
-                char ** childcandidates = chainV3(word, wordend, until, maxpos, parentcandidate, lemmas);
-                result = childcandidates ? childcandidates : addLemma(lemmas, parentcandidate);
-                break;
-                }
-            default:
-                result = lemmas;
-            }
-        }
-    return result;
     }
 
 static char * concat(char ** L)
@@ -483,7 +517,10 @@ const char * applyRules(const char * word,buffer * Buffer)
         delete [] result;
         result = NULL;
         char ** lemmas = 0;
-        result = concat(lemmatiseerV3(word,word+len,Buffer->buf,Buffer->buf+Buffer->buflen,0,lemmas));
+        char ** L = NULL;
+        char ** K = NULL;
+        lemmatiseerV3(word, word + len, Buffer->buf, Buffer->buf + Buffer->buflen, 0, lemmas, &L,&K,NULL);
+        result = concat(L);
         return result;
         }
     return NULL;

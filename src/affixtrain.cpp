@@ -20,7 +20,7 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "3.83"
+#define VERSION "3.84"
 
 #include "affixtrain.h"
 #include "testrules.h"
@@ -1346,7 +1346,11 @@ static bool doTraining
         writeRules(top, ext, 0, name, options);
         for (int thresh = 1; thresh <= cutoff; thresh++)
             {
+#ifdef OLDPRUNE
             top->pruneAll(thresh);
+#else
+            top = top->Prune(thresh);
+#endif
             top = top->cleanup(NULL,0);
             if (sizeof(name) <= (size_t)sprintf(name, nflexrulesFormat, thresh))
                 {

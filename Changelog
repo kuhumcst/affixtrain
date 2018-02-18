@@ -1,3 +1,13 @@
+Version 3.84 - 2018.02.17
+-------------------------
+Fixed errors in prediction of OOV word ambiguity. 
+Numbers were only derived from last run in cross validation, but normalized as
+if all runs had been counted. Also, the factor 0.5 in the computation of true
+positives and false negatives has been dropped. This factor had been introduced
+to compensate for the fact that ambiguous words occur twice (or more often) in
+the test set. However, other statistics did count with respect to number of
+test lines, and did not "corrigate" for ambiguity.
+
 Version 3.83 - 2018.02.02
 -------------------------
 Extra print statement when verbose.

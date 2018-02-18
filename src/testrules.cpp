@@ -973,6 +973,7 @@ struct decision
     int false_not_amb;  //fn
     int true_not_amb;   //tn
     decision():true_amb(0),false_amb(0),false_not_amb(0),true_not_amb(0){}
+    /*
     double tp()
         {
         return 0.5*true_amb;
@@ -1004,7 +1005,7 @@ struct decision
     double recall()
         {
         return tp()/relevant();
-        }
+        }*/
     };
 
 struct evaluation
@@ -1345,13 +1346,50 @@ typedef struct countStruct
     ambty tambiguous;
     evaluation Evaluation;
     int tambiguousRules;
+    int ttrue_amb;       //tp
+    int tfalse_amb;      //fp
+    int tfalse_not_amb;  //fn
+    int ttrue_not_amb;   //tn
     countStruct()
         {
         tflexcount = tsame = tdifferent = tambiguousRules = 0;
+        ttrue_amb = tfalse_amb = tfalse_not_amb = ttrue_not_amb = 0;
         for(size_t i = 0;i < sizeof(tambiguous)/sizeof(tambiguous[0]);++i)
             {
             tambiguous[i] = 0;
             }
+        }
+    double tp()
+        {
+        return ttrue_amb;
+        }
+    double fp()
+        {
+        return tfalse_amb;
+        }
+    double fn()
+        {
+        return tfalse_not_amb;
+        }
+    double tn()
+        {
+        return ttrue_not_amb;
+        }
+    double relevant()
+        {
+        return tp() + fn();
+        }
+    double retrieved()
+        {
+        return tp() + fp();
+        }
+    double precision()
+        {
+        return retrieved() > 0.0 ? tp() / retrieved() : 0.0;
+        }
+    double recall()
+        {
+        return tp() / relevant();
         }
     } countStruct;
 
@@ -1390,8 +1428,13 @@ class counting
                 n.Evaluation = compare(output,control,controlResult,test,Options);
                 }
             this->StandardDev.datum(n.Evaluation.same,n.Evaluation.ambiguous,n.Evaluation.different);
-            n.tsame += n.Evaluation.same;
-            n.tdifferent += n.Evaluation.different;
+            n.tsame        += n.Evaluation.same;
+            n.tdifferent   += n.Evaluation.different;
+            n.ttrue_amb      += n.Evaluation.Decision.true_amb;
+            n.tfalse_amb     += n.Evaluation.Decision.false_amb;
+            n.tfalse_not_amb += n.Evaluation.Decision.false_not_amb;
+            n.ttrue_not_amb  += n.Evaluation.Decision.true_not_amb;
+
             for(size_t j = 0;j < sizeof(n.tambiguous)/sizeof(n.tambiguous[0]);++j)
                 {
                 n.tambiguous[j] += n.Evaluation.ambiguous[j];
@@ -1441,14 +1484,14 @@ class counting
                 ,ntot > 0 ? 100.0*(double)n.tambiguousRules/ntot : 0
                 );
             fprintf(fptab,  "%14.6f %14.6f %14.6f %14.6f "
-                ,ntot > 0 ? 100.0*(double)this->n.Evaluation.Decision.false_amb/ntot : 0
-                ,ntot > 0 ? 100.0*(double)this->n.Evaluation.Decision.false_not_amb/ntot : 0
-                ,ntot > 0 ? 100.0*(double)this->n.Evaluation.Decision.true_amb/ntot : 0
-                ,ntot > 0 ? 100.0*(double)this->n.Evaluation.Decision.true_not_amb/ntot : 0
+                ,ntot > 0 ? 100.0*(double)this->n.tfalse_amb/ntot : 0
+                ,ntot > 0 ? 100.0*(double)this->n.tfalse_not_amb/ntot : 0
+                ,ntot > 0 ? 100.0*(double)this->n.ttrue_amb/ntot : 0
+                ,ntot > 0 ? 100.0*(double)this->n.ttrue_not_amb/ntot : 0
                 );
             fprintf(fptab,  "%14.6f %14.6f\n"
-                ,this->n.Evaluation.Decision.precision()
-                ,this->n.Evaluation.Decision.recall()
+                ,this->n.precision()
+                ,this->n.recall()
                 );
             fflush(fptab);
             }
@@ -1474,12 +1517,12 @@ class counting
             sprintf(ell[11],f2,ntot > 0 ? 100.0*this->StandardDev.calculate(eamb2) : 0.0);
             sprintf(ell[12],f2,ntot > 0 ? 100.0*this->StandardDev.calculate(edif) : 0.0);
             sprintf(ell[13],f2,ntot > 0 ? 100.0*(double)n.tambiguousRules/ntot : 0.0);
-            sprintf(ell[14],f2,ntot > 0 ? 100.0*(double)this->n.Evaluation.Decision.false_amb/ntot : 0.0);
-            sprintf(ell[15],f2,ntot > 0 ? 100.0*(double)this->n.Evaluation.Decision.false_not_amb/ntot : 0.0);
-            sprintf(ell[16],f2,ntot > 0 ? 100.0*(double)this->n.Evaluation.Decision.true_amb/ntot : 0.0);
-            sprintf(ell[17],f2,ntot > 0 ? 100.0*(double)this->n.Evaluation.Decision.true_not_amb/ntot : 0.0);
-            sprintf(ell[18],f2,this->n.Evaluation.Decision.precision());
-            sprintf(ell[19],f2,this->n.Evaluation.Decision.recall());
+            sprintf(ell[14],f2,ntot > 0 ? 100.0*(double)this->n.tfalse_amb/ntot : 0.0);
+            sprintf(ell[15],f2,ntot > 0 ? 100.0*(double)this->n.tfalse_not_amb/ntot : 0.0);
+            sprintf(ell[16],f2,ntot > 0 ? 100.0*(double)this->n.ttrue_amb/ntot : 0.0);
+            sprintf(ell[17],f2,ntot > 0 ? 100.0*(double)this->n.ttrue_not_amb/ntot : 0.0);
+            sprintf(ell[18],f2,this->n.precision());
+            sprintf(ell[19],f2,this->n.recall());
             sprintf(ell[20],"%6.3f*N^%4.3f ", exp(AffixLine->a()), AffixLine->b());//0.056414*N^0.799693
             delete[]ell;
             }
@@ -1506,12 +1549,12 @@ class counting
             fprintf(fptab,"ambi3%%         %14.6f\n",ntot > 0 ? 100.0*(double)n.tambiguous[2]/ntot : 0.0);
             fprintf(fptab,"diff%%          %14.6f\n",ntot > 0 ? 100.0*(double)n.tdifferent/ntot : 0.0);
             fprintf(fptab,"amb.rules%%     %14.6f\n",ntot > 0 ? 100.0*(double)n.tambiguousRules/ntot : 0.0);
-            fprintf(fptab,"false_amb%%     %14.6f\n",ntot > 0 ? 100.0*(double)this->n.Evaluation.Decision.false_amb/ntot : 0.0);
-            fprintf(fptab,"false_not_amb%% %14.6f\n",ntot > 0 ? 100.0*(double)this->n.Evaluation.Decision.false_not_amb/ntot : 0.0);
-            fprintf(fptab,"true_amb%%      %14.6f\n",ntot > 0 ? 100.0*(double)this->n.Evaluation.Decision.true_amb/ntot : 0.0);
-            fprintf(fptab,"true_not_amb%%  %14.6f\n",ntot > 0 ? 100.0*(double)this->n.Evaluation.Decision.true_not_amb/ntot : 0.0);
-            fprintf(fptab,"precision      %14.6f\n",this->n.Evaluation.Decision.precision());
-            fprintf(fptab,"recall         %14.6f\n",this->n.Evaluation.Decision.recall());
+            fprintf(fptab,"false_amb%%     %14.6f\n",ntot > 0 ? 100.0*(double)this->n.tfalse_amb/ntot : 0.0);
+            fprintf(fptab,"false_not_amb%% %14.6f\n",ntot > 0 ? 100.0*(double)this->n.tfalse_not_amb/ntot : 0.0);
+            fprintf(fptab,"true_amb%%      %14.6f\n",ntot > 0 ? 100.0*(double)this->n.ttrue_amb/ntot : 0.0);
+            fprintf(fptab,"true_not_amb%%  %14.6f\n",ntot > 0 ? 100.0*(double)this->n.ttrue_not_amb/ntot : 0.0);
+            fprintf(fptab,"precision      %14.6f\n",this->n.precision());
+            fprintf(fptab,"recall         %14.6f\n",this->n.recall());
             fflush(fptab);
             }
     };

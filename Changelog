@@ -1,3 +1,12 @@
+Version 3.85 - 2018.02.28
+-------------------------
+The rewritten node::Prune function was able to prune (delete) `this' node.
+As a consequence the top root could be deleted, which should never happen. The
+fix is to call Prune on the child of the top node instead of on the top node
+itself. One can still use the old Prune function by setting #define OLDPRUNE
+in settingsaffixtrain.h. However, the old Prune function is more recursive and
+can cause stack overflow. Thanks to Marek Medveď for pointing out the problem.
+
 Version 3.84 - 2018.02.17
 -------------------------
 Fixed errors in prediction of OOV word ambiguity. 
@@ -17,7 +26,7 @@ Extra print statement when verbose.
 Version 3.82 - 2017.12.20
 -------------------------
 Made it possible to compute optimal training parameters with a training set
-that has more than two columns, e.g. a text corpus in with tab seperations
+that has more than two columns, e.g. a text corpus in with tab separations
 between word, lemma and tag, one text word per line. However, it is still 
 better to prepare a training list without duplicate lines, as affixtrain
 does not remove duplicates. 

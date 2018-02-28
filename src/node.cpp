@@ -600,7 +600,6 @@ int node::prune(int threshold)
         N = Right->count();
     return N;
     }
-
 #else
 node * node::Prune(int threshold)
     {

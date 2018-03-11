@@ -1731,20 +1731,25 @@ void trainAndTest
                ,(Options->tenfoldCrossValidation() ? "10foldXVal" : "incSize")
                );
     else
+	{
+	const char * postag = Options->POStag();
+	if (postag == 0)
+	    postag = "NoTags";
+	assert(strcmp(postag, "(null)"));
         sprintf(formatprefix
                ,BASEDIR "%s%c%%s" SEPARATOR "%s_%s-%s%s%s%s%s%s_%%s.txt"
                ,Options->tempDir()
                ,DIRSEP
                ,LGf(Options)
                ,XTRf(Options)
-               , Options->POStag() ? Options->POStag() : "NoTags"
+               , postag // evaluated to "(null)". Why?: Options->POStag() ? Options->POStag() : "NoTags"
                ,(Options->suffixOnly() ? "_suffix" : "_affix")
                ,XT
                ,TT
                ,(Options->redo() ? "redone" : "singleshot")
                ,(Options->tenfoldCrossValidation() ? "10foldXVal" : "incSize")
                );
-
+	}
     char formatTraining[256]        ;sprintf(formatTraining,        formatprefix,"training"     ,"%d_%d");        // the training words
     char formatTest[256]            ;sprintf(formatTest,            formatprefix,"test"         ,"%d_%d");        // the test words (<> training words)
     char formatTrainTest[256]       ;sprintf(formatTrainTest,       formatprefix,"test"         ,"_train_%d_%d"); // the test words (= training words)

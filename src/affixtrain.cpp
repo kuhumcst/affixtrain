@@ -20,7 +20,7 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "3.85"
+#define VERSION "3.86"
 
 #include "affixtrain.h"
 #include "testrules.h"
@@ -786,6 +786,7 @@ static trainingPair * readTrainingPairs(aFile & afile, size_t & pairs, optionStr
 void FilterTagLines(const char * fname,optionStruct * options, const char * tag)
     {
     assert(fname);
+    assert(tag);
 
     size_t tabcount;
     size_t tagtabcount;

@@ -1,3 +1,9 @@
+Version 3.86 - 2018.03.11
+-------------------------
+The string "(null)" appeared in the file names starting with "evaluation" and
+some others, where the string "NoTags" was expected. Currently there is no
+explanation for this bug. Inserted an assert() to check optionStruct::POStag().
+
 Version 3.85 - 2018.02.28
 -------------------------
 The rewritten node::Prune function was able to prune (delete) `this' node.

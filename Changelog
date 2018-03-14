@@ -1,3 +1,7 @@
+Version 3.87 - 2018.03.14
+-------------------------
+Cause of (null) problem found and fixed it.
+
 Version 3.86 - 2018.03.11
 -------------------------
 The string "(null)" appeared in the file names starting with "evaluation" and

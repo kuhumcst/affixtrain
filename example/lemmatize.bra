@@ -19,13 +19,12 @@ of the rules used to produce those lemmas.
 
 ( ( apply
   =   pat rep wrd nr
-    .     !arg
-        : (?wrd.((=?pat).(=?rep)).?nr)
+    .   !arg:(?wrd.((=?pat).(=?rep)).?nr)
       & @(!wrd:!pat)
       & (str$!rep.!nr)
   )
 & ( merge
-  =   
+  =   a b c d
     .     whl
         ' ( !arg:?a #%?b ?c !b ?d
           & !a !b !c !d:?arg
@@ -41,25 +40,31 @@ of the rules used to produce those lemmas.
       & !arg
   )
 & ( lemmatise
-  =   tree wrd pat rep sub nr rule parent 1st 2nd W
+  =   tree wrd sub rule parent 1st 2nd W res
     .   !arg:(?tree.?wrd.?parent)
-      & ( !tree:@&!parent
-        |   !tree:(?rule,?sub) ?tree
-          & (   apply$(!wrd.!rule):?parent
-              & ( prune$(lemmatise$(!sub.!W.!parent))
-                | !parent
-                )
-            | lemmatise$(!tree.!wrd.!parent)
-            )
-        |   !tree:((?.#):?rule) ?tree
-          & ( apply$(!wrd.!rule)
-            | lemmatise$(!tree.!wrd.!parent)
-            )
-        |   !tree:(?1st.?2nd)
+      & ( !tree:&!parent
+        |   !tree:(?1st.~#?2nd)
           &   prune
             $ ( lemmatise$(!1st.!wrd.!parent)
                 lemmatise$(!2nd.!wrd.!parent)
               )
+        |     !tree
+            :   ?
+                (   (?rule,?sub)
+                  & apply$(!wrd.!rule):?parent
+                  & lemmatise$(!sub.!W.!parent):?res
+                  & prune$!res:?res
+                |   (?.#):?rule
+                  & apply$(!wrd.!rule):?res
+                |   (?1st.~#?2nd)
+                  &     prune
+                      $ ( lemmatise$(!1st.!wrd.!parent)
+                          lemmatise$(!2nd.!wrd.!parent)
+                        )
+                    : ?res
+                )
+                ?
+          & !res
+        | !parent
         )
-  )
-);
+  ));

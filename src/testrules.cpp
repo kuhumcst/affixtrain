@@ -1035,11 +1035,26 @@ static evaluation compare(const char * output, const char * control, const char 
     ++openfiles;
     if(f1 && f2 && f3 && f4)
         {
-        char b1[256];
-        char b2[256];
-        char b4[256];
+        char b1[4096];
+        char b2[4096];
+        char b4[4096];
         while(fgets(b1,sizeof(b1),f1) && fgets(b2,sizeof(b2),f2) && fgets(b4,sizeof(b4),f4))
             {
+            if(strlen(b1) + 1 == sizeof(b1))
+                {
+                fprintf(stderr,"Size of b1 in testrules.cpp (%d) is too small for line. Increase and re-compile.\n",sizeof(b1));
+                exit(-1);
+                }
+            if(strlen(b2) + 1 == sizeof(b2))
+                {
+                fprintf(stderr,"Size of b2 in testrules.cpp (%d) is too small for line. Increase and re-compile.\n",sizeof(b2));
+                exit(-1);
+                }
+            if(strlen(b4) + 1 == sizeof(b4))
+                {
+                fprintf(stderr,"Size of b4 in testrules.cpp (%d) is too small for line. Increase and re-compile.\n",sizeof(b4));
+                exit(-1);
+                }
             char * pb2 = b2;
             bool bambiguous;
             if(*pb2 == '|')

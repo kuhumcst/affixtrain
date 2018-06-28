@@ -1,3 +1,7 @@
+Version 3.89 - 2018.06.28
+-------------------------
+Increased size of line buffers in testrules.cpp.
+
 Version 3.88 - 2018.06.28
 -------------------------
 Another cause of (null) problem found and fixed. (options->tag == 0 is legal

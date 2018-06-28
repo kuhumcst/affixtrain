@@ -20,7 +20,7 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "3.87"
+#define VERSION "3.88"
 
 #include "affixtrain.h"
 #include "testrules.h"
@@ -1851,13 +1851,14 @@ void trainRules(optionStruct * options,countAndWeight * Counts)
     char command[1024];
     char FlexrulePassFormat[1024];
     char AccumulatedFlexrulePassFormat[1024];
+    const char * displaytag = tag ? tag : "";
     sprintf(FlexrulePassFormat,"%s%c%%s.pass%%d.cutoff%%%%d",options->tempDir(),DIRSEP);
     sprintf(AccumulatedFlexrulePassFormat,"%s%c%%s.pass%%d.cutoff%%%%d.accumulated",options->tempDir(),DIRSEP);
-    sprintf(pairsToTrainInNextPassFormat, "pairsToTrainInNextPass.%s%s.pass%%d", options->extra(), tag);
-    sprintf(ingestedFractionOfAmbiguousPairsFormat, "ingestedFractionOfAmbiguousPairs.%s%s.pass%%d", options->extra(), tag);
-    sprintf(allPairsFormat, "allPairs.%s%s.pass%%d", options->extra(), tag);
-    sprintf(allIngestedPairsFormat, "allIngestedPairs.%s%s.pass%%d", options->extra(), tag);
-    sprintf(numbersFormat, "numbers.%s%s.pass%%d", options->extra(), tag);
+    sprintf(pairsToTrainInNextPassFormat, "pairsToTrainInNextPass.%s%s.pass%%d", options->extra(), displaytag);
+    sprintf(ingestedFractionOfAmbiguousPairsFormat, "ingestedFractionOfAmbiguousPairs.%s%s.pass%%d", options->extra(), displaytag);
+    sprintf(allPairsFormat, "allPairs.%s%s.pass%%d", options->extra(), displaytag);
+    sprintf(allIngestedPairsFormat, "allIngestedPairs.%s%s.pass%%d", options->extra(), displaytag);
+    sprintf(numbersFormat, "numbers.%s%s.pass%%d", options->extra(), displaytag);
     char nflexrulesTag[1256];
     if (nflexrules)
         {

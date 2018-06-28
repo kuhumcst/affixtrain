@@ -1,3 +1,8 @@
+Version 3.88 - 2018.06.28
+-------------------------
+Another cause of (null) problem found and fixed. (options->tag == 0 is legal
+but generated file names like pairsToTrainInNextPass.1(null).pass1 .)
+
 Version 3.87 - 2018.03.14
 -------------------------
 Cause of (null) problem found and fixed it.

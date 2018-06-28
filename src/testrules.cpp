@@ -1042,17 +1042,17 @@ static evaluation compare(const char * output, const char * control, const char 
             {
             if(strlen(b1) + 1 == sizeof(b1))
                 {
-                fprintf(stderr,"Size of b1 in testrules.cpp (%d) is too small for line. Increase and re-compile.\n",sizeof(b1));
+                fprintf(stderr,"Size of b1 in testrules.cpp (%lu) is too small for line. Increase and re-compile.\n",(unsigned long)sizeof(b1));
                 exit(-1);
                 }
             if(strlen(b2) + 1 == sizeof(b2))
                 {
-                fprintf(stderr,"Size of b2 in testrules.cpp (%d) is too small for line. Increase and re-compile.\n",sizeof(b2));
+                fprintf(stderr,"Size of b2 in testrules.cpp (%lu) is too small for line. Increase and re-compile.\n",(unsigned long)sizeof(b2));
                 exit(-1);
                 }
             if(strlen(b4) + 1 == sizeof(b4))
                 {
-                fprintf(stderr,"Size of b4 in testrules.cpp (%d) is too small for line. Increase and re-compile.\n",sizeof(b4));
+                fprintf(stderr,"Size of b4 in testrules.cpp (%lu) is too small for line. Increase and re-compile.\n",(unsigned long)sizeof(b4));
                 exit(-1);
                 }
             char * pb2 = b2;

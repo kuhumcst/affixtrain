@@ -164,6 +164,8 @@ class optionStruct
         void setNumberOfNodes(int NoN){NumberOfNodes = NoN;}
         void setTrainingPairsLines(size_t TPL){TrainingPairsLines = TPL;}
         void setWeight(double W){TreePenalty = W;}
+        void setBlobs(int blobs) { Blobs = blobs; }
+        void setLines(unsigned int lines) { Lines = lines; }
 
         void setI(const char * WordList);
         void seti(const char * WordLemmaList);

@@ -802,6 +802,7 @@ void FilterTagLines(const char * fname,optionStruct * options, const char * tag)
     int i = 0;
     int kar;
     bool empty = true;
+    unsigned int lines = 0;
     while ((kar = getc(fp)) != EOF)
         {
         line[i++] = (char)kar;
@@ -841,11 +842,14 @@ void FilterTagLines(const char * fname,optionStruct * options, const char * tag)
                     fwrite(line, strlen(line), 1, fpt);
                     fputc('\n', fpt);
                     empty = false;
+                    ++lines;
                     }
                 }
             i = 0;
             }
         }
+    options->setBlobs(1);
+    options->setLines(lines);
     fclose(fp);
     fclose(fpt);
     }
@@ -1490,6 +1494,8 @@ void computeParms(optionStruct * options)
     double iterationsfactor = 1;
     double miniterations = options->minIterations();//MINITERATIONS;
     double maxiterations = options->maxIterations();//MAXITERATIONS;
+    if (maxiterations > options->lines())
+        maxiterations = options->lines();
     node::mostPenalized = options->expectedCutoff() + 1; // parameter to weight function
     if (options->minfraction() > 0.0)
         {
@@ -1590,7 +1596,6 @@ void computeParms(optionStruct * options)
             printparms(Count.getNnodes(),brownweight, options);
             }
         int looplimit = (int)(maxiterations*pow(iterationsfactor, -swath));
-
         options->info(5,"Computing parameters: iterate and train, improve parameters by trial and error.\n");
 
         for (int iterations = 0; iterations < looplimit; ++iterations)

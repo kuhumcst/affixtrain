@@ -1365,7 +1365,6 @@ const unsigned int partOfFile(const char * fbuf, const double fraction, optionSt
     bool tabSeen = false;
     if ((double)options->blobs() * fraction > 1.0)
         {
-        printf("blobs\n");
         int bl = 1;
         int li = 0;
         int blbs = 0; // If there are no non-empty lines, there are no blobs
@@ -1437,7 +1436,6 @@ const unsigned int partOfFile(const char * fbuf, const double fraction, optionSt
         }
     else if ((double)options->lines() * fraction > 1.0)
         {
-        printf("lines\n");
         while ((kar = fgetc(f)) != EOF)
             {
             if (bucket >= 1.0)
@@ -1458,7 +1456,6 @@ const unsigned int partOfFile(const char * fbuf, const double fraction, optionSt
         }
     else
         {
-        printf("bytes\n");
         while ((kar = fgetc(f)) != EOF)
             {
             fputc(kar, f2);
@@ -1485,10 +1482,7 @@ const unsigned int partOfFile(const char * fbuf, const double fraction, optionSt
         else if (kar == '\t')
             tabSeen = true;
         }
-    if (fraclines == 0)
-        {
-        printf("PROBLEM %s\n", options->wordLemmaList());
-        }
+    assert(fraclines != 0);
     --openfiles;
     fclose(f2);
     options->setReadLines(fraclines);

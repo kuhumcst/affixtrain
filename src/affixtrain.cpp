@@ -20,7 +20,7 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "3.89"
+#define VERSION "3.90"
 
 #include "affixtrain.h"
 #include "testrules.h"
@@ -64,7 +64,7 @@ static const char * tempFolder(const char * filename, optionStruct * options)
         written = sprintf(fullname, "%s%c%s", options->tempDir(), DIRSEP, filename);
         if ((size_t)written >= length)
             {
-            printf("tempDir: Buffer overrun");
+            fprintf(stderr,"tempDir: Buffer overrun");
             exit(-1);
             }
         return fullname;
@@ -119,10 +119,10 @@ FILE * fopenOrExit(const char * name, const char * mode, const char * descriptio
     ++openfiles;
     if (!fp)
         {
-        printf("Open files: %d\n",openfiles);
         fprintf
             (stderr
-            , "%s: Cannot open file %s for %s (%s). Exiting.\n"
+            , "Open files: %d\n%s: Cannot open file %s for %s (%s). Exiting.\n"
+            , openfiles
             , descriptionOfFile
             , name
             , strchr(mode, 'r') ? "reading" : strchr(mode, 'a') ? "appending" : "writing"
@@ -167,8 +167,7 @@ struct aFile
         assert(fname);
 
         FILE * fp = fopenOrExit(fname, "rb", "Input file");
-        if (options->verbose() > 5)
-            printf("reading file %s ...", fname);
+        options->info(5,"reading file %s ...", fname);
         CHECK("CglobTempDir");
         this->fname = new char[strlen(fname) + 1];
         strcpy(this->fname, fname);
@@ -226,10 +225,7 @@ struct aFile
                 buf = eob;
                 }
             }
-        if (options->verbose() > 5)
-            {
-            printf("line " ZD "\n", line);
-            }
+        options->info(5,"line " ZD "\n", line);
 
         lines = line;
         Lines = new pointers[lines + 1];
@@ -264,11 +260,7 @@ struct aFile
                 buf = eob;
                 }
             }
-        if (options->verbose() > 5)
-            {
-            printf("line " ZD " read\n", line);
-            printf("%s:", fname);
-            }
+        options->info(5,"line " ZD " read\n%s:", line, fname);
         }
     ~aFile()
         {
@@ -308,10 +300,7 @@ static tagClass * collectTags(optionStruct * options)
     tagClass * Tags = NULL;
     size_t line;
     pointers * Lines = afile.Lines;
-    if (options->verbose() > 5)
-        {
-        printf("Checking " ZD " lines in %s for tags %s\n", afile.lines, afile.fname, options->columns());
-        }
+    options->info(5,"Checking " ZD " lines in %s for tags %s\n", afile.lines, afile.fname, options->columns());
     for (line = 0; line < afile.lines; ++line)
         {
         const char * cols[18];
@@ -367,8 +356,7 @@ static tagClass * collectTags(optionStruct * options)
         if (cols == 0 || strchr(cols, '3') || strchr(cols, 't') || strchr(cols, 'T'))
             {
             options->setn("FB"); // No column with tags found.
-            if (options->verbose() > 0)
-                printf("No column with tags found in %s.\n"
+            options->info(0,"No column with tags found in %s.\n"
                 "Changed the column format (-n option) to FB.\n", 
                 options->wordLemmaList());
             }
@@ -378,8 +366,7 @@ static tagClass * collectTags(optionStruct * options)
         if (options->columns() == 0)
             {
             options->setn("FBT"); // Column with tags found.
-            if (options->verbose() > 0)
-                printf("Column with tags found in %s.\n"
+            options->info(0,"Column with tags found in %s.\n"
                 "I suppose the column format (-n option) is FBT.\n"
                 "If you want to ignore the tags, define -n FBO.\n"
                 "(Or whatever the actual column order is.)\n", 
@@ -416,8 +403,7 @@ static int compare(const void * arg1, const void * arg2)
 
 static int markAmbiguous(size_t allPairs, trainingPair * TrainingPair, optionStruct * options)
     {
-    if (options->verbose() > 4)
-        printf("markAmbiguous\n");
+    options->info(2,"markAmbiguous\n");
     trainingPair ** pTrainingPair = new trainingPair *[allPairs];
     size_t j;
     for (j = 0; j < allPairs; ++j)
@@ -544,8 +530,7 @@ static int markAmbiguous(size_t allPairs, trainingPair * TrainingPair, optionStr
         }
 
     delete[] pTrainingPair; // Bart 20081008
-    if (options->verbose() > 4)
-        printf("markAmbiguous DONE. Returns %d\n",n);
+    options->info(2,"markAmbiguous DONE. Returns %d\n",n);
     return n;
     }
 
@@ -620,8 +605,7 @@ static trainingPair * globTrainingPair;
 
 static trainingPair * readTrainingPairs(aFile & afile, size_t & pairs, optionStruct * options)
     {
-    if (options->verbose() > 4)
-        printf("readTrainingPairs\n");
+    options->info(2,"readTrainingPairs\n");
     const char * tag = options->POStag();
     trainingPair * TrainingPair = new trainingPair[afile.lines];
     globTrainingPair = TrainingPair;
@@ -630,10 +614,7 @@ static trainingPair * readTrainingPairs(aFile & afile, size_t & pairs, optionStr
     size_t line;
 //    size_t taglength = tag ? strlen(tag) : 0;
     pointers * Lines = afile.Lines;
-    if (options->verbose() > 4)
-        {
-        printf("readLines with tag %s\n", (tag && *tag) ? tag : "_ (UNDEFINED)");
-        }
+    options->info(2,"readLines with tag %s\n", (tag && *tag) ? tag : "_ (UNDEFINED)");
     for (line = 0; line < afile.lines; ++line)
         {
         const char * cols[18];
@@ -772,14 +753,11 @@ static trainingPair * readTrainingPairs(aFile & afile, size_t & pairs, optionStr
                 }
             }
         }
-    if (options->verbose() > 4)
-        {
-        if (tag && *tag)
-            printf(ZD " characters and " ZD " lines, " ZD " selected with tag %s       \n", afile.size, afile.lines, pairs, tag);
-        else
-            printf(ZD " characters and " ZD " lines%c", afile.size, afile.lines,STARTLINE);
-        printf("readTrainingPairs DONE\n");
-        }
+    if (tag && *tag)
+        options->info(2,ZD " characters and " ZD " lines, " ZD " selected with tag %s       \n", afile.size, afile.lines, pairs, tag);
+    else
+        options->info(2,ZD " characters and " ZD " lines%c", afile.size, afile.lines,STARTLINE);
+    options->info(2,"readTrainingPairs DONE\n");
     return TrainingPair;
     }
 
@@ -1064,7 +1042,7 @@ static const char * flexRuleFileName(const char * ext, int threshold, const char
         filename = new char[size];
         if ((int)size <= sprintf(filename, "rules_%d%s.lem", threshold, ext))
             {
-            printf("flexRuleFileName: filename too small");
+            fprintf(stderr, "flexRuleFileName: filename too small");
             exit(-1);
             }
         return filename;
@@ -1097,7 +1075,7 @@ static bool writeRules(node * tree, const char * ext, int threshold, const char 
 #endif
         if (256 <= sprintf(filename, "rules_%d%s.lel", threshold, ext))
             {
-            printf("writeRules: filename 2 small");
+            fprintf(stderr, "writeRules: filename 2 small");
             exit(-1);
             }
         FILE * folel = fopenOrExit(tempFolder(filename, options), "wb+", "writeRules");
@@ -1122,8 +1100,7 @@ static bool writeRules(node * tree, const char * ext, int threshold, const char 
             int nr = 0;
             strng L("");
             strng R("");
-            if (options->verbose() > 6)
-                printf("Calling printRules\n");
+            options->info(6,"Calling printRules\n");
             printRules
                 (tree
 #if RULESASTEXTINDENTED
@@ -1137,14 +1114,12 @@ static bool writeRules(node * tree, const char * ext, int threshold, const char 
                 , nr
                 , options
                 );
-            if (options->verbose() > 6)
-                printf("Calling printRules DONE\n");
+            options->info(6,"Calling printRules DONE\n");
 #if RULESASTEXTINDENTED
             --openfiles;
             fclose(foo);
 #endif
-            if (options->verbose() > 6)
-                printf("Calling rearrange\n");
+            options->info(6,"Calling rearrange\n");
             rearrange
                 ( FlexRuleFileName// the binary output of the training, 
                 // third command line argument
@@ -1154,17 +1129,12 @@ static bool writeRules(node * tree, const char * ext, int threshold, const char 
                 // positions, like in the binary output.
 #endif
                 );
-            if (options->verbose() > 6)
-                printf("Calling rearrange DONE\n");
+            options->info(6,"Calling rearrange DONE\n");
             --openfiles;
             fclose(folel);
             if (remove(tempFolder(filename, options))) // del ".lel"
                 {
-                if (options->verbose())
-                    {
-                    printf("cannot remove %s (Press <Enter> to continue...)\n", filename);
-                    getchar();
-                    }
+                options->info(0,"cannot remove %s\n", filename);
                 }
 #if RULESASTEXT
             --openfiles;
@@ -1265,12 +1235,10 @@ static bool doTraining
     bool New;
     vertex * best = Hash.getVertex(&ROOT, New);
 
-    if (options->verbose() > 4)
-        printf("Going to build a decision tree\n");
+    options->info(2,"Going to build a decision tree\n");
 
     top = new node(best);
-    if (options->verbose() > 4)
-        printf("Top node is created\n");
+    options->info(2,"Top node is created\n");
 
     trainingPair * Right = NULL;
 #if PRUNETRAININGPAIRS
@@ -1287,8 +1255,7 @@ static bool doTraining
 #if PRUNETRAININGPAIRS
     fclose(fpmourn);
 #endif
-    if (options->verbose() > 4)
-        printf("Decision tree built\n");
+    options->info(2,"Decision tree built\n");
     //    fclose(fprune);
     top = top->cleanup(NULL,0);
 
@@ -1338,12 +1305,11 @@ static bool doTraining
         char name[500];
         if (sizeof(name) <= (size_t)sprintf(name, nflexrulesFormat, 0))
             {
-            printf("doTraining: name 2 small");
+            fprintf(stderr, "doTraining: name 2 small");
             exit(-1);
             }
         countNodes(top,Counts+0,options);
-        if (options->verbose() > 6)
-            printf("Calling writeRules %s %s\n",name,ext);
+        options->info(6,"Calling writeRules %s %s\n",name,ext);
         writeRules(top, ext, 0, name, options);
         for (int thresh = 1; thresh <= cutoff; thresh++)
             {
@@ -1352,21 +1318,19 @@ static bool doTraining
 #else
             assert(top->IfPatternFails == NULL);
             if(top->IfPatternSucceeds)
-                top->IfPatternSucceeds = top->IfPatternSucceeds->Prune(thresh);
+                top->IfPatternSucceeds = top->IfPatternSucceeds->Prune((unsigned long)thresh);
 #endif
             top = top->cleanup(NULL,0);
             if (sizeof(name) <= (size_t)sprintf(name, nflexrulesFormat, thresh))
                 {
-                printf("doTraining: name 2 small");
+                fprintf(stderr, "doTraining: name 2 small");
                 exit(-1);
                 }
             countNodes(top,Counts+thresh,options);
-            if (options->verbose() > 6)
-                printf("Calling writeRules %s %s thresh %d\n",name,ext,thresh);
+            options->info(6,"Calling writeRules %s %s thresh %d\n",name,ext,thresh);
             writeRules(top, ext, thresh, name, options);
             }
-        if (options->verbose() > 6)
-            printf("Calling writeRules %s %s DONE\n",name,ext);
+        options->info(6,"Calling writeRules %s %s DONE\n",name,ext);
         }
     else
         {
@@ -1453,8 +1417,7 @@ const unsigned int partOfFile(const char * fbuf, const double fraction, optionSt
             }
         if(li > 0)
             ++blbs;
-        if(options->verbose())
-            printf("%d of %d lines, %d of %d clusters\n",li,options->lines(),bl,blbs);
+        options->info(0,"%d of %d lines, %d of %d clusters\n",li,options->lines(),bl,blbs);
         if (options->currentParms() && !flog)
             {
             flog = fopenOrExit(options->currentParms(), "a", "log file");
@@ -1510,11 +1473,7 @@ const unsigned int partOfFile(const char * fbuf, const double fraction, optionSt
         fclose(flog);
         flog = 0;
         }
-    if (options->verbose())
-        {
-        printf("reading %d lines\n", fraclines);
-        printf("tmpnam %s\n", fbuf);
-        }
+    options->info(0,"reading %d lines\ntmpnam %s\n", fraclines, fbuf);
     return fraclines;
     }
 
@@ -1555,7 +1514,7 @@ void computeParms(optionStruct * options)
     ext[0] = '\0';
     if (sizeof(ext) <= (size_t)sprintf(ext, "%s", options->extra()))
         {
-        printf("computeParms: ext 2 small");
+        fprintf(stderr, "computeParms: ext 2 small");
         exit(-1);
         }
     countAndWeight Count;
@@ -1566,8 +1525,7 @@ void computeParms(optionStruct * options)
         size_t lines = 0;
         size_t fraclines = 0;
 
-        if (options->verbose() > 5)
-            printf("Computing parameters: swath %d of %d\n",swath, maxswath);
+        options->info(5,"Computing parameters: swath %d of %d\n",swath, maxswath);
 
         if (options->minfraction() > 0.0)
             {
@@ -1577,11 +1535,9 @@ void computeParms(optionStruct * options)
             else
                 {
                 filename = fbuf;
-                if (options->verbose() > 5)
-                    printf("Computing parameters: take a sample of training data\n");
+                options->info(5,"Computing parameters: take a sample of training data\n");
                 fraclines = partOfFile(fbuf, fraction, options);
-                if (options->verbose() > 5)
-                    printf("Computing parameters: take a sample of training data DONE\n");
+                options->info(5,"Computing parameters: take a sample of training data DONE\n");
                 }
             CHECK("D1globTempDir");
             brown(); // until not all parms are zero
@@ -1592,14 +1548,12 @@ void computeParms(optionStruct * options)
                 copybest(); // go on with best result so far.
             size_t filelines;
 
-            if (options->verbose() > 5)
-                printf("Computing parameters: initial training\n");
+            options->info(5,"Computing parameters: initial training\n");
 
             aFile afile(filename, options,options->columns());
             filelines = afile.lines;
 
-            if (options->verbose() > 6)
-                printf("A Calling doTraining %s\n",ext);
+            options->info(6,"A Calling doTraining %s\n",ext);
             doTraining
                 (/* aFile &                                     */  afile
                 ,/* const char *                                */  ext
@@ -1609,8 +1563,7 @@ void computeParms(optionStruct * options)
                 ,/* countAndWeight *                            */  &Count
                 ,                                                   options
                 ); // sets Nnodes
-            if (options->verbose() > 6)
-                printf("A Calling doTraining %s DONE\n",ext);
+            options->info(6,"A Calling doTraining %s DONE\n",ext);
             if (lines == 0)
                 fraclines = lines = filelines;
 
@@ -1638,8 +1591,7 @@ void computeParms(optionStruct * options)
             }
         int looplimit = (int)(maxiterations*pow(iterationsfactor, -swath));
 
-        if (options->verbose() > 5)
-            printf("Computing parameters: iterate and train, improve parameters by trial and error.\n");
+        options->info(5,"Computing parameters: iterate and train, improve parameters by trial and error.\n");
 
         for (int iterations = 0; iterations < looplimit; ++iterations)
             {
@@ -1663,17 +1615,13 @@ void computeParms(optionStruct * options)
                 flog = 0;
                 }
             CHECK("D2fglobTempDir");
-            if (options->verbose() > 5)
-                {
-                printf("%d.%d ", swath, iterations);
-                }
+            options->info(5,"%d.%d ", swath, iterations);
             CHECK("D2globTempDir");
 
             aFile afile(filename, options, options->columns());
             size_t filelines = afile.lines;
 
-            if (options->verbose() > 6)
-                printf("B Calling doTraining %s\n",ext);
+            options->info(6,"B Calling doTraining %s\n",ext);
             doTraining
                 (/* aFile &                                     */  afile
                 ,/* const char *                                */  ext
@@ -1683,15 +1631,11 @@ void computeParms(optionStruct * options)
                 ,/* countAndWeight *                            */  &Count
                 ,                                                   options
                 ); // sets Nnodes
-            if (options->verbose() > 6)
-                printf("B Calling doTraining %s DONE\n",ext);
+            options->info(6,"B Calling doTraining %s DONE\n",ext);
             if (lines == 0)                 
                 fraclines = lines = filelines;
 
-            if (options->verbose() > 5)
-                {
-                printf("%c%d %d %f %d %f           \n", STARTLINE, iterations, currentNo, currentweight, brownNo, brownweight);
-                }
+            options->info(5,"%c%d %d %f %d %f           \n", STARTLINE, iterations, currentNo, currentweight, brownNo, brownweight);
 
             if (currentNo == 0)
                 {
@@ -1735,8 +1679,7 @@ void computeParms(optionStruct * options)
                     }
                 printparms(brownNo,brownweight, options);
 
-                if (options->verbose() > 5)
-                    printf("swath %d brownNo %d currentNo %d\n", swath, brownNo, currentNo);
+                options->info(5,"swath %d brownNo %d currentNo %d\n", swath, brownNo, currentNo);
 
                 if (  (  brownNo <= currentNo
                       && options->getWeightFunction() == econstant 
@@ -1761,8 +1704,7 @@ void computeParms(optionStruct * options)
                                               ) 
                                            )
                                         );
-                    if (options->verbose() > 5)
-                        printf("%s\n", improvement ? "IMPROVEMENT" : "same");
+                    options->info(5,"%s\n", improvement ? "IMPROVEMENT" : "same");
                     currentNo = brownNo;
                     currentweight = brownweight;
                     betterfound(currentNo, currentweight, swath, iterations, blobs, lines, fraction, fraclines, improvement, options);
@@ -1773,8 +1715,7 @@ void computeParms(optionStruct * options)
                     }
                 }
             }
-        if (options->verbose() > 5)
-            printf("br1 %d br2 %d\n", br1, br2);
+        options->info(5,"br1 %d br2 %d\n", br1, br2);
         }
     remove(fbuf);
     delete[] fbuf;
@@ -1830,8 +1771,7 @@ bool haswritabledir(const char * name)
 void trainRules(optionStruct * options,countAndWeight * Counts)
     {
     CHECK("jglobTempDir");
-    if (options->verbose() > 4)
-        printf("trainRules\n");
+    options->info(2,"trainRules\n");
     assert(options->flexrules() != NULL);
     const char * tag = options->POStag();
     const char * nflexrules = options->flexrules();
@@ -1848,7 +1788,7 @@ void trainRules(optionStruct * options,countAndWeight * Counts)
     char allIngestedPairsFormat[1024];
     char bestRulesFormat[1024];
     char numbersFormat[1024];
-    char command[1024];
+    //char command[1024];
     char FlexrulePassFormat[1024];
     char AccumulatedFlexrulePassFormat[1024];
     const char * displaytag = tag ? tag : "";
@@ -1875,9 +1815,7 @@ void trainRules(optionStruct * options,countAndWeight * Counts)
     do
         {
         ++passes;
-        if (options->verbose() > 4)
-            printf("do pass %d\n", passes);
-        //        printf("passes:%d\n",passes);
+        options->info(3,"do pass %d\n", passes);
         char flexrulesPass[1256];
         sprintf(flexrulesPass, FlexrulePassFormat, nflexrules, passes);
         char ext[100];
@@ -1889,38 +1827,35 @@ void trainRules(optionStruct * options,countAndWeight * Counts)
         sprintf(ingestedFractionOfAmbiguousPairsName, ingestedFractionOfAmbiguousPairsFormat, passes);
         sprintf(allPairsName, allPairsFormat, passes);
         sprintf(allIngestedPairsName, allIngestedPairsFormat, passes);
-        char spass[10];
+        char spass[20];
         if (sizeof(spass) <= (size_t)sprintf(spass, ".pass%d", passes))
             {
-            printf("trainRules: spass 2 small");
+            fprintf(stderr, "trainRules: spass 2 small");
             exit(-1);
             }
         if (sizeof(ext) <= (size_t)sprintf(ext, "%s%s", options->extra(), spass))
             {
-            printf("trainRules: ext 2 small");
+            fprintf(stderr, "trainRules: ext 2 small");
             exit(-1);
             }
 
         if(options->externalTrainer())
             {
-            if (options->verbose() > 4)
-                printf("options->externalTrainer() %s\n", options->externalTrainer());
+            options->info(1,"options->externalTrainer() %s\n", options->externalTrainer());
             if (sizeof(bestRulesFormat) <= (size_t)sprintf(bestRulesFormat, accumulatedFormat, nflexrules, 1))
                 {
-                printf("trainRules: bestRulesFormat 2 small");
+                fprintf(stderr, "trainRules: bestRulesFormat 2 small");
                 exit(-1);
                 }
             for(int threshold = 0;threshold <= options->cutoff();++threshold)
                 {
-                if (options->verbose() > 4)
-                    printf("threshold %d\n", threshold);
+                options->info(2,"threshold %d\n", threshold);
                 char * dest = new char[strlen(bestRulesFormat) + 10];
                 sprintf(dest, bestRulesFormat, threshold);
                 char * command = new char[strlen(options->externalTrainer())+strlen(fname)+strlen(dest)+strlen("noofrules.txt")+15];
                 sprintf(command,"%s %s %s %s",options->externalTrainer(),fname,dest,"noofrules.txt");
                 delete [] dest;
-                if (options->verbose() > 4)
-                    printf("External trainer command: [%s]\n", command);
+                options->info(2,"External trainer command: [%s]\n", command);
                 if (!system(command))
                     {
                     FILE * noofrules = fopen("noofrules.txt","r");
@@ -1953,8 +1888,7 @@ void trainRules(optionStruct * options,countAndWeight * Counts)
         else
             {
             aFile afile(fname, options, passes > 1 ? "12" : options->columns());
-            if (options->verbose() > 6)
-                printf("C Calling doTraining %s, %s, %s\n",ext,flexrulesPass, pairsToTrainInNextPassName);
+            options->info(6,"C Calling doTraining %s, %s, %s\n",ext,flexrulesPass, pairsToTrainInNextPassName);
             moreToDo = doTraining
                 (/* aFile &          */  afile
                 ,/* const char *     */  ext
@@ -1964,8 +1898,7 @@ void trainRules(optionStruct * options,countAndWeight * Counts)
                 ,/* countAndWeight * */  Counts
                 ,/* optionStruct *   */  options
                 );
-            if (options->verbose() > 6)
-                printf("C Calling doTraining %s, %s, %s DONE\n",ext,flexrulesPass, pairsToTrainInNextPassName);
+            options->info(6,"C Calling doTraining %s, %s, %s DONE\n",ext,flexrulesPass, pairsToTrainInNextPassName);
             }
         /*
         Re-do the training, but only with those pairs that made it into
@@ -1975,15 +1908,11 @@ void trainRules(optionStruct * options,countAndWeight * Counts)
         */
         if (options->redo() && moreToDo)
             {
-            if (options->verbose() > 5)
-                {
-                printf("More training to do with file \"%s\"\n", pairsToTrainInNextPassName);
-                }
+            options->info(5,"More training to do with file \"%s\"\n", pairsToTrainInNextPassName);
 
             aFile afile(tempFolder(allIngestedPairsName, options), options, options->columns());
 
-            if (options->verbose() > 6)
-                printf("D Calling doTraining %s, %s\n",ext,flexrulesPass);
+            options->info(6,"D Calling doTraining %s, %s\n",ext,flexrulesPass);
             if(doTraining
                 (/* aFile &                           */  afile
                 ,/* const char *                      */  ext
@@ -1995,26 +1924,20 @@ void trainRules(optionStruct * options,countAndWeight * Counts)
                 )
               ) // sets Nnodes
                 {
-                if (options->verbose())
-                    {
-                    printf("This should return 0 (Press <Enter> to continue...)\n");
-                    getchar();
-                    }
+                options->info(0,"\"doTraining\" should return 0\n");
                 }
-            if (options->verbose() > 6)
-                printf("D Calling doTraining %s, %s DONE\n",ext,flexrulesPass);
+            options->info(6,"D Calling doTraining %s, %s DONE\n",ext,flexrulesPass);
             }
-        else if (options->verbose() > 4)
+        else if (moreToDo)
             {
-            if (moreToDo)
-                printf("No retraining done on ingested pairs, although ambiguous pairs were found and may have caused noise. (Faster) \n");
+            options->info(1,"No retraining done on ingested pairs, although ambiguous pairs were found and may have caused noise. (Faster) \n");
             }
 
         char AccumulatedFlexrulesPass[256];
         char NextAccumulatedFlexrulesPassFormat[256];
         if (sizeof(bestRulesFormat) <= (size_t)sprintf(bestRulesFormat, accumulatedFormat, nflexrules, passes))
             {
-            printf("trainRules: bestRulesFormat 2 small");
+            fprintf(stderr, "trainRules: bestRulesFormat 2 small");
             exit(-1);
             }
         if (passes > 1)
@@ -2022,12 +1945,12 @@ void trainRules(optionStruct * options,countAndWeight * Counts)
             assert(accumulatedFormatPrev != NULL);
             if (sizeof(AccumulatedFlexrulesPass) <= (size_t)sprintf(AccumulatedFlexrulesPass, accumulatedFormatPrev, nflexrules, passes - 1))
                 {
-                printf("trainRules: AccumulatedFlexrulesPass 2 small");
+                fprintf(stderr, "trainRules: AccumulatedFlexrulesPass 2 small");
                 exit(-1);
                 }
             if (sizeof(NextAccumulatedFlexrulesPassFormat) <= (size_t)sprintf(NextAccumulatedFlexrulesPassFormat, AccumulatedFlexrulePassFormat, nflexrules, passes))
                 {
-                printf("trainRules: NextAccumulatedFlexrulesPassFormat 2 small");
+                fprintf(stderr, "trainRules: NextAccumulatedFlexrulesPassFormat 2 small");
                 exit(-1);
                 }
             }
@@ -2037,7 +1960,7 @@ void trainRules(optionStruct * options,countAndWeight * Counts)
             char nextbestflexrules[1150];
             if (sizeof(nextbestflexrules) <= (size_t)sprintf(nextbestflexrules, flexrulesPass, cut))
                 {
-                printf("trainRules: nextbestflexrules 2 small");
+                fprintf(stderr, "trainRules: nextbestflexrules 2 small");
                 exit(-1);
                 }
             //prettyPrint(nextbestflexrules);
@@ -2046,18 +1969,15 @@ void trainRules(optionStruct * options,countAndWeight * Counts)
                 char bestflexrules[1150], newbestflexrules[1150];
                 if (sizeof(bestflexrules) <= (size_t)sprintf(bestflexrules, AccumulatedFlexrulesPass, cut))
                     {
-                    printf("trainRules: bestflexrules 2 small");
+                    fprintf(stderr, "trainRules: bestflexrules 2 small");
                     exit(-1);
                     }
                 if (sizeof(newbestflexrules) <= (size_t)sprintf(newbestflexrules, NextAccumulatedFlexrulesPassFormat, cut))
                     {
-                    printf("trainRules: newbestflexrules 2 small");
+                    fprintf(stderr, "trainRules: newbestflexrules 2 small");
                     exit(-1);
                     }
-                if (options->verbose() > 5)
-                    {
-                    printf("flexcombi best %s + next best %s -> combined %s\n", bestflexrules, nextbestflexrules, bestflexrules);
-                    }
+                options->info(5,"flexcombi best %s + next best %s -> combined %s\n", bestflexrules, nextbestflexrules, bestflexrules);
                 if (!flexcombi(bestflexrules, nextbestflexrules, newbestflexrules))
                     break;
                 //prettyPrint(newbestflexrules);
@@ -2069,10 +1989,7 @@ void trainRules(optionStruct * options,countAndWeight * Counts)
         accumulatedFormat = AccumulatedFlexrulePassFormat;
         } while (moreToDo && passes < options->maxPasses());
 
-        if (options->verbose() > 5)
-            {
-            putchar('\n'); // to compensate for missing newline in readTrainingPairs
-            }
+        options->info(5,"\n"); // to compensate for missing newline in readTrainingPairs
         if (options->cutoff() >= 0)
             {
             char dest[1000];
@@ -2092,47 +2009,40 @@ void trainRules(optionStruct * options,countAndWeight * Counts)
                     filename = nflexrules;
                     sprintf(dirname, "%d", cut);
                     }
-                if (options->verbose() > 3)
-                    printf("dirname %s\n", dirname);
+                options->info(3,"dirname %s\n", dirname);
 
                 char testfile[500];
                 sprintf(testfile, "%s%cTESTFILE", dirname, DIRSEP);
-                if (options->verbose() > 3)
-                    printf("testfile %s\n", testfile);
+                options->info(3,"testfile %s\n", testfile);
                 FILE * fptest = fopen(testfile, "w");
                 ++openfiles;
                 bool hasDir = false;
                 if (fptest)
                     {
-                    if (options->verbose() > 3)
-                        printf("testfile created\n");
+                    options->info(3,"testfile created\n");
                     --openfiles;
                     fclose(fptest);
                     remove(testfile);
-                    if (options->verbose() > 3)
-                        printf("testfile deleted\n");
+                    options->info(3,"testfile deleted\n");
                     hasDir = true;
                     }
                 else
                     {
-                    if (options->verbose() > 3)
-                        printf("testfile not created\n");
+                    options->info(3,"testfile not created\n");
+                    char command[1024];
                     sprintf(command, "%s %s", MKDIR, dirname);
-                    if (options->verbose() > 3)
-                        printf("command %s\n", command);
+                    options->info(3,"command %s\n", command);
                     if (!system(command))
                         {
                         fptest = fopen(testfile, "w");
                         ++openfiles;
                         if (fptest)
                             {
-                            if (options->verbose() > 3)
-                                printf("testfile created\n");
+                            options->info(3,"testfile created\n");
                             --openfiles;
                             fclose(fptest);
                             remove(testfile);
-                            if (options->verbose() > 3)
-                                printf("testfile deleted\n");
+                            options->info(3,"testfile deleted\n");
                             hasDir = true;
                             }
                         }
@@ -2165,14 +2075,13 @@ void trainRules(optionStruct * options,countAndWeight * Counts)
             {
             char scut[20];
             sprintf(scut, "%s%d", SCUT, cut);
-            for (int passes = 1;; ++passes)
+            for (int passs = 1;; ++passs)
                 {
                 char dest[1000];
                 char spass[10];
-                sprintf(spass, ".pass%d", passes);
+                sprintf(spass, ".pass%d", passs);
                 sprintf(dest, "%s%s%s", nflexrules, scut, spass);
-                if (options->verbose() > 3)
-                    printf("Remove %s \n", dest);
+                options->info(3,"Remove %s \n", dest);
                 if (remove(dest))
                     break;
                 }
@@ -2191,12 +2100,11 @@ static void initOutput(const char * path)
     fclose(fp);
     }
 
-void ParameterComputation(optionStruct * poptions, const char * tagName)
+void ParameterComputation(optionStruct * poptions/*, const char * tagName*/)
     {
     if (poptions->computeParms())
         {
-        if (poptions->verbose() > 4)
-            printf("Computing parameters\n");
+        poptions->info(2, "Computing parameters\n");
 
         if (poptions->currentParms())
             initOutput(poptions->currentParms());
@@ -2206,35 +2114,29 @@ void ParameterComputation(optionStruct * poptions, const char * tagName)
 
         computeParms(poptions);
 
-        if (poptions->verbose() > 4)
-            printf("Computing parameters DONE\n");
+        poptions->info(2, "Computing parameters DONE\n");
         }
     }
 
 void ComputeDelta(optionStruct * poptions)
     {
-    if (poptions->verbose() > 2)
-        printf("Going to compute delta.\n");
+    poptions->info(2,"Going to compute delta.\n");
 
     init(poptions); // TODO Check that penalties are the best ones, not the last ones tried.
 
-    if (poptions->verbose() > 2)
-        printf("Computing delta DONE.\n");
+    poptions->info(2,"Computing delta DONE.\n");
     }
 
 void TestRules(optionStruct * poptions)
     {
-    if (poptions->verbose() > 1)
-        printf("TestRules\n");
+    poptions->info(1,"TestRules\n");
     if (poptions->test() || (poptions->trainTest() && !poptions->tenfoldCrossValidation()))
         {
-        if (poptions->verbose() > 2)
-            printf("Going to test the rules.\n");
+        poptions->info(2,"Going to test the rules.\n");
 
         poptions->printArgFile();
         testrules(poptions);
-        if (poptions->verbose() > 2)
-            printf("Testing the rules DONE.\n");
+        poptions->info(2,"Testing the rules DONE.\n");
         }
     }
 
@@ -2242,12 +2144,9 @@ void CreateFlexRules(optionStruct * poptions)
     {
     if (poptions->createFlexRules())
         {
-        //            printf("CREATE FLEXRULES (<ENTER>)");
-        //            getchar();
         setCompetitionFunction(poptions);
         poptions->setReadLines(poptions->lines());
-        if (poptions->verbose() > 1)
-            printf("poptions->createFlexRules()\n");
+        poptions->info(2,"createFlexRules()\n");
 
         countAndWeight * Counts = new countAndWeight[1 + (size_t)poptions->cutoff()];
         trainRules(poptions, Counts);
@@ -2267,21 +2166,15 @@ void printNiceInput(optionStruct * options, const char * tagName)
 
 void AllProcessing(optionStruct * poptions, const char * tagName)
     {
-    if (poptions->verbose())
-        {
-        printf("AllProcessing %s\n", tagName);
-        }
+    poptions->info(0,"AllProcessing %s\n", tagName);
 
     printNiceInput(poptions,tagName);
 
-    ParameterComputation(poptions,tagName);
+    ParameterComputation(poptions/*,tagName*/);
     ComputeDelta(poptions);
     TestRules(poptions);
     CreateFlexRules(poptions);
-    if (poptions->verbose())
-        {
-        printf("AllProcessing %s DONE\n", tagName);
-        }
+    poptions->info(0,"AllProcessing %s DONE\n", tagName);
     }
 
 
@@ -2307,7 +2200,7 @@ int main(int argc, char **argv)
 
     if (options.verbose())
         {
-        options.print(stdout);
+        options.print(stderr);
         options.printArgFile();
         }
 
@@ -2327,13 +2220,13 @@ int main(int argc, char **argv)
             {
             if (!haswritabledir(options.tempDir()))
                 {
-                printf("Cannot create file %s. Did you specify an existing and writable temp directory? (option -j)\n", tempFolder("testFile", &options));
+                fprintf(stderr, "Cannot create file %s. Did you specify an existing and writable temp directory? (option -j)\n", tempFolder("testFile", &options));
                 return -1;
                 }
             }
         else if (!canwriteindir("."))
             {
-            printf("Cannot write in the working directory.\n");
+            fprintf(stderr, "Cannot write in the working directory.\n");
             return -1;
             }
 
@@ -2342,15 +2235,11 @@ int main(int argc, char **argv)
         tagClass * theTag = Tags;
         if (theTag)
             {
-            if (options.verbose())
-                printf("Doing Tags\n");
+            options.info(0,"Doing Tags\n");
             optionStruct originalOptions(options);
             while (theTag)
                 {
-                if (options.verbose())
-                    {
-                    printf("Doing tag %s\n", theTag->name);
-                    }
+                options.info(0, "Doing tag %s\n", theTag->name);
                 FilterTagLines(originalOptions.wordLemmaList(), &options, theTag->name);
                 AllProcessing(&options,theTag->name);
                 theTag = theTag->next;
@@ -2358,18 +2247,12 @@ int main(int argc, char **argv)
             }
         else
             {
-            if (options.verbose())
-                printf("NOT doing Tags\n");
+            options.info(0, "NOT doing Tags\n");
             AllProcessing(&options, "");
             }
 
 
-        if (options.verbose())
-            {
-            printf("\nAffixTrain OK\n");
-            if (argc < 3)
-                getchar();
-            }
+        options.info(0, "\nAffixTrain OK\n");
         }
     cleanUpOptions();
     return 0;

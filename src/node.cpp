@@ -1121,7 +1121,8 @@ void node::init(trainingPair ** allRight,trainingPair ** allWrong,int level,opti
     *allRight = NotApplicableRight;
     *allWrong = NotApplicableWrong;
 
-    this->Right->allDeleteRules();
+    if(this->Right)
+        this->Right->allDeleteRules();
 #if AMBIGUOUS
     trainingPair * Ambiguous = 0;
 #endif

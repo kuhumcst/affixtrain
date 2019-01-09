@@ -1229,7 +1229,7 @@ static bool doTraining
     trainingPair * TrainingPair = readTrainingPairs(afile, allPairs, options);
     markTheAmbiguousPairs(TrainingPair, allPairs, options);
     trainingPair * train = createChainOfPointersToTrainingPairs(TrainingPair,allPairs);
-
+    
     bool moreToDo = false;
     VertexPointerCount = 0;
 
@@ -1238,7 +1238,7 @@ static bool doTraining
     vertex ROOT(StartAnyEnd, StartAnyEnd);
     bool New;
     vertex * best = Hash.getVertex(&ROOT, New);
-
+    
     options->info(2,"Going to build a decision tree\n");
 
     top = new node(best);
@@ -1252,7 +1252,7 @@ static bool doTraining
 //    train->printAll(fprune,"ALL\n",'\n');
 //    fprintf(fprune,"____________\n");
     top->init(&Right, &train, 0, options);
-    /* After top->init, the chain of pointers to training pairs, that starts 
+    /* After top->init, the chain of pointers to training pairs, that starts
        with 'train', is broken and spread over the generated nodes in the
        decision tree. To traverse the training pairs, we have to use the
        table 'TrainingPair', as is done below. */
@@ -1262,7 +1262,7 @@ static bool doTraining
     options->info(2,"Decision tree built\n");
     //    fclose(fprune);
     top = top->cleanup(NULL,0);
-
+    
     FILE * nexttrain = pairsToTrainInNextPassName ? fopenOrExit(tempFolder(pairsToTrainInNextPassName, options), "wb", "nexttrain") : NULL;
     if (nexttrain)
         {

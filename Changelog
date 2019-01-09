@@ -5,6 +5,7 @@ Write information to a file, not stdout.
 Some signed/unsigned issues solved.
 Set minimum no. of lines in fractional training file to 1.
 Compute 'fraclines' in affixtrain.cpp as number of non-empty lines.
+Fixed null-pointer issue in node.cpp.
 
 Version 3.89 - 2018.06.28
 -------------------------

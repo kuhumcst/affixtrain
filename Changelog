@@ -1,3 +1,7 @@
+Version 3.90 - 2019.01.09
+-------------------------
+Increased size of 'spass' buffer in affixtrain.cpp.
+
 Version 3.89 - 2018.06.28
 -------------------------
 Increased size of line buffers in testrules.cpp.

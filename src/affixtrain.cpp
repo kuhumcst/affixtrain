@@ -2073,12 +2073,12 @@ void trainRules(optionStruct * options,countAndWeight * Counts)
             }
         for (int cut = 0; cut <= options->cutoff(); ++cut)
             {
-            char scut[20];
+            char scut[100];
             sprintf(scut, "%s%d", SCUT, cut);
             for (int passs = 1;; ++passs)
                 {
                 char dest[1000];
-                char spass[10];
+                char spass[100];
                 sprintf(spass, ".pass%d", passs);
                 sprintf(dest, "%s%s%s", nflexrules, scut, spass);
                 options->info(3,"Remove %s \n", dest);

@@ -39,7 +39,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define COPY "cp -f "
 #define MKDIR "mkdir "
 #define DIRSEP '/'
-#define ZD "%zd"
+#define ZD "%zu"
 #endif
 
 #define DOIMPEDANCE 0

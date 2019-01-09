@@ -742,7 +742,7 @@ OptReturnTp optionStruct::readOptsFromFile(char * locoptarg, char * progname)
                     }
                 else
                     {
-                    fprintf(stderr, "Missing option letter on line %lu in option file \"%s\"\n", lineno, locoptarg);
+                    fprintf(stderr, "Missing option letter on line %u in option file \"%s\"\n", lineno, locoptarg);
                     exit(1);
                     }
                 }

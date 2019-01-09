@@ -1,6 +1,8 @@
 Version 3.90 - 2019.01.09
 -------------------------
-Increased size of 'spass' buffer in affixtrain.cpp.
+Increased size of 'spass' buffer in affixtrain.cpp. 
+Write information to a file, not stdout.
+Some signed/unsigned issues solved.
 
 Version 3.89 - 2018.06.28
 -------------------------

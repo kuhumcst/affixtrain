@@ -2682,9 +2682,9 @@ void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,siz
                , (options->getWeightFunction() == esupport || options->getWeightFunction() == eentropy) ? "" : "not "
                ,DBL_DIG+2,weight
                ,blobs
-               ,(unsigned int)lines
+               ,(size_t)lines
                ,DBL_DIG+2,fraction
-               , (unsigned int)fraclines
+               , (size_t)fraclines
                );
         fprintf(f,"        {{\n        ");
         int i = 0;

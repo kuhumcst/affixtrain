@@ -1362,8 +1362,10 @@ const unsigned int partOfFile(const char * fbuf, const double fraction, optionSt
     int kar;
     FILE * f = fopen(options->wordLemmaList(), "rb");
     ++openfiles;
+    bool tabSeen = false;
     if ((double)options->blobs() * fraction > 1.0)
         {
+        printf("blobs\n");
         int bl = 1;
         int li = 0;
         int blbs = 0; // If there are no non-empty lines, there are no blobs
@@ -1435,20 +1437,28 @@ const unsigned int partOfFile(const char * fbuf, const double fraction, optionSt
         }
     else if ((double)options->lines() * fraction > 1.0)
         {
+        printf("lines\n");
         while ((kar = fgetc(f)) != EOF)
             {
             if (bucket >= 1.0)
                 fputc(kar, f2);
             if (kar == '\n')
                 {
-                if (bucket >= 1.0)
-                    bucket -= 1.0;
-                bucket += fraction;
+                if (tabSeen)
+                    {
+                    if (bucket >= 1.0)
+                        bucket -= 1.0;
+                    bucket += fraction;
+                    tabSeen = false;
+                    }
                 }
+            else if (kar == '\t')
+                tabSeen = true;
             }
         }
     else
         {
+        printf("bytes\n");
         while ((kar = fgetc(f)) != EOF)
             {
             fputc(kar, f2);
@@ -1461,10 +1471,23 @@ const unsigned int partOfFile(const char * fbuf, const double fraction, optionSt
 
     f2 = fopenOrExit(fbuf, "r", "computeParms");
     unsigned int fraclines = 0;
+    tabSeen = false;
     while ((kar = fgetc(f2)) != EOF)
         {
         if (kar == '\n')
-            ++fraclines;
+            {
+            if (tabSeen)
+                {
+                tabSeen = false;
+                ++fraclines;
+                }
+            }
+        else if (kar == '\t')
+            tabSeen = true;
+        }
+    if (fraclines == 0)
+        {
+        printf("PROBLEM %s\n", options->wordLemmaList());
         }
     --openfiles;
     fclose(f2);

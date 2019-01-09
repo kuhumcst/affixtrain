@@ -247,7 +247,6 @@ struct fileBuffer
                     }
                 else
                     {
-                    //printf("Old version\n");
                     rewind(flexrulefile);
                     }
                 }
@@ -454,7 +453,7 @@ int prettyPrint(const char * flexrulesIn)
     fileBuffer FileBuffer;
     if (!FileBuffer.readRules(flexrulesIn))
         {
-        printf("Error (prettyPrint): Cannot open %s (flexrulesIn) for reading\n", flexrulesIn);
+        fprintf(stderr, "Error (prettyPrint): Cannot open %s (flexrulesIn) for reading\n", flexrulesIn);
         return false;
         }
 
@@ -467,7 +466,7 @@ int prettyPrint(const char * flexrulesIn)
     ++openfiles;
     if (!fm)
         {
-        printf("Error (prettyPrint): Cannot open %s (filenameOut) for writing\n", filenameOut);
+        fprintf(stderr, "Error (prettyPrint): Cannot open %s (filenameOut) for writing\n", filenameOut);
         return false;
         }
 //    char start[1000] = { 0 };
@@ -667,7 +666,7 @@ int prettyPrintBracmat(const char * flexrulesIn)
     fileBuffer FileBuffer;
     if (!FileBuffer.readRules(flexrulesIn))
         {
-        printf("Error (prettyPrintBracmat): Cannot open %s (flexrulesIn) for reading\n", flexrulesIn);
+        fprintf(stderr, "Error (prettyPrintBracmat): Cannot open %s (flexrulesIn) for reading\n", flexrulesIn);
         return false;
         }
 
@@ -680,7 +679,7 @@ int prettyPrintBracmat(const char * flexrulesIn)
     ++openfiles;
     if (!fmbra)
         {
-        printf("Error (prettyPrintBracmat): Cannot open %s (brafile) for writing\n", brafile);
+        fprintf(stderr, "Error (prettyPrintBracmat): Cannot open %s (brafile) for writing\n", brafile);
         return false;
         }
 
@@ -705,24 +704,24 @@ class rule
     char * Start;
     char * End;
     rule(char * S, char * E) :Start(S), End(E){}
-    void print(int ind)
+    void print(FILE * fp,int ind)
         {
         char * s = Start;
         int dif = '>' + '|';
         int sep = '>';
-        printf("%*s", ind, "");
+        fprintf(fp, "%*s", ind, "");
         while (*s != '\n')
             {
             if (*s == '\t')
                 {
-                printf("%c",sep);
+                fprintf(fp, "%c",sep);
                 sep = dif - sep;
                 }
             else
-                printf("%c", *s);
+                fprintf(fp, "%c", *s);
             ++s;
             }
-        printf("\n");
+        fprintf(fp, "\n");
         }
     ptrdiff_t copy(char * arr/*, int ind*/)
         {
@@ -761,7 +760,7 @@ class treenode
         rule Rule;
         oneOrMore Sibling;
         oneOrMore Child;
-        void print(int ind);
+        void print(FILE * fp,int ind);
         ptrdiff_t copy(char * arr, int ind);
         bool eq(treenode * Y)
             {
@@ -776,8 +775,8 @@ class treenode
                 tp += 2;
             return (typetype)tp;
             }
-        treenode(char * rl, char * end, chain * ASib, treenode * Chld, chain * AChld)
-            :Rule(rl,end),Sibling(0,ASib),Child(Chld,AChld){}
+        treenode(char * rl, char * anend, chain * ASib, treenode * Chld, chain * AChld)
+            :Rule(rl,anend),Sibling(0,ASib),Child(Chld,AChld){}
         void setSib(treenode * Sib) { Sibling.setSib(Sib); }
         ~treenode();
         void merge(treenode * Y)
@@ -795,11 +794,11 @@ class chain
     public:
         chain * Alt;
         treenode * TreeNode;
-        chain(char * buf, char * end)
+        chain(char * buf, char * anend)
             {
             int Next = *(int*)buf;
             if (Next > 0)
-                Alt = new chain(buf + Next, end);
+                Alt = new chain(buf + Next, anend);
             else
                 { 
                 Alt = NULL;
@@ -807,7 +806,7 @@ class chain
                     Next = -Next;
                 }
             buf += sizeof(int);
-            /*TreeNode =*/ treenodeFactory(buf, (Next == 0) ? end : buf+Next,&TreeNode);
+            /*TreeNode =*/ treenodeFactory(buf, (Next == 0) ? anend : buf+Next,&TreeNode);
             }
         void append(chain * C)
             {
@@ -848,7 +847,7 @@ class chain
             else
                 return 0;
             }
-        void print(int ind);
+        void print(FILE * fp,int ind);
         ptrdiff_t copy(char * arr, int ind);
     };
 
@@ -884,40 +883,40 @@ treenode * oneOrMore::get(treenode * example)
         return 0;
     }
 
-void treenode::print(int ind)
+void treenode::print(FILE * fp, int ind)
     {
-    Rule.print(ind);
+    Rule.print(fp,ind);
     if (Sibling.one)
         {
-        printf("%*s", ind, "");
-        printf("Sibling:\n");
-        Sibling.one->print(ind);
-        printf("%*s", ind, "");
-        printf("END Sibling");
+        fprintf(fp, "%*s", ind, "");
+        fprintf(fp, "Sibling:\n");
+        Sibling.one->print(fp,ind);
+        fprintf(fp, "%*s", ind, "");
+        fprintf(fp, "END Sibling");
         }
     if (Sibling.more)
         {
-        printf("%*s", ind, "");
-        printf("Sibling chain:\n");
-        Sibling.more->print(ind + 2);
-        printf("%*s", ind, "");
-        printf("END Sibling chain\n");
+        fprintf(fp, "%*s", ind, "");
+        fprintf(fp, "Sibling chain:\n");
+        Sibling.more->print(fp,ind + 2);
+        fprintf(fp, "%*s", ind, "");
+        fprintf(fp, "END Sibling chain\n");
         }
     if (Child.one)
         {
-        printf("%*s", ind, "");
-        printf("Child:\n");
-        Child.one->print(ind+2);
-        printf("%*s", ind, "");
-        printf("END Child\n");
+        fprintf(fp, "%*s", ind, "");
+        fprintf(fp, "Child:\n");
+        Child.one->print(fp,ind+2);
+        fprintf(fp, "%*s", ind, "");
+        fprintf(fp, "END Child\n");
         }
     if (Child.more)
         {
-        printf("%*s", ind+2, "");
-        printf("Child chain:\n");
-        Child.more->print(ind + 4);
-        printf("%*s", ind+2, "");
-        printf("END Child chain\n");
+        fprintf(fp, "%*s", ind+2, "");
+        fprintf(fp, "Child chain:\n");
+        Child.more->print(fp,ind + 4);
+        fprintf(fp, "%*s", ind+2, "");
+        fprintf(fp, "END Child chain\n");
         }
     }
 
@@ -966,20 +965,20 @@ ptrdiff_t treenode::copy(char * arr,int ind)
     return arr - (char*)FailBranch;
     }
 
-void chain::print(int ind)
+void chain::print(FILE * fp,int ind)
     {
     if (TreeNode)
         {
-        TreeNode->print(ind + 4);
+        TreeNode->print(fp,ind + 4);
         }
     else
         {
-        printf("%*s(parent)\n", ind + 4, "");
+        fprintf(fp, "%*s(parent)\n", ind + 4, "");
         }
-    printf("%*s", ind + 4, "");
-    printf("---\n");
+    fprintf(fp, "%*s", ind + 4, "");
+    fprintf(fp, "---\n");
     if (Alt)
-        Alt->print(ind);
+        Alt->print(fp,ind);
     }
 
 ptrdiff_t chain::copy(char * arr, int ind)
@@ -1011,20 +1010,20 @@ oneOrMore::~oneOrMore()
     }
 
 
-void treenodeFactory(char * buf,char * end, treenode ** NodePointerNeedingValue)
+void treenodeFactory(char * buf,char * anend, treenode ** NodePointerNeedingValue)
     {
     assert(NodePointerNeedingValue != 0);
     for (;;)
         {
-        assert(((end - buf) & 3) == 0);
-        if (end < buf + 2 * sizeof(int))
+        assert(((anend - buf) & 3) == 0);
+        if (anend < buf + 2 * sizeof(int))
             {
             *NodePointerNeedingValue = NULL;
             return;
             }
         else
             {
-            treenode * Sibling = NULL;
+            //treenode * Sibling = NULL;
             chain * ASibling = NULL;
             treenode * Child = NULL;
             chain * AChild = NULL;
@@ -1056,13 +1055,13 @@ void treenodeFactory(char * buf,char * end, treenode ** NodePointerNeedingValue)
                 {
                 if (type & 2)
                     {
-                    AChild = new chain(buf, end);
+                    AChild = new chain(buf, anend);
                     *NodePointerNeedingValue = new treenode(rule, e + 1, 0, 0, AChild);
                     return;
                     }
                 else
                     {
-                    treenodeFactory(buf, end, &Child);
+                    treenodeFactory(buf, anend, &Child);
                     *NodePointerNeedingValue = new treenode(rule, e + 1, 0, Child, 0);
                     return;
                     }
@@ -1074,14 +1073,14 @@ void treenodeFactory(char * buf,char * end, treenode ** NodePointerNeedingValue)
                     if (type & 2)
                         {
                         AChild = new chain(buf, Fail + OnFail);
-                        ASibling = new chain(Fail + OnFail, end);
+                        ASibling = new chain(Fail + OnFail, anend);
                         *NodePointerNeedingValue = new treenode(rule, e + 1, ASibling, 0, AChild);
                         return;
                         }
                     else
                         {
                         treenodeFactory(buf, Fail + OnFail, &Child);
-                        ASibling = new chain(Fail + OnFail, end);
+                        ASibling = new chain(Fail + OnFail, anend);
                         *NodePointerNeedingValue = new treenode(rule, e + 1, ASibling, Child, 0);
                         return;
                         }
@@ -1178,15 +1177,14 @@ bool flexcombi(const char * bestflexrules, const char * nextbestflexrules, const
     {
     fileBuffer FileBuffer;
     fileBuffer NextFileBuffer;
-//    printf("flexcombi (V3): %s + %s -> %s\n", bestflexrules, nextbestflexrules, combinedflexrules);
     if (!FileBuffer.readRules(bestflexrules))
         {
-        printf("Error (flexcombi): Cannot open %s for reading\n",bestflexrules);
+        fprintf(stderr, "Error (flexcombi): Cannot open %s for reading\n",bestflexrules);
         return false;
         }
     if (!NextFileBuffer.readRules(nextbestflexrules))
         {
-        printf("Error (flexcombi): Cannot open %s for reading\n",nextbestflexrules);
+        fprintf(stderr, "Error (flexcombi): Cannot open %s for reading\n",nextbestflexrules);
         return false;
         }
     char * arr = new char[(size_t)(2 * (FileBuffer.Length + NextFileBuffer.Length))];
@@ -1194,7 +1192,7 @@ bool flexcombi(const char * bestflexrules, const char * nextbestflexrules, const
     ++openfiles;
     if(!f)
         {
-        printf("Error (flexcombi): Cannot open %s for writing\n",combinedflexrules);
+        fprintf(stderr, "Error (flexcombi): Cannot open %s for writing\n",combinedflexrules);
         return false;
         }
     fprintf(f,"\r%.2s\r","V31");
@@ -1202,15 +1200,9 @@ bool flexcombi(const char * bestflexrules, const char * nextbestflexrules, const
     treenodeFactory(FileBuffer.buf, FileBuffer.buf + FileBuffer.Length, &TreeNode);
     if (TreeNode)
         {
-        //printf("\nTree:\n");
-        //TreeNode->print(0);
         treenode * NextTreeNode = NULL;
         treenodeFactory(NextFileBuffer.buf, NextFileBuffer.buf + NextFileBuffer.Length, &NextTreeNode);
-        //printf("\nNext Tree:\n");
-        //NextTreeNode->print(0);
         TreeNode->merge(NextTreeNode);
-        //printf("\nCombined Tree:\n");
-        //TreeNode->print(0);
         ptrdiff_t length = TreeNode->copy(arr, 0);
         *(int*)arr = 0;
         for(ptrdiff_t i = 0;i < length;++i)

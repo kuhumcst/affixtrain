@@ -22,7 +22,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #ifndef OPTIONAFF_H
 #define OPTIONAFF_H
 
-#include <stdio.h> // FILE
+#include <stdio.h>
+#include <stdarg.h>
 
 typedef enum {GoOn = 0,Leave = 1,Error = 2} OptReturnTp;
 typedef enum {econstant = 0, edepth = 1, esupport = 2, eentropy = 3, esize = 4} OptWeightFunction;
@@ -61,7 +62,7 @@ class optionStruct
         const char * X; // rule weight function, defaults to constant (1)
         const char * I; // Input (with option -b: additionally lemmatise a word list - one word per line)
         const char * O; // Output (lemmas of input -I) (with option -b)
-        int nD; // set by counting numbers in D, defaults to 6
+        unsigned int nD; // set by counting numbers in D, defaults to 6
         int c; // cutoff
         int C; // expected cutoff
         int K;    // Number of differently sized fractions of trainingdata 
@@ -130,6 +131,16 @@ class optionStruct
         const int maxRecursionDepthRuleCreation()const{return Q;}
 //        const int percentageTestPairs()const{return q;}
         const int verbose()const{ return Verbose; }
+        void info(int verbosityLevel, const char * format, ...)
+            {
+            if (Verbose > verbosityLevel)
+                {
+                va_list args;
+                va_start(args, format);
+                vfprintf(stderr, format, args);
+                va_end(args);
+                }
+            }
         const bool computeParms()const{ return ComputeParms; }
         const bool suffixOnly()const{return SuffixOnly;}
         const bool expensiveInfix(){ return ExpensiveInfix; }
@@ -145,8 +156,8 @@ class optionStruct
         const double minIterations()const{return M;}
         const double maxIterations()const{return N;}
         const int numberOfParms()const{return nD;}
-        const double parm(int i)const{return (0<=i&&i<nD) ? D[i] : 0.0;}
-        void setParm(int i,double v){if(0<=i&&i<nD)D[i]=v;}
+        const double parm(int indx)const{return (0<= indx&&(unsigned int)indx<nD) ? D[indx] : 0.0;}
+        void setParm(int indx,double v){if(0<= indx&& (unsigned int)indx<nD)D[indx]=v;}
         const bool createFlexRules(){return F;}
         void setSwath(int S){Swath = S;}
         void setSwathIteration(int SI){SwathIteration = SI;}

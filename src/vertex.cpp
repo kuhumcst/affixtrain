@@ -173,7 +173,6 @@ matchResult vertex::lemmatise(trainingPair * pair)
                     break;
 #endif
                 default:
-                    //printf("?????????????????\n");
                     ;
                 }
             assert(pair->getTentativeRes() != yes);
@@ -469,7 +468,7 @@ matchResult vertex::apply(trainingPair * trainingpair)
     size_t L1 = trainingpair->itsWordlength();
     if (L1 + 3 > sizeof(wrd))
         {
-        printf("vertex::apply too small buffer");
+        fprintf(stderr, "vertex::apply too small buffer");
         exit(1);
         }
     wrd[0] = START;
@@ -618,7 +617,7 @@ matchResult vertex::applym(trainingPair * pair, char * mask)
     size_t L1 = pair->itsWordlength();
     if (L1 + 3 > sizeof(wrd))
         {
-        printf("vertex::apply too small buffer");
+        fprintf(stderr, "vertex::apply too small buffer");
         exit(1);
         }
     wrd[0] = START;

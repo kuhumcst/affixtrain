@@ -162,12 +162,12 @@ class node // node in decision tree
             return n;
             }
 #else
-        node * Prune(int threshold);
+        node * Prune(unsigned long threshold);
 #endif
 #if RULESASTEXTINDENTED
         int print(FILE * fo,int ind,int & Nnodes,int &NnodesR);
 #endif
-        void printNumbers(trainingPair ** allRight,trainingPair ** allWrong);
+        void printNumbers(FILE * fp,trainingPair ** allRight,trainingPair ** allWrong);
         void init(trainingPair ** allRight,trainingPair ** allWrong,int level,optionStruct * options);
         void splitTrainingPairList(trainingPair * all,trainingPair **& pNotApplicable,trainingPair **& pWrong,trainingPair **& pRight,bool SuffixOnly);
         void unsetSolved(trainingPair ** allPairs);

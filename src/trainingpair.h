@@ -214,40 +214,40 @@ class trainingPair
 #endif
         size_t itsWordlength(){return wordlength;}
         size_t itsLemmalength(){return lemmalength;}
-        void init(const char * Word
-            ,size_t wordlength
-            ,const char * LemmaHead
-            ,size_t lemmalength
+        void init(const char * aWord
+            ,size_t awordlength
+            ,const char * aLemmaHead
+            ,size_t alemmalength
 #if WORDCLASS
-            ,const char * WordClass
-            ,size_t wordclasslength
+            ,const char * aWordClass
+            ,size_t awordclasslength
 #endif
 #if LEMMACLASS
-            ,const char * LemmaClass
-            ,size_t lemmaclasslength
+            ,const char * aLemmaClass
+            ,size_t alemmaclasslength
 #endif
 #if LEMMAINL
-            ,int Inl,int Lemma_Inl
+            ,int Inl,int aLemma_Inl
 #endif
             )
             {
-            this->Word = Word;
-            this->wordlength = wordlength;
-            this->LemmaHead = LemmaHead;
-            this->lemmalength = lemmalength;
+            this->Word = aWord;
+            this->wordlength = awordlength;
+            this->LemmaHead = aLemmaHead;
+            this->lemmalength = alemmalength;
 #if WORDCLASS
-            this->WordClass = WordClass;
-            this->wordclasslength = wordclasslength;
+            this->WordClass = aWordClass;
+            this->wordclasslength = awordclasslength;
 #endif
 #if LEMMACLASS
-            this->LemmaClass = LemmaClass;
-            this->lemmaclasslength = lemmaclasslength;
+            this->LemmaClass = aLemmaClass;
+            this->lemmaclasslength = alemmaclasslength;
 #endif
 
             this->bits = 0;
 #if LEMMAINL
-            this->Inl = Inl;
-            this->Lemma_Inl = Lemma_Inl;
+            this->Inl = aInl;
+            this->Lemma_Inl = aLemma_Inl;
 #endif
 #if AMBIGUOUS
             this->Alt = this;

@@ -2645,20 +2645,20 @@ void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,siz
     options->printArgFile();
     if (options->verbose() > 5)
         {
-        printf("%d.%d %d  \tparms ", swath, iterations, Nnodes);
+        fprintf(stderr, "%d.%d %d  \tparms ", swath, iterations, Nnodes);
         int i = 0;
         for (; i < NPARMS; ++i)
             {
-            printf("%7.6f", parms.Matrix[i]);
+            fprintf(stderr, "%7.6f", parms.Matrix[i]);
             if (((i + 1) % parms.ROWPARMS) == 0)
                 {
                 if (i == NPARMS - 1)
-                    printf("\n");
+                    fprintf(stderr, "\n");
                 else
-                    printf(";\n");
+                    fprintf(stderr, ";\n");
                 }
             else
-                printf(";");
+                fprintf(stderr, ";");
             }
         }
 
@@ -2682,9 +2682,9 @@ void betterfound(int Nnodes,double weight,int swath,int iterations,int blobs,siz
                , (options->getWeightFunction() == esupport || options->getWeightFunction() == eentropy) ? "" : "not "
                ,DBL_DIG+2,weight
                ,blobs
-               ,lines
+               ,(unsigned int)lines
                ,DBL_DIG+2,fraction
-               ,fraclines
+               , (unsigned int)fraclines
                );
         fprintf(f,"        {{\n        ");
         int i = 0;
@@ -2800,7 +2800,7 @@ void testAngle()
         for(double z = 1.0;z >= -1.0;z -= 0.25)
             {
             double ang = angle(z,d);
-            printf("%d %2.3f -> %2.3f: %2.2f\n",d,z,cos(ang),180.0/pi*ang);
+            fprintf(stderr, "%d %2.3f -> %2.3f: %2.2f\n",d,z,cos(ang),180.0/pi*ang);
             }
         }
     getchar();
@@ -3027,10 +3027,6 @@ bool init(optionStruct * options)
     /* Take the distance between the most outlying vector and its closest
        neighbour as the initial headroom for changing a vector. */
     InitialDelta = sqrt(1.0 - MinMaxInnerProduct * MinMaxInnerProduct); 
-/*
-    printf("InitialDelta %f outlier %d closest to %d\n",InitialDelta,outlier,neighbour);
-    printf("Furthest distance %f between %d and %d\n",sqrt(1.0 - MinInnerProduct * MinInnerProduct),furthest1,furthest2);
-*/
     return true;
     }
 
@@ -3176,12 +3172,12 @@ void setCompetitionFunction(optionStruct * options)
                           )
                             {
                             comp = comp_parms0_off;
-                            if (options->verbose() > 5)
-                                {
-                                printf("bests[%d].suffixonly == [%s] bests[%d].langbase == [%s]\n", j, bests[j].suffixonly ? "true" : "false", j, bests[j].langbase);
-                                printf("comp = comp_parms0_off\n");
-                                printf("bests[%d].rows == [%d]\n", j, bests[j].rowss);
-                                }
+                            options->info(5,
+                                "bests[%d].suffixonly == [%s] bests[%d].langbase == [%s]\n"
+                                "comp = comp_parms0_off\n"
+                                "bests[%d].rows == [%d]\n"
+                                , j, bests[j].suffixonly ? "true" : "false", j, bests[j].langbase
+                                , j, bests[j].rowss);
                             nparms = bests[j].rowss * parms.ROWPARMS;
                             if(nparms > NPARMS)
                                 {
@@ -3224,10 +3220,7 @@ void setCompetitionFunction(optionStruct * options)
                         getchar();
                         exit(-1);
                         }
-                    if(options->verbose())
-                        {
-                        printf("comp_parms0_off\n");
-                        }
+                    options->info(0,"comp_parms0_off\n");
                     }
                 return;
                 }

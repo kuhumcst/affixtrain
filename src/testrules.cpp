@@ -455,13 +455,13 @@ static int fileRead(line * lines,
                         }
                     else
                         {
-                        printf("Format error in line %d\n",linecnt);
+                        fprintf(stderr, "Format error in line %d\n",linecnt);
                         return -1;
                         }
                     }
                 else
                     {
-                    printf("Line %d contains only whitespace.\n",linecnt+clumpcnt);
+                    fprintf(stderr, "Line %d contains only whitespace.\n",linecnt+clumpcnt);
                     return -1;
                     }
                 }
@@ -471,7 +471,7 @@ static int fileRead(line * lines,
             if((size_t)(pbuf - buf + 2) > sizeof(buf))
                 {
                 *pbuf = 0;
-                printf("Buffer buf too small for line starting with [%s] in function fileRead in file testrules.c\n",buf);
+                fprintf(stderr, "Buffer buf too small for line starting with [%s] in function fileRead in file testrules.c\n",buf);
                 exit(-1);
                 }
             *pbuf++ = (char)kar;
@@ -511,7 +511,7 @@ static ptrdiff_t removeDuplicateLines(clump * Clump)
             }
         }
     Clump->linecnt = i+1;
-    for(int j = 0;j < Clump->linecnt - 1;++j)
+    for(j = 0;j < Clump->linecnt - 1;++j)
         {
         line * A = Clump->start+j;
         line * B = Clump->start+j+1;
@@ -591,8 +591,7 @@ static ptrdiff_t readlines(int columnfull,int columnbase,int columnPOS,line *& l
 
     srand(1);
     countLinesAndClumps(fpi,Linecnt,clumpcnt);
-    if (Options->verbose() > 4)
-        printf("readlines countLinesAndClumps: %td lines %d clumps\n",Linecnt,clumpcnt);
+    Options->info(5, "readlines countLinesAndClumps: %td lines %d clumps\n",Linecnt,clumpcnt);
     assert(!lines);
     rewind(fpi);
     lines = new line[(size_t)Linecnt];
@@ -607,7 +606,7 @@ static ptrdiff_t readlines(int columnfull,int columnbase,int columnPOS,line *& l
     Linecnt = fileRead(lines,clumps,fpi,columnfull,columnbase,columnPOS,sep);
     if(Linecnt < 0)
         {
-        printf("Error in file \"%s\"\n",lemmalistef(Options));
+        fprintf(stderr, "Error in file \"%s\"\n",lemmalistef(Options));
         exit(-1);
         }
     --openfiles;
@@ -617,29 +616,24 @@ static ptrdiff_t readlines(int columnfull,int columnbase,int columnPOS,line *& l
         if (clumpcnt < 2)
             {
             clump Clump = { lines, Linecnt };
-            if (Options->verbose() > 4)
-                printf("readlines removeDuplicateLines\n");
+            Options->info(2,"readlines removeDuplicateLines\n");
             removeDuplicateLines(&Clump);
-            if (Options->verbose() > 4)
-                printf("readlines randomix\n");
+            Options->info(2,"readlines randomix\n");
             randomix(Clump.start, Clump.linecnt);
             lines = Clump.start;
             Linecnt = Clump.linecnt;
             }
         else
             {
-            if (Options->verbose() > 4)
-                printf("readlines removeDuplicateLines in %d clumps\n", clumpcnt);
+            Options->info(2,"readlines removeDuplicateLines in %d clumps\n", clumpcnt);
             for (int m = 0; m < clumpcnt; ++m)
                 removeDuplicateLines(clumps + m);
 
-            if (Options->verbose() > 4)
-                printf("readlines randomix\n");
+            Options->info(2,"readlines randomix\n");
             randomix(clumps, clumpcnt);
             }
         }
-    if (Options->verbose() > 4)
-        printf("readlines DONE\n");
+    Options->info(2,"readlines DONE\n");
     return Linecnt;
     }
 
@@ -700,7 +694,7 @@ static void printTrain(line * Line,FILE * fptrain,FILE * fptraintest,FILE * fptr
         }
     else
         {
-        printf("%s\n",Line->s);
+        fprintf(stderr, "%s\n",Line->s);
         }
     }
 
@@ -1064,10 +1058,6 @@ static evaluation compare(const char * output, const char * control, const char 
                 }
             else
                 bambiguous = false;
-            /*
-            long Ref = 0;
-            char * hash;
-            */
             char * s;
             bool found;
             char * tab;
@@ -1081,60 +1071,35 @@ static evaluation compare(const char * output, const char * control, const char 
                 {
                 ++c;
                 tab = NULL;
-//                hash = strchr(s,'#');
                 char * bar;
-                /*
-                if(hash && hash > s && '0' <= hash[1] && hash[1] <= 9)
+                bar = strchr(s,'|');
+                if(bar && bar > s && bar[1])
                     {
-                    *hash = '\0';
-                    Ref = strtol(hash+1,NULL,10);
-                    if(!strcmp(s,pb2))
-                        {
-                        *hash = '#';
-                        found = true;
-                        }
-                    else
-                        {
-                        *hash = '#';
-                        bar = strchr(hash,'|');
-                        if(bar)
-                            s = bar + 1;
-                        else
-                            s = NULL;
-                        }
+                    ambiguousRule = true;
+                    *bar = '\0';
+                    }
+                tab = strchr(s,'\t');
+                if(tab)
+                    *tab = '\0';
+                if(!strcmp(s,pb2))
+                    {
+                    if(bar)
+                        *bar = '|';
+                    if(tab)
+                        *tab = '\t';
+                    found = true;
                     }
                 else
-                */
                     {
-                    bar = strchr(s,'|');
-                    if(bar && bar > s && bar[1])
+                    if(bar)
                         {
-                        ambiguousRule = true;
-                        *bar = '\0';
-                        }
-                    tab = strchr(s,'\t');
-                    if(tab)
-                        *tab = '\0';
-                    if(!strcmp(s,pb2))
-                        {
-                        if(bar)
-                            *bar = '|';
-                        if(tab)
-                            *tab = '\t';
-                        found = true;
+                        *bar = '|';
+                        s = bar + 1;
                         }
                     else
-                        {
-                        if(bar)
-                            {
-                            *bar = '|';
-                            s = bar + 1;
-                            }
-                        else
-                            s = NULL;
-                        if(tab)
-                            *tab = '\t';
-                        }
+                        s = NULL;
+                    if(tab)
+                        *tab = '\t';
                     }
                 }
 
@@ -1146,28 +1111,22 @@ static evaluation compare(const char * output, const char * control, const char 
                     if(c > 2)
                         c = 2;
                     ++Evaluation.ambiguous[c];
-//                    Correct(Ref);
                     if(f3)
                         fprintf(f3,"|\t%s\t%s\t%s\n",b4,b1,b2);
-//                        fprintf(f3,"|\t%ld\t%s\t%s\t%s\n",Ref,b4,b1,b2);
                     }
                 else
                     {
                     assert(!ambiguousRule);
                     ++Evaluation.same;
-//                    Correct(Ref);
                     if(f3)
                         fprintf(f3,"+\t%s\t%s\t%s\n",b4,b1,b2);
-//                        fprintf(f3,"+\t%ld\t%s\t%s\t%s\n",Ref,b4,b1,b2);
                     }
                 }
             else
                 {
                 ++Evaluation.different;
-//                Wrong(Ref);
                 if(f3)
                     fprintf(f3,"-\t%s\t%s\t%s\n",b4,b1,b2);
-//                    fprintf(f3,"-\t%ld\t%s\t%s\t%s\n",Ref,b4,b1,b2);
                 }
 
             if(ambiguousRule)
@@ -1191,23 +1150,19 @@ static evaluation compare(const char * output, const char * control, const char 
         {
         if(!f1)
             {
-            printf("\n!f1 (output %s) PRESS ENTER\n",output);
-            getchar();
+            fprintf(stderr,"\n!f1 (output %s)\n",output);
             }
         if(!f2)
             {
-            printf("\n!f2 (control %s) PRESS ENTER\n",control);
-            getchar();
+            fprintf(stderr, "\n!f2 (control %s)\n",control);
             }
         if(!f3)
             {
-            printf("\n!f3 (controlResult %s) PRESS ENTER\n",controlResult);
-            getchar();
+            fprintf(stderr, "\n!f3 (controlResult %s)\n",controlResult);
             }
         if(!f4)
             {
-            printf("\n!f4 (test %s) PRESS ENTER\n",test);
-            getchar();
+            fprintf(stderr, "\n!f4 (test %s)\n",test);
             }
         }
     if(f1)
@@ -1248,10 +1203,10 @@ class stddev // standard deviations
         int *x;
         tri *X;
     public:
-        void datum(int x)
+        void datum(int anx)
             {
             assert(N < maxN);
-            this->x[N++] = x;
+            this->x[N++] = anx;
             }
         void datum(int s,ambty a,int d)
             {
@@ -1730,27 +1685,28 @@ void trainAndTest
         )
     {
     lineab AffixLine[CUTOFFS];
-    if (Options->verbose() > 3)
-        printf("trainAndTest\n");
+    Options->info(3,"trainAndTest\n");
 
     char formatprefix[500];
-    if(Options->externalTrainer() || Options->externalLemmatizer())
+    if (Options->externalTrainer() || Options->externalLemmatizer())
+        {
         sprintf(formatprefix
-               ,BASEDIR "%s%c%%s" SEPARATOR "%s_%s%s%s%s_%%s.txt"
-               ,Options->tempDir()
-               ,DIRSEP
-               ,LGf(Options)
-               ,"_external"
-               ,XT
-               ,TT
-               ,(Options->tenfoldCrossValidation() ? "10foldXVal" : "incSize")
-               );
+                , BASEDIR "%s%c%%s" SEPARATOR "%s_%s%s%s%s_%%s.txt"
+                , Options->tempDir()
+                , DIRSEP
+                , LGf(Options)
+                , "_external"
+                , XT
+                , TT
+                , (Options->tenfoldCrossValidation() ? "10foldXVal" : "incSize")
+        );
+        }
     else
-	{
-	const char * postag = Options->POStag();
-	if (postag == 0)
-	    postag = "NoTags";
-	assert(strcmp(postag, "(null)"));
+	    {
+	    const char * postag = Options->POStag();
+	    if (postag == 0)
+	        postag = "NoTags";
+    	assert(strcmp(postag, "(null)"));
         sprintf(formatprefix
                ,BASEDIR "%s%c%%s" SEPARATOR "%s_%s-%s%s%s%s%s%s_%%s.txt"
                ,Options->tempDir()
@@ -1764,7 +1720,7 @@ void trainAndTest
                ,(Options->redo() ? "redone" : "singleshot")
                ,(Options->tenfoldCrossValidation() ? "10foldXVal" : "incSize")
                );
-	}
+	    }
     char formatTraining[256]        ;sprintf(formatTraining,        formatprefix,"training"     ,"%d_%d");        // the training words
     char formatTest[256]            ;sprintf(formatTest,            formatprefix,"test"         ,"%d_%d");        // the test words (<> training words)
     char formatTrainTest[256]       ;sprintf(formatTrainTest,       formatprefix,"test"         ,"_train_%d_%d"); // the test words (= training words)
@@ -1781,7 +1737,7 @@ void trainAndTest
     char formatWeird[256]           ;sprintf(formatWeird,           formatprefix,"weird"        ,"");
 
     char formatTally[256]           ;sprintf(formatTally,           formatprefix,"tally"        ,"");
-    char formatTab[256]             ;sprintf(formatTab,             formatprefix,"evaluation"          ,"");
+    char formatTab[256]             ;sprintf(formatTab,             formatprefix,"evaluation"   ,"");
     char tally[256];
     char tab[256];
     sprintf(tally,"%s",formatTally);
@@ -1815,8 +1771,7 @@ void trainAndTest
     int noOfSteps;
     for(fraction = FRACTION_LOW,noOfSteps = 1;fraction <= FRACTION_HIGH;fraction = nextFraction(fraction),++noOfSteps)
         {
-        if (Options->verbose() > 4)
-            printf("Test: take fraction %d\n",fraction);
+        Options->info(3,"Test: take fraction %d\n",fraction);
         if(!fptally)
             {
             fptally = fopen(tally,"ab");
@@ -1868,8 +1823,7 @@ void trainAndTest
             ; ++count
             )
             {
-            if (Options->verbose() > 4)
-                printf("Test: count = %d maxcount = %d\n", count, maxcount);
+            Options->info(4,"Test: count = %d maxcount = %d\n", count, maxcount);
             char test[256];
             char Tcontrol[256];
             char Ttraincontrol[256];
@@ -1918,8 +1872,7 @@ void trainAndTest
                 trainlines = splitLemmaLineList(linecnt,Ttraining,test,Tcontrol,1,2,3,fraction,traintest,Ttraincontrol,lines,TrainTest,Options->tenfoldCrossValidation());
             if(trainlines > 0)
                 {
-                if (Options->verbose() > 4)
-                    printf("Test: trainlines = %ld\n", trainlines);
+                Options->info(4,"Test: trainlines = %ld\n", trainlines);
                 ttrainlines += trainlines;
 
                 optionStruct testOptions(*Options);
@@ -1941,12 +1894,10 @@ void trainAndTest
 
             if(ttrainlines > 0)
                 {
-                if (Options->verbose() > 4)
-                    printf("Test: ttrainlines = %ld\n", ttrainlines);
+                Options->info(4,"Test: ttrainlines = %ld\n", ttrainlines);
                 for (int cutoff = CUTOFF_LOW; cutoff <= CUTOFF_HIGH; ++cutoff)
                     {
-                    if (Options->verbose() > 4)
-                        printf("Test: cutoff = %d CUTOFF_HIGH = %d\n", cutoff, CUTOFF_HIGH);
+                    Options->info(5,"Test: cutoff = %d CUTOFF_HIGH = %d\n", cutoff, CUTOFF_HIGH);
                     sprintf(controlResult, formatcontrolResult, fraction, count, cutoff);
                     char Affixrules[250];
                     const char * lastslash = strrchr(Options->flexrules(),DIRSEP);
@@ -1962,7 +1913,7 @@ void trainAndTest
 
                     sprintf(Soutput,formatSOutput,cutoff,fraction,count);
                     sprintf(output,formatOutput,cutoff,fraction,count);
-                    FILE * fptally = fopen(tally,"ab");
+                    fptally = fopen(tally,"ab");
                     ++openfiles;
                     if(fptally)
                         {
@@ -1970,8 +1921,7 @@ void trainAndTest
                             {
                             char * command = new char[strlen(Options->externalLemmatizer())+strlen(TrainTest ? traintest : test)+strlen(Affixrules)+strlen(output)+5];
                             sprintf(command,"%s %s %s %s",Options->externalLemmatizer(),TrainTest ? traintest : test,Affixrules,output);
-                            if (Options->verbose())
-                                printf("External lemmatizer command: [%s]\n",command);
+                            Options->info(0,"External lemmatizer command: [%s]\n",command);
 
                             if(system(command))
                                 fprintf(stderr,"Cannot execute system command \"%s\".\n",command);
@@ -1984,6 +1934,7 @@ void trainAndTest
                             test,Ttraincontrol,controlResult,Tcontrol,fptally,Counts,Options,TrainTest);
                         --openfiles;
                         fclose(fptally);
+                        fptally = 0;
                         }
                     else
                         {
@@ -2076,8 +2027,7 @@ static int readFileAndTrainAndTest(optionStruct * Options,bool TrainTest)
     {
     const char * XT;
     const char * TT;
-    if (Options->verbose() > 4)
-        printf("Test initialization\n");
+    Options->info(4,"Test initialization\n");
     CUTOFF_LOW = 0;
     CUTOFF_HIGH = Options->cutoff();
     TAGGED = false;
@@ -2127,15 +2077,14 @@ static int readFileAndTrainAndTest(optionStruct * Options,bool TrainTest)
 
     if(XTRf(Options) == NULL)
         {
-        printf("Rule comparison function (variable XTRf(Options)) not specified for language %s\n",LGf(Options));
+        fprintf(stderr, "Rule comparison function (variable XTRf(Options)) not specified for language %s\n",LGf(Options));
         exit(1);
         }
     
     line * lines = NULL;
     clump * clumps = NULL;
     int clumpcnt = 0;
-    if (Options->verbose() > 4)
-        printf("Test: read file\n");
+    Options->info(4,"Test: read file\n");
     ptrdiff_t linecnt = readFile
         (lines
         ,clumps
@@ -2143,12 +2092,10 @@ static int readFileAndTrainAndTest(optionStruct * Options,bool TrainTest)
         ,sep
         ,Options
         );
-    if (Options->verbose() > 4)
-        printf("Test: read file DONE\n");
+    Options->info(4,"Test: read file DONE\n");
     if(linecnt)
         {
-        if (Options->verbose() > 4)
-            printf("Test: train and then test\n");
+        Options->info(4,"Test: train and then test\n");
         trainAndTest
             (linecnt
             ,clumpcnt
@@ -2160,8 +2107,7 @@ static int readFileAndTrainAndTest(optionStruct * Options,bool TrainTest)
             ,TrainTest
             );
 
-        if (Options->verbose() > 4)
-            printf("Test: train and then test DONE\n");
+        Options->info(4,"Test: train and then test DONE\n");
         delete [] lines;
         lines = NULL;
         }
@@ -2174,14 +2120,12 @@ int testrules(optionStruct * Options)
         {
         if(Options->trainTest() && !Options->tenfoldCrossValidation())
             {
-            if (Options->verbose() > 4)
-                printf("trainTest.\n");
+            Options->info(4,"trainTest.\n");
             readFileAndTrainAndTest(Options,true);
             }
         if(Options->test())
             {
-            if (Options->verbose() > 4)
-                printf("OOVTest.\n");
+            Options->info(4,"OOVTest.\n");
             readFileAndTrainAndTest(Options,false);
             }
         return 0;

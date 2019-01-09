@@ -494,10 +494,10 @@ bool readRules(const char * filename,buffer * Buffer)
     ++openfiles;
     if(f)
         {
-        bool result = readRules(f,Buffer);
+        bool aresult = readRules(f,Buffer);
         --openfiles;
         fclose(f);
-        return result;
+        return aresult;
         }
     return false;
     }

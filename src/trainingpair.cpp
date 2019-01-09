@@ -78,9 +78,9 @@ void trainingPair::takeMask(char * mask)
     Mask = dup(mask);
     }
 
-void trainingPair::addRule(vertex * V,bool InputRight,bool Right)
+void trainingPair::addRule(vertex * aV,bool InputRight,bool Right)
     {
-    this->applicableRules = new vertexPointer(V,this->applicableRules,InputRight,Right);
+    this->applicableRules = new vertexPointer(aV,this->applicableRules,InputRight,Right);
     }
 
 void trainingPair::deleteRules()
@@ -292,16 +292,16 @@ void trainingPair::fprintTraining(FILE * fp
                 {
                 while(len-- > 0 && *plemma)
                     {
-                    char * lemma = plemma;
-                    int LEMMA = (int)upperEquivalent(getUTF8char((const char *&)plemma,globUTF8));
-                    int WORD =  getUTF8char(pword,globUTF8);
+                    char * alemma = plemma;
+                    unsigned int LEMMA = (int)upperEquivalent(getUTF8char((const char *&)plemma,globUTF8));
+                    unsigned int WORD =  (unsigned int)getUTF8char(pword,globUTF8);
                     if(LEMMA == WORD)
                         {
                         char NLEMMA[7];
                         int n = UnicodeToUtf8(LEMMA,NLEMMA,sizeof(NLEMMA)-1);
-                        if(n == plemma - lemma)
+                        if(n == plemma - alemma)
                             {
-                            strncpy(lemma,NLEMMA,(size_t)n);
+                            strncpy(alemma,NLEMMA,(size_t)n);
                             // Notice: no '\0'
                             }
                         else
@@ -456,21 +456,19 @@ int printRules(node * nd
              )
     {
     int n = 0;
-    if (options->verbose() > 6)
-        printf("ind==(%d)\n",ind);
+    options->info(6, "ind==(%d)\n",ind);
     while(nd)
         {
         strng * nLL = 0;
         strng * nRR = 0;
 #if BRACMATOUTPUT
-        strng * snode;
+        strng * snode = 0;
 #endif
         // pat is the complete pattern, not an optimized pattern that only 
         // specifies the differences with its parent pattern.
         // pat starts with '^' and ends with '$'.
         // Wildcards are the character in the constant ANY (currently ':')
-        if (options->verbose() > 6)
-            printf("pat [%s] rep [%s]\n",nd->V->Pattern.itsTxt(),nd->V->Replacement.itsTxt());
+        options->info(6, "pat [%s] rep [%s]\n",nd->V->Pattern.itsTxt(),nd->V->Replacement.itsTxt());
         strng * pat = nd->V->Pattern.substr(1,(ptrdiff_t)strlen(nd->V->Pattern.itsTxt()) - 2);
         strng * rep = nd->V->Replacement.substr(1, (ptrdiff_t)strlen(nd->V->Replacement.itsTxt()) - 2);
         strng * patreps[100];
@@ -539,7 +537,7 @@ int printRules(node * nd
         nd->V->printRule(fo,ind,nr);
 #endif
 #if BRACMATOUTPUT
-        if(fobra)
+        if(fobra && snode)
             {
             fprintf(fobra,"%s\n",snode->itsTxt());
             delete snode;
@@ -579,8 +577,7 @@ int printRules(node * nd
         delete nRR;
         nd = nd->IfPatternFails;
         }
-    if (options->verbose() > 6)
-        printf("ind==(%d)DONE n==(%d)\n",ind,n);
+        options->info(6, "ind==(%d)DONE n==(%d)\n",ind,n);
     return n;
     }
 
@@ -694,7 +691,6 @@ trainingPair * trainingPair::makeWrongAmbiguousIfRightPresent(trainingPair *& Am
         }
     else
         {
-      //  printf("All ambiguous\n");
         Ambiguous = this;
         return 0;
         }

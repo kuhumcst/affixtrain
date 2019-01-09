@@ -135,11 +135,11 @@ edif strng::dif(strng * s) // returns Txt - s
        It returns -1 if Txt is weaker than s_Txt
        It retuns 0 if the conditions are incommensurable.
     */
-    char * Txt = this->Txt;
+    char * aTxt = this->Txt;
     char * s_Txt = s->Txt;
     char * A[100];
     char * B[100];
-    cut(Txt,A);
+    cut(aTxt,A);
     cut(s_Txt,B);
     if(compatibleCondition(A,B))
         {

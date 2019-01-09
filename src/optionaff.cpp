@@ -35,7 +35,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 static char opts[] = "?@:A:B:b:C:c:D:d:E:e:F:f:G:hH:I:i:j:K:k:L:M:m:N:n:O:o:P:p:Q:"/*q:*/"R:s:T:t:V:v:X:x:W:" /* GNU: */ "wr";
 static char *** Ppoptions = NULL;
 static char ** Poptions = NULL;
-static int optionSets = 0;
+static unsigned int optionSets = 0;
 
 char * dupl(const char * s)
     {
@@ -70,7 +70,7 @@ optionStruct::optionStruct(optionStruct & O)
     G = dupl(O.G);
     nD = O.nD;
     D = new double[nD];
-    for(int ii = 0;ii < nD;++ii)
+    for(unsigned int ii = 0;ii < nD;++ii)
         D[ii] = O.D[ii];
     ComputeParms = O.ComputeParms;
     SuffixOnly = O.SuffixOnly;
@@ -87,7 +87,6 @@ optionStruct::optionStruct(optionStruct & O)
     TrainTest = O.TrainTest;
     Q = O.Q;
     MaxPasses = O.MaxPasses;
-    //q = O.q;
     K = O.K;
     M = O.M;
     N = O.N;
@@ -155,7 +154,7 @@ void cleanUpOptions()
     {
     if (optionSets > 0)
         {
-        for (int I = 0; I < optionSets; ++I)
+        for (unsigned int I = 0; I < optionSets; ++I)
             {
             delete[] Poptions[I];
             delete[] Ppoptions[I];
@@ -187,7 +186,7 @@ optionStruct::~optionStruct()
 
 void optionStruct::detectFloatingPointNumbers(const char * S)
     {
-    int n = 0;
+    unsigned int anN = 0;
     const char * t = 0;
     double Sum2 = 0.0;
     double Sum = 0.0;
@@ -208,7 +207,7 @@ void optionStruct::detectFloatingPointNumbers(const char * S)
             )
             {
             Sum2 += d*d;
-            ++n;
+            ++anN;
             }
         t = strpbrk(s, ",;:");
         if(t == 0)
@@ -220,11 +219,11 @@ void optionStruct::detectFloatingPointNumbers(const char * S)
         exit(-3);
         }
     Sum = sqrt(Sum2);
-    if (n == 4 || n == 6)
+    if (anN == 4 || anN == 6)
         {
-        nD = n;
-        D = new double[n];
-        n = 0;
+        nD = anN;
+        D = new double[anN];
+        anN = 0;
         endptr = S;
         newendptr = 0;
         for (s = S;;s = t + 1,endptr = newendptr)
@@ -239,8 +238,8 @@ void optionStruct::detectFloatingPointNumbers(const char * S)
                     )
                 )
                 {
-                D[n] = d / Sum;
-                ++n;
+                D[anN] = d / Sum;
+                ++anN;
                 }
             t = strchr(s, ';');
             if(t == 0)
@@ -249,8 +248,8 @@ void optionStruct::detectFloatingPointNumbers(const char * S)
         
         if(D[1] > 0 && D[2] < 0)
             { // The penalty for W=>R and R=>W must be negative and positive, respectively. (W=>R is "good" and R=>W is "bad")
-            for(n = 0;n < nD;++n)
-                D[n] = -D[n];
+            for(anN = 0;anN < nD;++anN)
+                D[anN] = -D[anN];
             }
            
         }
@@ -267,7 +266,7 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
         {
         case 'W':
         case 'd':
-            printf("Obsolete option %c. Use option -X\n",optchar);
+            fprintf(stderr, "Obsolete option %c. Use option -X\n",optchar);
             exit(1);
             break;
         case '@':
@@ -320,7 +319,7 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
                 Minfraction = strtod(locoptarg, (char**)0);
                 if (Minfraction <= 0.0 || 1.0 < Minfraction)
                     {
-                    printf("%s", "Option -L: value must be greater than 0.0 and not greater than 1.0");
+                    fprintf(stderr, "%s", "Option -L: value must be greater than 0.0 and not greater than 1.0");
                     exit(-1);
                     }
                 }
@@ -336,7 +335,7 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
                 Maxfraction = strtod(locoptarg, (char**)0);
                 if (Maxfraction > 1.0)
                     {
-                    printf("%s", "Option -H: value must be greater than 0.0 and not greater than 1.0");
+                    fprintf(stderr, "%s", "Option -H: value must be greater than 0.0 and not greater than 1.0");
                     exit(-1);
                     }
                 }
@@ -352,7 +351,7 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
                 K = strtol(locoptarg, 0, 10);
                 if (K <= 0)
                     {
-                    printf("%s", "Option -K: value must be 1 or more");
+                    fprintf(stderr, "%s", "Option -K: value must be 1 or more");
                     exit(-1);
                     }
                 }
@@ -368,7 +367,7 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
                 M = strtod(locoptarg, (char**)0);
                 if (M < 1.0)
                     {
-                    printf("%s", "Option -M: value must be 1.0 or greater");
+                    fprintf(stderr, "%s", "Option -M: value must be 1.0 or greater");
                     exit(-1);
                     }
                 break;
@@ -385,7 +384,7 @@ OptReturnTp optionStruct::doSwitch(int optchar, char * locoptarg, char * prognam
                 N = strtod(locoptarg, (char**)0);
                 if (N < 1.0)
                     {
-                    printf("%s", "Option -N: value must be 1.0 or greater");
+                    fprintf(stderr, "%s", "Option -N: value must be 1.0 or greater");
                     exit(-1);
                     }
                 }
@@ -666,7 +665,7 @@ OptReturnTp optionStruct::readOptsFromFile(char * locoptarg, char * progname)
         {
         char * p;
         char line[1000];
-        int lineno = 0;
+        unsigned int lineno = 0;
         size_t bufsize = 0;
         while (fgets(line, sizeof(line) - 1, fpopt))
             {
@@ -735,7 +734,7 @@ OptReturnTp optionStruct::readOptsFromFile(char * locoptarg, char * progname)
                             {
                             if (optarg2)
                                 {
-                                printf("Option argument %s provided for option letter %c that doesn't use it on line %d in option file \"%s\"\n", optarg2, line[off], lineno, locoptarg);
+                                fprintf(stderr, "Option argument %s provided for option letter %c that doesn't use it on line %d in option file \"%s\"\n", optarg2, line[off], lineno, locoptarg);
                                 exit(1);
                                 }
                             }
@@ -743,7 +742,7 @@ OptReturnTp optionStruct::readOptsFromFile(char * locoptarg, char * progname)
                     }
                 else
                     {
-                    printf("Missing option letter on line %d in option file \"%s\"\n", lineno, locoptarg);
+                    fprintf(stderr, "Missing option letter on line %lu in option file \"%s\"\n", lineno, locoptarg);
                     exit(1);
                     }
                 }
@@ -756,7 +755,7 @@ OptReturnTp optionStruct::readOptsFromFile(char * locoptarg, char * progname)
         optionSets++;
         char *** tmpPpoptions = new char **[optionSets];
         char ** tmpPoptions = new char *[optionSets];
-        int g;
+        unsigned int g;
         for (g = 0; g < optionSets - 1; ++g)
             {
             tmpPpoptions[g] = Ppoptions[g];
@@ -847,7 +846,7 @@ OptReturnTp optionStruct::readOptsFromFile(char * locoptarg, char * progname)
         }
     else
         {
-        printf("Cannot open option file %s\n", locoptarg);
+        fprintf(stderr, "Cannot open option file %s\n", locoptarg);
         }
     return result;
     }
@@ -903,13 +902,12 @@ void optionStruct::completeArgs()
             {
             if (f == NULL)
                 {
-                if (Verbose)
-                    printf("computeParms == true\n");
+                info(0,"computeParms == true\n");
                 P = dupl("approx_parms.txt");
                 }
             else
                 {
-                printf("Option -p should not be set if option -f is set.\n");
+                fprintf(stderr, "Option -p should not be set if option -f is set.\n");
                 exit(1);
                 }
             }
@@ -962,7 +960,7 @@ void optionStruct::completeArgs()
             }
         else
             {
-            printf("Option -X can only have values C, D, E or W\n");
+            fprintf(stderr, "Option -X can only have values C, D, E or W\n");
             exit(1);
             }
         }
@@ -1068,8 +1066,7 @@ void optionStruct::completeArgs()
     if(Lines > 0)
         ++Blobs;
 
-    if (verbose() > 5)
-        printf("blobs:%d lines %d\n", Blobs, Lines);
+    info(5,"blobs:%d lines %d\n", Blobs, Lines);
     --openfiles;
     fclose(fpWrdLem);
     if(Minfraction < MINLINES/(double)Lines)
@@ -1115,15 +1112,15 @@ OptReturnTp optionStruct::readArgs(int argc, char * argv[])
                 else if (!n)
                     n = dupl(argv[optind++]);
                 else
-                    printf("Too many arguments:%s\n", argv[optind]);
+                    fprintf(stderr, "Too many arguments:%s\n", argv[optind]);
                 }
             }
         else if (optind < argc)
             {
             if (i && c && o && e && n)
-                printf("Too many arguments:%s\n", argv[optind]);
+                fprintf(stderr, "Too many arguments:%s\n", argv[optind]);
             else
-                printf("You cannot have a command line with both option-style arguments and option-less-fixed-position arguments:%s\n", argv[optind]);
+                fprintf(stderr, "You cannot have a command line with both option-style arguments and option-less-fixed-position arguments:%s\n", argv[optind]);
             }
 
         completeArgs();
@@ -1173,7 +1170,7 @@ void optionStruct::print(FILE * fp) const
         fprintf(fp, "               ; flex rules (output, binary format)\n;-o %s (N/A)\n", o ? o : "");
         fprintf(fp, "               ; temp dir (including separator at end!)\n;-j %s (N/A)\n", j ? j : "");
 //        fprintf(fp, "               ; percentage of training pairs to set aside for testing\n;-q %d (N/A)\n", q);
-        fprintf(fp, "               ; penalties to decide which rule survives (4 or 6 floating point numbers: R=>R;W=>R;R=>W;W=>W[;R=>N/A;W=>NA], where R=#right cases, W=#wrong cases, N/A=#not applicable cases, previous success state=>success state after rule application)\n"); if (nD > 0){ fprintf(fp, ";-D "); for (int i = 0; i < nD; ++i)fprintf(fp, "%.10f;", D[i]); fprintf(fp, " (N/A)\n"); } else fprintf(fp, ";-D (N/A)\n");
+        fprintf(fp, "               ; penalties to decide which rule survives (4 or 6 floating point numbers: R=>R;W=>R;R=>W;W=>W[;R=>N/A;W=>NA], where R=#right cases, W=#wrong cases, N/A=#not applicable cases, previous success state=>success state after rule application)\n"); if (nD > 0){ fprintf(fp, ";-D "); for (unsigned int indx = 0; indx < nD; ++indx)fprintf(fp, "%.10f;", D[indx]); fprintf(fp, " (N/A)\n"); } else fprintf(fp, ";-D (N/A)\n");
         fprintf(fp, "               ; compute parms (-p: yes -p-: no)\n;-p %s (N/A)\n", ComputeParms ? "" : "-");
         fprintf(fp, "               ; expected optimal pruning threshold (only effective in combination with -XW)\n;-C %d (N/A)\n", C);
         fprintf(fp, "               ; tree penalty (-XC: constant -XD: more support is better -XE: higher entropy is better -XW: Fewer pattern characters other than wildcards is better)\n;-X %s (N/A)\n", X);
@@ -1207,7 +1204,7 @@ void optionStruct::print(FILE * fp) const
         fprintf(fp, "               ; flex rules (output, binary format, can be left unspecified)\n%s-o %s\n", o ? "" : ";", o ? o : "(Not specified, autogenerated)");
         fprintf(fp, "               ; temp dir\n-j %s\n", j ? j : "");
 //        fprintf(fp, "               ; percentage of training pairs to set aside for testing\n-q %d\n", q);
-        fprintf(fp, "               ; penalties to decide which rule survives (4 or 6 floating point numbers: R=>R;W=>R;R=>W;W=>W[;R=>N/A;W=>NA], where R=#right cases, W=#wrong cases, N/A=#not applicable cases, previous success state=>success state after rule application)\n"); if (nD > 0){ fprintf(fp, "-D "); for (int i = 0; i < nD; ++i)fprintf(fp, "%.10f;", D[i]); fprintf(fp, "\n"); } else fprintf(fp, ";-D not specified\n");
+        fprintf(fp, "               ; penalties to decide which rule survives (4 or 6 floating point numbers: R=>R;W=>R;R=>W;W=>W[;R=>N/A;W=>NA], where R=#right cases, W=#wrong cases, N/A=#not applicable cases, previous success state=>success state after rule application)\n"); if (nD > 0){ fprintf(fp, "-D "); for (unsigned int indx = 0; indx < nD; ++indx)fprintf(fp, "%.10f;", D[indx]); fprintf(fp, "\n"); } else fprintf(fp, ";-D not specified\n");
         fprintf(fp, "               ; compute parms (-p: yes -p-: no)\n-p %s\n", ComputeParms ? "" : "-");
         if (ComputeParms)
             {
@@ -1347,11 +1344,6 @@ void optionStruct::setArgstring()
             {
             strcat(Argstring, "_suf");
             }
-/*        if (k && k[0])
-            {
-            strcat(Argstring, "_");
-            strcat(Argstring, k);
-            }*/
         if (ExpensiveInfix)
             {
             strcat(Argstring, "_inf");
@@ -1394,39 +1386,43 @@ void optionStruct::setArgstring()
 
 const char * optionStruct::argstring_no_path() const
     {
-    assert(Argstring);
-    const char * fw_slash = strrchr(Argstring,'/');
-    const char * back_slash = strrchr(Argstring,'\\');
-    if(fw_slash != 0)
+    if (Argstring)
         {
-        if(back_slash != 0)
+        const char * fw_slash = strrchr(Argstring, '/');
+        const char * back_slash = strrchr(Argstring, '\\');
+        if (fw_slash != 0)
             {
-            if(back_slash < fw_slash)
-                return fw_slash + 1;
+            if (back_slash != 0)
+                {
+                if (back_slash < fw_slash)
+                    return fw_slash + 1;
+                else
+                    return back_slash + 1;
+                }
             else
-                return back_slash + 1;
+                return fw_slash + 1;
             }
-        else
-            return fw_slash + 1;
+        else if (back_slash != 0)
+            return back_slash + 1;
         }
-    else if(back_slash != 0)
-        return back_slash + 1;
-    else
-        return Argstring;
+    return Argstring;
     }
 
 
 void optionStruct::printArgFile() const
     {
     const char * Args = argstring_no_path();
-    char * name = new char[strlen("parms.")+strlen(Args)+1];
-    strcpy(name, "parms.");
-    strcat(name, Args);
-    FILE * fp = fopen(name, "wb");
-    ++openfiles;
-    print(fp);
-    --openfiles;
-    fclose(fp);
+    if (Args)
+        {
+        char * name = new char[strlen("parms.") + strlen(Args) + 1];
+        strcpy(name, "parms.");
+        strcat(name, Args);
+        FILE * fp = fopen(name, "wb");
+        ++openfiles;
+        print(fp);
+        --openfiles;
+        fclose(fp);
+        }
     }
 
 

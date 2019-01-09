@@ -158,10 +158,10 @@ class vertexPointer
                 p = n;
                 }
             }
-        bool has(vertex * V)
+        bool has(vertex * aV)
             {
             for(vertexPointer * p = this; p; p = p->Next)
-                if(p->V == V)
+                if(p->V == aV)
                     return true;
             return false;
             }

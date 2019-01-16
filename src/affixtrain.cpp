@@ -20,7 +20,7 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "3.90"
+#define VERSION "3.91"
 
 #include "affixtrain.h"
 #include "testrules.h"
@@ -2261,9 +2261,10 @@ int main(int argc, char **argv)
             optionStruct originalOptions(options);
             while (theTag)
                 {
-                options.info(0, "Doing tag %s\n", theTag->name);
-                FilterTagLines(originalOptions.wordLemmaList(), &options, theTag->name);
-                AllProcessing(&options,theTag->name);
+                optionStruct tagOptions(options);
+                tagOptions.info(0, "Doing tag %s\n", theTag->name);
+                FilterTagLines(originalOptions.wordLemmaList(), &tagOptions, theTag->name);
+                AllProcessing(&tagOptions,theTag->name);
                 theTag = theTag->next;
                 }
             }

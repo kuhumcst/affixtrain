@@ -1,3 +1,9 @@
+Version 3.91 - 2019.01.16
+-------------------------
+When training with tags, copy the original option structure to a tag specific
+option structure, so that parameter training processes start with a fresh
+initial set of weights, instead of inheriting them from the previous tag. 
+
 Version 3.90 - 2019.01.09
 -------------------------
 Increased size of 'spass' buffer in affixtrain.cpp. 

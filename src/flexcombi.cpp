@@ -1182,12 +1182,20 @@ bool flexcombi(const char * bestflexrules, const char * nextbestflexrules, const
         fprintf(stderr, "Error (flexcombi): Cannot open %s for reading\n",bestflexrules);
         return false;
         }
-    if (!NextFileBuffer.readRules(nextbestflexrules))
+
+    char * arr;
+    if (strcmp(bestflexrules, nextbestflexrules))
         {
-        fprintf(stderr, "Error (flexcombi): Cannot open %s for reading\n",nextbestflexrules);
-        return false;
+        if (!NextFileBuffer.readRules(nextbestflexrules))
+            {
+            fprintf(stderr, "Error (flexcombi): Cannot open %s for reading\n", nextbestflexrules);
+                return false;
+            }
+        arr = new char[(size_t)(2 * (FileBuffer.Length + NextFileBuffer.Length))];
         }
-    char * arr = new char[(size_t)(2 * (FileBuffer.Length + NextFileBuffer.Length))];
+    else
+        arr = new char[(size_t)(2 * (FileBuffer.Length))];
+
     FILE * f = fopen(combinedflexrules, "wb");
     ++openfiles;
     if(!f)
@@ -1200,9 +1208,12 @@ bool flexcombi(const char * bestflexrules, const char * nextbestflexrules, const
     treenodeFactory(FileBuffer.buf, FileBuffer.buf + FileBuffer.Length, &TreeNode);
     if (TreeNode)
         {
-        treenode * NextTreeNode = NULL;
-        treenodeFactory(NextFileBuffer.buf, NextFileBuffer.buf + NextFileBuffer.Length, &NextTreeNode);
-        TreeNode->merge(NextTreeNode);
+        if (strcmp(bestflexrules, nextbestflexrules))
+            {
+            treenode* NextTreeNode = NULL;
+            treenodeFactory(NextFileBuffer.buf, NextFileBuffer.buf + NextFileBuffer.Length, &NextTreeNode);
+            TreeNode->merge(NextTreeNode);
+            }
         ptrdiff_t length = TreeNode->copy(arr, 0);
         *(int*)arr = 0;
         for(ptrdiff_t i = 0;i < length;++i)
@@ -1210,7 +1221,5 @@ bool flexcombi(const char * bestflexrules, const char * nextbestflexrules, const
         }
     --openfiles;
     fclose(f);
-    //prettyPrint(combinedflexrules);
-    //prettyPrintBracmat(combinedflexrules);
     return true;
     }

@@ -1,3 +1,11 @@
+Version 3.92 - 2021.04.16
+-------------------------
+Ensured that flexrules also have the initial string "\rV3\r" if the training
+set is unambiguous. The string is inserted by the function 'flexcombi', which
+is called to combine flexrules from each pass that is needed to handle
+ambiguities. The function 'flexcombi' is now also called after the first (and
+perhaps only) pass, with no merging really taking place.
+
 Version 3.91 - 2019.01.16
 -------------------------
 When training with tags, copy the original option structure to a tag specific

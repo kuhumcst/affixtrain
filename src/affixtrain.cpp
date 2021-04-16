@@ -20,7 +20,7 @@ along with AFFIXTRAIN; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define VERSION "3.91"
+#define VERSION "3.92"
 
 #include "affixtrain.h"
 #include "testrules.h"
@@ -1970,11 +1970,11 @@ void trainRules(optionStruct * options,countAndWeight * Counts)
                 fprintf(stderr, "trainRules: AccumulatedFlexrulesPass 2 small");
                 exit(-1);
                 }
-            if (sizeof(NextAccumulatedFlexrulesPassFormat) <= (size_t)sprintf(NextAccumulatedFlexrulesPassFormat, AccumulatedFlexrulePassFormat, nflexrules, passes))
-                {
-                fprintf(stderr, "trainRules: NextAccumulatedFlexrulesPassFormat 2 small");
-                exit(-1);
-                }
+            }
+        if (sizeof(NextAccumulatedFlexrulesPassFormat) <= (size_t)sprintf(NextAccumulatedFlexrulesPassFormat, AccumulatedFlexrulePassFormat, nflexrules, passes))
+            {
+            fprintf(stderr, "trainRules: NextAccumulatedFlexrulesPassFormat 2 small");
+            exit(-1);
             }
 
         for (int cut = 0; cut <= options->cutoff(); ++cut)
@@ -2003,6 +2003,24 @@ void trainRules(optionStruct * options,countAndWeight * Counts)
                 if (!flexcombi(bestflexrules, nextbestflexrules, newbestflexrules))
                     break;
                 //prettyPrint(newbestflexrules);
+                }
+            else
+                { /* Purpose: use flexcombi to insert version in binary flexrule file.
+                     If the training set is unambiguous, only one pass is needed,
+                     and the version number would be missing, causing cstlemma to
+                     protest that the flexrules are of obsolete design.
+                   */
+                char newbestflexrules[1150];
+                if (sizeof(newbestflexrules) <= (size_t)sprintf(newbestflexrules, NextAccumulatedFlexrulesPassFormat, cut))
+                    {
+                    fprintf(stderr, "trainRules: newbestflexrules 2 small");
+                    exit(-1);
+                    }
+                options->info(5, "flexcombi best %s + next best %s -> combined %s\n", nextbestflexrules, nextbestflexrules, nextbestflexrules);
+                if (!flexcombi(nextbestflexrules, nextbestflexrules, newbestflexrules))
+                    break;
+                remove(nextbestflexrules);
+                rename(newbestflexrules, nextbestflexrules);
                 }
             }
         fname = tempFolder(pairsToTrainInNextPassName, options);

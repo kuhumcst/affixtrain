@@ -1739,7 +1739,7 @@ void trainAndTest
     char formatTally[256]           ;sprintf(formatTally,           formatprefix,"tally"        ,"");
     char formatTab[256]             ;sprintf(formatTab,             formatprefix,"evaluation"   ,"");
     char tally[256];
-    char tab[256];
+    char tab[1024];
     sprintf(tally,"%s",formatTally);
     char * sep = strchr(formatTab,DIRSEP);
     if(sep)

@@ -753,7 +753,7 @@ static trainingPair * readTrainingPairs(aFile & afile, size_t & pairs, optionStr
                 }
             else if(wordlength + lemmalength > 0)
                 {
-                fprintf(stderr, "Word [%.*s] and/or lemma [%.*s] is empty\n", wordlength, Word, lemmalength, LemmaHead);
+                fprintf(stderr, "Word [%.*s] and/or lemma [%.*s] is empty\n", (int)wordlength, Word, (int)lemmalength, LemmaHead);
                 exit(-1);
                 }
             }
@@ -2056,7 +2056,7 @@ void trainRules(optionStruct * options,countAndWeight * Counts)
                     }
                 options->info(3,"dirname %s\n", dirname);
 
-                char testfile[500];
+                char testfile[512];
                 sprintf(testfile, "%s%cTESTFILE", dirname, DIRSEP);
                 options->info(3,"testfile %s\n", testfile);
                 FILE * fptest = fopen(testfile, "w");
@@ -2094,7 +2094,7 @@ void trainRules(optionStruct * options,countAndWeight * Counts)
                     }
                 if (hasDir)
                     {
-                    char finalPath[1024];
+                    char finalPath[2048];
                     sprintf(finalPath, "%s%c%s", dirname, DIRSEP, filename);
                     remove(finalPath);
                     sprintf(dest, bestRulesFormat, cut);
@@ -2122,7 +2122,7 @@ void trainRules(optionStruct * options,countAndWeight * Counts)
             sprintf(scut, "%s%d", SCUT, cut);
             for (int passs = 1;; ++passs)
                 {
-                char dest[1000];
+                char dest[1500];
                 char spass[100];
                 sprintf(spass, ".pass%d", passs);
                 sprintf(dest, "%s%s%s", nflexrules, scut, spass);

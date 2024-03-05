@@ -751,6 +751,11 @@ static trainingPair * readTrainingPairs(aFile & afile, size_t & pairs, optionStr
                     );
                 ++pairs;
                 }
+            else if(wordlength + lemmalength > 0)
+                {
+                fprintf(stderr, "Word [%.*s] and/or lemma [%.*s] is empty\n", wordlength, Word, lemmalength, LemmaHead);
+                exit(-1);
+                }
             }
         }
     if (tag && *tag)
